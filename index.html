@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Page Quest</title>
+<meta name="description" content="A reading game: warm up on tricky words, read each page out loud, answer a question to move on, and earn treasure.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Page Quest">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#eef4fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1724" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Lexend:wght@400;500;600&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%} body{margin:0} img{max-width:100%}
+/* Layout: one centred column (max 760px) per screen; the reading page is a plain, high-contrast card with large Lexend type. */
+:root{
+  --bg:#eef4fb; --panel:#ffffff; --ink:#1b2638; --mut:#55627a; --line:#d4dfec; --soft:#e4ecf8;
+  --accent:#2a5bd7; --accent-ink:#ffffff; --sun:#e9a614; --sun-soft:#fff3cf; --good:#1c8f5a; --good-soft:#d8f2e4;
+  --oops:#d24a2f; --oops-soft:#fde3dc; --mark:#ffe680; --path:#b9c9de;
+  --display:"Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --read:"Lexend", "Verdana", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1724; --panel:#17233a; --ink:#eef3fb; --mut:#a8b5ca; --line:#2b3a57; --soft:#1f2d48;
+  --accent:#86a8ff; --accent-ink:#0f1724; --sun:#f6c24a; --sun-soft:#3b3214; --good:#52d495; --good-soft:#163d2b;
+  --oops:#ff8a70; --oops-soft:#46221b; --mark:#6b5a12; --path:#3a4c6d; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0f1724; --panel:#17233a; --ink:#eef3fb; --mut:#a8b5ca; --line:#2b3a57; --soft:#1f2d48;
+  --accent:#86a8ff; --accent-ink:#0f1724; --sun:#f6c24a; --sun-soft:#3b3214; --good:#52d495; --good-soft:#163d2b;
+  --oops:#ff8a70; --oops-soft:#46221b; --mark:#6b5a12; --path:#3a4c6d; color-scheme:dark }
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--read);font-size:16px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px;-webkit-tap-highlight-color:transparent}
+#app{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:2.3rem} h2{font-size:1.6rem} h3{font-size:1.25rem}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;touch-action:manipulation}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:10px 22px;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-family:var(--display);font-weight:700;font-size:1.2rem;box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 60%,#000)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn.ghost{background:var(--soft);color:var(--ink);box-shadow:0 3px 0 var(--line)}
+.btn.sun{background:var(--sun);color:#2b1d00;box-shadow:0 3px 0 color-mix(in srgb,var(--sun) 60%,#000)}
+.btn.small{min-height:40px;padding:6px 14px;font-size:1rem;border-radius:12px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.spread{justify-content:space-between}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:20px}
+.mut{color:var(--mut)}
+.coins{display:inline-flex;align-items:center;gap:6px;font-family:var(--display);font-weight:800;font-size:1.25rem;background:var(--sun-soft);padding:4px 14px;border-radius:999px;font-variant-numeric:tabular-nums}
+.coin{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe48a,var(--sun) 60%,#b77d00);display:inline-block;flex:none}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:var(--soft);font-size:.85rem;font-weight:600}
+.topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar .grow{flex:1;min-width:0}
+.avatar{width:56px;height:56px;border-radius:18px;background:var(--soft);display:grid;place-items:center;font-size:2rem;flex:none}
+.xp{height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:6px}
+.xp>i{display:block;height:100%;background:var(--good);border-radius:99px}
+.brand{font-family:var(--display);font-weight:800;font-size:2.6rem;letter-spacing:.5px;color:var(--accent);line-height:1}
+.brand small{display:block;font-size:1rem;color:var(--mut);font-weight:600;letter-spacing:0}
+
+/* profiles */
+.who{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+.who button{background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:18px 12px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.who .big{font-size:3rem;line-height:1}
+.who b{font-family:var(--display);font-size:1.4rem}
+.pick{display:flex;gap:8px;flex-wrap:wrap}
+.pick button{min-width:56px;min-height:56px;border-radius:16px;background:var(--soft);font-size:1.7rem;border:3px solid transparent}
+.pick button.on{border-color:var(--accent);background:var(--panel)}
+.pick.words button{font-size:1.05rem;font-weight:600;padding:0 16px}
+input[type=text]{font:inherit;font-size:1.3rem;padding:12px 16px;border-radius:14px;border:2px solid var(--line);background:var(--panel);color:var(--ink);width:100%}
+label.lab{font-weight:600;display:block;margin-bottom:6px}
+
+/* hub */
+.vault{background:linear-gradient(135deg,var(--sun-soft),var(--panel));border-color:var(--sun)}
+.map{width:100%;height:auto;display:block}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.tile{background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:16px;text-align:left;display:flex;gap:12px;align-items:center}
+.tile .ic{font-size:2.2rem}
+.tile b{font-family:var(--display);font-size:1.25rem;display:block}
+
+/* library */
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tabs button{padding:8px 16px;border-radius:999px;background:var(--soft);font-weight:600;min-height:44px}
+.tabs button.on{background:var(--ink);color:var(--bg)}
+.books{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.book{background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:8px;min-width:0}
+.book .ic{font-size:2.6rem;line-height:1}
+.book b{font-family:var(--display);font-size:1.2rem;line-height:1.2}
+.book .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.stars{color:var(--sun);letter-spacing:2px;font-size:1.1rem}
+.new{border-style:dashed;border-color:var(--accent)}
+
+/* warm-up */
+.tw{display:flex;flex-direction:column;gap:12px}
+.twrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.syl{font-family:var(--read);font-size:1.7rem;font-weight:500;padding:8px 14px;border-radius:12px;background:var(--soft);min-height:56px}
+.syl.lit{background:var(--good-soft);color:var(--good)}
+.twdone{font-family:var(--read);font-size:1.7rem;font-weight:600;color:var(--good)}
+
+/* reader */
+.rhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dots{display:flex;gap:6px}
+.dots i{width:14px;height:14px;border-radius:50%;background:var(--soft);border:2px solid var(--line)}
+.dots i.done{background:var(--good);border-color:var(--good)}
+.dots i.now{background:var(--accent);border-color:var(--accent)}
+.passage{font-family:var(--read);font-size:calc(var(--fs,1) * 1.6rem);line-height:2;word-spacing:.12em;letter-spacing:.01em}
+.lv5 .passage{font-size:calc(var(--fs,1) * 1.4rem)}
+.w{border-radius:6px;padding:1px 2px;cursor:pointer;transition:background .15s}
+.w.read{background:var(--good-soft)}
+.w.now{background:var(--mark);box-shadow:0 3px 0 var(--sun)}
+.w.ev{background:var(--mark)}
+.modes{display:flex;gap:8px;flex-wrap:wrap}
+.modes button{padding:8px 14px;border-radius:12px;background:var(--soft);font-weight:600;min-height:44px}
+.modes button.on{background:var(--accent);color:var(--accent-ink)}
+.ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.speed{display:flex;align-items:center;gap:8px}
+.speed input{width:140px;accent-color:var(--accent)}
+.result{background:var(--good-soft);border-radius:16px;padding:14px 16px;font-weight:500}
+.notice{background:var(--sun-soft);border-radius:16px;padding:12px 16px}
+.pop{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel);border:2px solid var(--accent);border-radius:20px;padding:14px 18px;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:20;max-width:calc(100% - 32px);display:flex;flex-direction:column;gap:10px;align-items:center}
+.pop .syls{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.listen{display:inline-flex;align-items:center;gap:8px;font-weight:600;color:var(--good)}
+.listen i{width:12px;height:12px;border-radius:50%;background:var(--oops);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.3}}
+
+/* question */
+.q{font-family:var(--display);font-size:1.6rem;line-height:1.25}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{text-align:left;padding:16px 18px;border-radius:16px;background:var(--soft);border:2px solid var(--line);font-size:1.2rem;font-weight:500;min-height:60px}
+.opt.right{background:var(--good-soft);border-color:var(--good)}
+.opt.wrong{background:var(--oops-soft);border-color:var(--oops);opacity:.7}
+.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.skill{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--mut)}
+
+/* sequence */
+.slots{display:flex;flex-direction:column;gap:8px}
+.slot{min-height:54px;border:2px dashed var(--line);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;font-size:1.1rem}
+.slot.full{border-style:solid;border-color:var(--good);background:var(--good-soft)}
+.slot .n{font-family:var(--display);font-weight:800;color:var(--mut);width:22px}
+
+/* shop */
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.item{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.item .big{font-size:2.6rem;line-height:1.1}
+.item.own{border-color:var(--good);background:var(--good-soft)}
+.shelf{display:flex;flex-wrap:wrap;gap:6px;font-size:2rem;min-height:48px;padding:10px;border-radius:16px;background:var(--soft)}
+
+/* celebrate */
+.float{position:fixed;left:50%;top:40%;transform:translate(-50%,0);font-family:var(--display);font-weight:800;font-size:2.4rem;color:var(--sun);text-shadow:0 2px 0 rgba(0,0,0,.2);pointer-events:none;animation:up 1.1s ease-out forwards;z-index:30}
+@keyframes up{to{transform:translate(-50%,-120px);opacity:0}}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:25}
+.big-emoji{font-size:4rem;line-height:1}
+
+/* grown-ups */
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+td,th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+.bar{height:12px;border-radius:99px;background:var(--soft);overflow:hidden;min-width:80px}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.tablewrap{overflow-x:auto}
+a{color:var(--accent)}
+@media (max-width:520px){h1{font-size:1.9rem}.brand{font-size:2.1rem}.passage{line-height:1.85}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div id="app"><p class="mut">Loading Page Quest…</p></div>
+
+<script>
+/* ---------------------------------------------------------------
+   Page Quest — reading practice game.
+   Everything a reader earns is kept in this browser (localStorage),
+   so each iPad keeps its own readers' progress.
+---------------------------------------------------------------- */
+
+// ---------- Stories ----------
+// Each page: t = text, q = question, o = options (the FIRST is correct; shuffled on screen),
+// e = the sentence that proves the answer (for "look back"), k = skill.
+const STORIES = [
+{id:'pancake',title:'The Pancake That Rolled Away',icon:'🥞',cat:'fun',lvl:3,
+ tricky:[['wobbled','wob-bled'],['puddle','pud-dle'],['farmer','far-mer'],['breath','breath']],
+ pages:[
+ {t:'On Saturday, Dad made a giant pancake. It was as big as a bike wheel! He flipped it high into the air. But the pancake did not come back down into the pan. It landed on its edge on the kitchen floor. Then it began to roll. It rolled past the cat. It rolled past the dog. It rolled right out the back door!',
+  q:'What was special about Dad\'s pancake?',o:['It was as big as a bike wheel','It was bright blue','It could talk'],e:'It was as big as a bike wheel!',k:'detail'},
+ {t:'Mia and her little brother Leo ran after it. "Stop, pancake!" Mia yelled. The pancake did not stop. It rolled down the hill and across the bridge. A duck in the pond quacked at it. A farmer dropped his bucket. Leo was out of breath. "How can a pancake be so fast?" he asked.',
+  q:'How was Leo feeling while he chased the pancake?',o:['Tired','Bored','Sleepy'],e:'Leo was out of breath.',k:'inference'},
+ {t:'At the bottom of the hill was a big mud puddle. The pancake rolled straight toward it. Mia had an idea. She grabbed a long stick and held it out like a gate. The pancake bumped into the stick. It wobbled back and forth. Then it fell flat on the grass with a soft plop.',
+  q:'How did Mia stop the pancake?',o:['She held out a long stick','She jumped into the mud','She called the farmer'],e:'She grabbed a long stick and held it out like a gate.',k:'detail'},
+ {t:'Mia and Leo carried the pancake home. It was covered in grass, so nobody wanted to eat it. Dad laughed and made a new one. This time it was small. "Small pancakes are better," said Leo. "They don\'t run away." Everyone laughed. Even the cat looked happy.',
+  q:'Why does Leo think small pancakes are better?',o:['They don\'t run away','They taste like grass','They are easier to flip'],e:'"They don\'t run away."',k:'inference'}],
+ seq:['Dad flipped a giant pancake.','The pancake rolled down the hill.','Mia stopped it with a stick.','Dad made a small pancake.']},
+
+{id:'zee',title:'Captain Zee and the Lost Moon Rock',icon:'🚀',cat:'fun',lvl:3,
+ tricky:[['package','pack-age'],['important','im-por-tant'],['galaxy','gal-ax-y'],['museum','mu-se-um']],
+ pages:[
+ {t:'Captain Zee flew a tiny spaceship named Sparky. Her job was to deliver packages to the planets. One morning, she had a very important box. Inside was a shiny moon rock for the Space Museum. "Do not lose it," said her boss. Captain Zee put the box under her seat and blasted off.',
+  q:'What was Captain Zee\'s job?',o:['Delivering packages to planets','Fixing robots','Cooking space food'],e:'Her job was to deliver packages to the planets.',k:'detail'},
+ {t:'Halfway to the museum, Sparky hit a bumpy patch of space dust. The ship shook and rattled. When it was over, Captain Zee looked under her seat. The box was open. The moon rock was gone! She checked every corner of the ship. She checked behind the snack drawer. No rock.',
+  q:'Why do you think the box came open?',o:['The ship shook in the space dust','Captain Zee opened it','The box was made of paper'],e:'The ship shook and rattled.',k:'inference'},
+ {t:'Then Captain Zee heard a strange crunching sound. It was coming from the back of the ship. She tiptoed closer. There sat a small green alien named Blip. Blip was holding the moon rock and licking it like a lollipop. "Yum," said Blip. "This is the best candy in the galaxy!"',
+  q:'What did Blip think the moon rock was?',o:['Candy','A ball','A map'],e:'"This is the best candy in the galaxy!"',k:'detail'},
+ {t:'Captain Zee had to think fast. She opened her snack drawer and pulled out a bag of star-shaped gummies. "Want to trade?" she asked. Blip tasted a gummy, and his eyes grew huge. He handed back the rock right away. Captain Zee made it to the museum just in time, with one new friend riding along.',
+  q:'How did Captain Zee get the moon rock back?',o:['She traded gummies for it','She chased Blip around the ship','She called her boss for help'],e:'"Want to trade?"',k:'detail'}],
+ seq:['Captain Zee put the box under her seat.','Sparky flew through space dust.','She found Blip licking the rock.','She traded gummies for the rock.']},
+
+{id:'muffins',title:'The Mystery of the Missing Muffins',icon:'🧁',cat:'fun',lvl:3,
+ tricky:[['windowsill','win-dow-sill'],['mystery','mys-ter-y'],['detective','de-tec-tive'],['neighbor','neigh-bor']],
+ pages:[
+ {t:'Grandma Rosa baked twelve blueberry muffins and set them on the windowsill to cool. Then she went to answer the phone. When she came back, only six muffins were left! "Who took my muffins?" she cried. Her grandson Sam grabbed his notebook. "Don\'t worry, Grandma," he said. "I will solve this mystery."',
+  q:'How many muffins were missing?',o:['Six','Twelve','Two'],e:'only six muffins were left!',k:'inference'},
+ {t:'Sam looked closely at the windowsill. He found blue crumbs and a long gray hair. Then he looked outside. In the soft dirt below the window were small paw prints. "Hmm," said Sam. "Our thief has fur and four feet." He wrote the clues in his notebook.',
+  q:'Which clues did Sam find?',o:['Crumbs, a gray hair, and paw prints','A shoe and a hat','A broken window'],e:'He found blue crumbs and a long gray hair.',k:'detail'},
+ {t:'Sam followed the paw prints across the yard. They led to the old shed. He heard a happy munching sound inside. Sam slowly opened the door. There was Biscuit, the neighbor\'s gray dog. His nose was purple with blueberry juice. Next to him was a pile of muffin wrappers.',
+  q:'How did Sam know Biscuit ate the muffins?',o:['His nose was purple with blueberry juice','Biscuit barked at him','Sam saw him at the window'],e:'His nose was purple with blueberry juice.',k:'inference'},
+ {t:'Sam carried Biscuit back to Grandma. "Here is your muffin thief," he said. Grandma shook her head, but she was smiling. "Next time, I will cool my muffins on the table," she said. Then she gave Sam a muffin for being such a great detective. Biscuit got a dog biscuit instead.',
+  q:'What will Grandma do next time?',o:['Cool her muffins on the table','Buy muffins at the store','Bake muffins for the dog'],e:'"Next time, I will cool my muffins on the table,"',k:'detail'}],
+ seq:['Grandma set the muffins on the windowsill.','Sam found crumbs and paw prints.','Sam found Biscuit in the shed.','Grandma gave Sam a muffin.']},
+
+{id:'gus',title:'Gus the Goat Joins the Band',icon:'🐐',cat:'fun',lvl:3,
+ tricky:[['instrument','in-stru-ment'],['parade','pa-rade'],['rhythm','rhy-thm'],['accident','ac-ci-dent']],
+ pages:[
+ {t:'Gus the goat loved music. Every day he listened to the town band practice in the park. The drums went boom. The horns went toot. Gus wanted to play too, but he did not have an instrument. All he could do was say "Maaa!" very loudly. Nobody thought that was music.',
+  q:'What did Gus want to do?',o:['Play in the band','Eat the drums','Take a nap'],e:'Gus wanted to play too',k:'detail'},
+ {t:'One day the band got ready for the big summer parade. Then Max, the drummer, slipped on a banana peel. He hurt his wrist and could not play. "Oh no," said the band leader. "A parade without drums is too quiet. What will we do?" Gus trotted over and tapped the drum with his hoof.',
+  q:'Why couldn\'t Max play the drums?',o:['He hurt his wrist','He was asleep','He lost his drum'],e:'He hurt his wrist and could not play.',k:'detail'},
+ {t:'Tap, tap, BOOM! Gus kept a perfect beat. The band leader\'s mouth fell open. "That goat has rhythm!" she said. The band let Gus practice with them all week. He learned to play loud and soft, fast and slow. He only ate one drumstick, and it was an accident.',
+  q:'What does "That goat has rhythm" mean?',o:['Gus can keep a good beat','Gus is very hungry','Gus runs fast'],e:'Gus kept a perfect beat.',k:'vocabulary'},
+ {t:'On the day of the parade, Gus marched at the front of the band. The crowd cheered and clapped. At the end of the song, Gus lifted his head and shouted, "Maaa!" This time, everyone cheered even louder. The band leader gave Gus a shiny medal. He wore it every single day.',
+  q:'How did the crowd feel about Gus?',o:['They loved him','They were angry','They wanted to go home'],e:'The crowd cheered and clapped.',k:'inference'}],
+ seq:['Gus listened to the band in the park.','Max slipped on a banana peel.','Gus practiced with the band.','Gus marched in the parade.']},
+
+{id:'dot',title:'Dot the Dragon and the Dark',icon:'🐉',cat:'fun',lvl:3,
+ tricky:[['breathe','breathe'],['whispered','whis-pered'],['lantern','lan-tern'],['shadows','shad-ows']],
+ pages:[
+ {t:'Dot was a young dragon who could breathe fire, fly over mountains, and lift a whole tree. But Dot had a secret. She was afraid of the dark. Every night she hid under her blanket in the cave. "Real dragons are brave," she whispered. "What is wrong with me?"',
+  q:'What was Dot\'s secret?',o:['She was afraid of the dark','She could not breathe fire','She did not like trees'],e:'She was afraid of the dark.',k:'detail'},
+ {t:'One night, a storm knocked out all the lights in the village below. The people could not see their way home. A little boy named Theo was lost in the woods. His mother called his name again and again. Dot heard her from the cave. Her wings shook. The woods were very, very dark.',
+  q:'Why were Dot\'s wings shaking?',o:['She was scared of the dark woods','She was cold from the rain','She was getting ready to dance'],e:'The woods were very, very dark.',k:'inference'},
+ {t:'Dot took a deep breath. Then she flew into the woods and blew a small, gentle flame. The flame glowed like a lantern. Shadows jumped and danced, but nothing scary came out. Soon Dot heard crying. She found Theo sitting under a tall pine tree.',
+  q:'Why did Dot blow a small, gentle flame?',o:['To light the way like a lantern','To burn down the trees','To cook her dinner'],e:'The flame glowed like a lantern.',k:'inference'},
+ {t:'Theo climbed onto Dot\'s back, and she carried him home. The whole village cheered. "You are the bravest dragon ever," said Theo\'s mother. Dot smiled. She learned that being brave does not mean you are never scared. It means you help even when you are.',
+  q:'What did Dot learn?',o:['Being brave means helping even when you are scared','Dragons are never scared','The dark is always fun'],e:'It means you help even when you are.',k:'main idea'}],
+ seq:['Dot hid under her blanket at night.','A storm knocked out the lights.','Dot found Theo under a pine tree.','Dot carried Theo home.']},
+
+{id:'rex',title:'Robot Rex Goes to School',icon:'🤖',cat:'fun',lvl:3,
+ tricky:[['blinking','blink-ing'],['classroom','class-room'],['carefully','care-ful-ly'],['perfectly','per-fect-ly']],
+ pages:[
+ {t:'Rex was a robot dog built by Ms. Patel\'s class. He had wheels instead of legs and two blinking lights for eyes. On the first day, Rex rolled into the classroom and said, "Beep! Good morning!" The kids laughed and clapped. Rex was going to be their class helper.',
+  q:'Who built Rex?',o:['Ms. Patel\'s class','A toy store','A scientist'],e:'Rex was a robot dog built by Ms. Patel\'s class.',k:'detail'},
+ {t:'Rex tried very hard to help. He passed out papers, but he gave each kid five pages instead of one. He watered the plant, but he used a whole bucket. The floor was soaked! Rex\'s lights blinked slowly. "Beep," he said quietly. "I am not a good helper."',
+  q:'How did Rex feel after the floor got soaked?',o:['Sad','Excited','Silly'],e:'Rex\'s lights blinked slowly.',k:'inference'},
+ {t:'A girl named Ava sat down next to Rex. "Everyone makes mistakes when they are learning," she said. "Let\'s practice together." Ava showed Rex how to count papers, one for each desk. She showed him how much water a plant needs. Rex listened carefully and tried again.',
+  q:'What did Ava teach Rex?',o:['How to count papers and water the plant','How to roll faster','How to say good morning'],e:'Ava showed Rex how to count papers, one for each desk.',k:'detail'},
+ {t:'By Friday, Rex was the best class helper in the whole school. He handed out papers perfectly. He watered the plant with just one small cup. The class gave him a sticker that said "Super Helper." Rex\'s lights blinked fast and bright. "Beep beep!" he said. That meant thank you.',
+  q:'What do Rex\'s fast, bright lights show?',o:['He is happy','He is broken','He is sleepy'],e:'Rex\'s lights blinked fast and bright.',k:'inference'}],
+ seq:['Rex rolled into the classroom.','Rex soaked the floor.','Ava helped Rex practice.','The class gave Rex a sticker.']},
+
+{id:'earhart',title:'Amelia Earhart: Wings Over the Ocean',icon:'✈️',cat:'people',lvl:5,
+ tricky:[['adventure','ad-ven-ture'],['expensive','ex-pen-sive'],['Atlantic','At-lan-tic'],['navigator','nav-i-ga-tor']],
+ pages:[
+ {t:'Amelia Earhart was born in 1897 in Atchison, Kansas. As a girl, she did not like to sit still. She collected bugs, climbed trees, and once built a homemade roller coaster that started on the roof of a tool shed. In those days, many people believed girls should be quiet and stay close to home. Amelia did not agree. She kept a scrapbook of newspaper stories about women who did jobs usually done by men. She wanted adventures of her own.',
+  q:'What does the roller coaster tell you about young Amelia?',o:['She was daring and creative','She was afraid of heights','She liked to stay indoors'],e:'once built a homemade roller coaster that started on the roof of a tool shed',k:'inference'},
+ {t:'In 1920, Amelia rode in an airplane for the first time, at an air show in Long Beach, California. The ride lasted about ten minutes. "By the time I had got two or three hundred feet off the ground," she later wrote, "I knew I had to fly." Flying lessons were expensive, so Amelia worked several jobs to pay for them, including truck driver and photographer. Within two years, she bought her first plane. It was bright yellow, and she named it The Canary.',
+  q:'How did Amelia pay for flying lessons?',o:['She worked several jobs','Her school paid for them','She won a contest'],e:'Amelia worked several jobs to pay for them',k:'detail'},
+ {t:'On May 20, 1932, Amelia took off alone from Newfoundland to fly across the Atlantic Ocean. The trip was dangerous. Ice formed on her wings, and one of her instruments stopped working. She flew through storms in the dark for hours. About fifteen hours later, she landed in a cow pasture in Northern Ireland. A surprised farmworker asked if she had come far. "From America," she answered. She was the first woman to fly solo across the Atlantic.',
+  q:'What does the word "solo" mean on this page?',o:['Alone','Very fast','At night'],e:'Amelia took off alone from Newfoundland',k:'vocabulary'},
+ {t:'In 1937, Amelia tried her biggest adventure yet: flying around the world near the equator. Her navigator, Fred Noonan, flew with her. They had traveled about 22,000 miles when they headed for tiny Howland Island in the Pacific Ocean. They never arrived. The United States Navy searched for weeks, but the plane was never found. People still wonder what happened. Amelia believed women should try the same things men tried, and her courage inspired many girls to dream bigger.',
+  q:'What is the main idea of this page?',o:['Amelia disappeared on her last flight, but her courage still inspires people','Fred Noonan was a navigator','Howland Island is in the Pacific Ocean'],e:'her courage inspired many girls to dream bigger.',k:'main idea'}],
+ seq:['Amelia built a backyard roller coaster.','She rode in an airplane for the first time.','She flew alone across the Atlantic.','She disappeared over the Pacific.']},
+
+{id:'robinson',title:'Jackie Robinson: Number 42',icon:'⚾',cat:'people',lvl:5,
+ tricky:[['treatment','treat-ment'],['barrier','bar-ri-er'],['courage','cour-age'],['valuable','val-u-a-ble']],
+ pages:[
+ {t:'Jackie Robinson was born in 1919 in Cairo, Georgia, the youngest of five children. When he was a baby, his mother moved the family to Pasadena, California, hoping for a better life. Money was tight, and the family faced unfair treatment because they were Black. Jackie found his talent in sports. His older brother Mack was a track star who won a silver medal at the 1936 Olympics. At UCLA, Jackie became the first student to earn varsity letters in four sports: baseball, basketball, football, and track.',
+  q:'Who in Jackie\'s family was an Olympic athlete?',o:['His brother Mack','His mother','His sister'],e:'His older brother Mack was a track star who won a silver medal at the 1936 Olympics.',k:'detail'},
+ {t:'In the 1940s, Major League Baseball had an unfair rule that was never written down: Black players were not allowed. They played in their own leagues, called the Negro Leagues. Jackie joined the Kansas City Monarchs in 1945. That same year, Branch Rickey, the leader of the Brooklyn Dodgers, asked to meet him. Rickey wanted to break baseball\'s color barrier. He warned Jackie that fans and players would insult him. He needed a player with the courage not to fight back. Jackie agreed.',
+  q:'What does "color barrier" mean here?',o:['The unfair rule that kept Black players out','A wall painted on the field','The colors of team uniforms'],e:'Black players were not allowed.',k:'vocabulary'},
+ {t:'On April 15, 1947, Jackie Robinson stepped onto the field for the Brooklyn Dodgers. He became the first Black player in the major leagues in modern times. Some fans shouted terrible things. Some players tried to hurt him with the metal spikes on their shoes. Jackie kept his promise and answered with his playing instead of his fists. He hit, ran, and stole bases with amazing speed. At the end of the season, he was named the first Rookie of the Year.',
+  q:'How did Jackie respond when people treated him badly?',o:['He answered with his playing','He quit the team','He fought back with his fists'],e:'Jackie kept his promise and answered with his playing instead of his fists.',k:'detail'},
+ {t:'Jackie played ten seasons with the Dodgers. He won the National League\'s Most Valuable Player award in 1949 and helped Brooklyn win the World Series in 1955. After baseball, he spoke out for equal rights for all Americans. In 1997, Major League Baseball retired his number, 42, for every team. Today, on April 15 each year, every major league player wears number 42 to honor him.',
+  q:'Why does every player wear number 42 on April 15?',o:['To honor Jackie Robinson','Because it is a lucky number','Because the uniforms ran out'],e:'every major league player wears number 42 to honor him.',k:'inference'}],
+ seq:['Jackie earned letters in four sports at UCLA.','He joined the Kansas City Monarchs.','He played his first game for the Dodgers.','His number 42 was retired for every team.']},
+
+{id:'wright',title:'The Wright Brothers Take Off',icon:'🛩️',cat:'people',lvl:5,
+ tricky:[['helicopter','hel-i-cop-ter'],['bicycle','bi-cy-cle'],['propellers','pro-pel-lers'],['controlled','con-trolled']],
+ pages:[
+ {t:'Wilbur and Orville Wright grew up in Dayton, Ohio. In 1878, their father came home with a gift: a small toy helicopter made of cork, bamboo, and paper, powered by a rubber band. The boys played with it until it broke, then built copies of their own. Years later, they said that little toy first made them curious about flying. Neither brother earned a high school diploma, but they never stopped learning. They read books, built machines, and asked endless questions.',
+  q:'What first made the brothers curious about flying?',o:['A toy helicopter','A trip in a balloon','A book about birds'],e:'they said that little toy first made them curious about flying.',k:'detail'},
+ {t:'In 1892, the brothers opened a bicycle shop. They repaired, sold, and later built their own bicycles. This work taught them an important lesson: a rider must balance and steer. The brothers believed a flying machine would need the same kind of control. Most inventors at the time focused on powerful engines. The Wrights focused on balance. They watched birds and noticed how they twisted their wingtips to turn. So the brothers designed wings that could twist, too.',
+  q:'How was the Wrights\' idea different from other inventors\'?',o:['They focused on balance and control','They built bigger engines','They only studied bicycles'],e:'The Wrights focused on balance.',k:'main idea'},
+ {t:'The brothers needed strong, steady wind to test their gliders. They chose Kitty Hawk, North Carolina, a sandy place by the ocean. For three years they tested gliders there, crashing, fixing, and trying again. Back home, they built a wind tunnel to test about two hundred tiny wing shapes. Each failure taught them something new. By 1903 they had built a plane with an engine and two propellers. They called it the Flyer.',
+  q:'Why did the brothers choose Kitty Hawk?',o:['It had strong, steady wind','It was close to their home','It had a big airport'],e:'The brothers needed strong, steady wind to test their gliders.',k:'detail'},
+ {t:'On December 17, 1903, Orville lay on the lower wing of the Flyer while Wilbur ran alongside. The plane rose into the cold air and stayed up for twelve seconds, traveling 120 feet. It was the first powered, controlled airplane flight in history. The brothers took turns flying three more times that day. On the last flight, Wilbur flew 852 feet in 59 seconds. Only a few people saw it, but that short hop led to every airplane in the sky today.',
+  q:'Why was a twelve-second flight such a big deal?',o:['It was the first powered, controlled airplane flight','It was the fastest flight ever','It crossed the ocean'],e:'It was the first powered, controlled airplane flight in history.',k:'inference'}],
+ seq:['Their father gave them a toy helicopter.','They opened a bicycle shop.','They tested gliders at Kitty Hawk.','Orville flew the Flyer for twelve seconds.']},
+
+{id:'tubman',title:'Harriet Tubman: Following the North Star',icon:'⭐',cat:'people',lvl:5,
+ tricky:[['slavery','slav-er-y'],['Underground','Un-der-ground'],['network','net-work'],['passenger','pas-sen-ger']],
+ pages:[
+ {t:'Harriet Tubman was born into slavery around 1822 in Dorchester County, Maryland. Her name at birth was Araminta Ross, and her family called her Minty. Enslaved people were forced to work without pay and could be sold away from their families at any time. As a child, Harriet worked in fields and in houses. When she was young, an overseer threw a heavy weight that struck her head. She survived, but she had painful headaches and sudden sleeping spells for the rest of her life.',
+  q:'What was Harriet Tubman\'s name at birth?',o:['Araminta Ross','Harriet Ross','Minty Tubman'],e:'Her name at birth was Araminta Ross',k:'detail'},
+ {t:'In 1849, Harriet decided to escape. She traveled at night, mostly on foot, about 90 miles to Pennsylvania, where slavery was against the law. She followed the North Star to find her way. Along the way, she was helped by the Underground Railroad. It was not a real railroad. It was a secret network of people and safe houses that helped enslaved people reach freedom. When Harriet reached Pennsylvania, she said she felt like she was in heaven.',
+  q:'What was the Underground Railroad?',o:['A secret network of people and safe houses','A train that ran under the ground','A road to Maryland'],e:'It was a secret network of people and safe houses that helped enslaved people reach freedom.',k:'vocabulary'},
+ {t:'Harriet was free, but her family was not. So she went back. Over about ten years, she returned to Maryland about thirteen times and led around seventy people to freedom, including her parents and brothers. She was clever and careful. She traveled in winter, when nights were long, and often left on Saturday nights, because notices about runaways could not be printed in newspapers until Monday. Harriet later said she never lost a single passenger.',
+  q:'Why did Harriet often leave on Saturday nights?',o:['Runaway notices could not be printed until Monday','Saturday nights were the warmest','Trains only ran on weekends'],e:'because notices about runaways could not be printed in newspapers until Monday.',k:'inference'},
+ {t:'During the Civil War, Harriet worked for the Union Army as a cook, a nurse, and a spy. In 1863, she helped lead a raid along the Combahee River in South Carolina that freed more than 700 enslaved people. She was the first woman to lead an armed raid in the war. After the war, she lived in Auburn, New York, where she cared for elderly people and worked for women\'s right to vote. Harriet Tubman showed that one brave person can change many lives.',
+  q:'What is the main idea of this page?',o:['Harriet kept helping others her whole life','The Civil War was long','Auburn is in New York'],e:'Harriet Tubman showed that one brave person can change many lives.',k:'main idea'}],
+ seq:['Harriet was born in Maryland.','She escaped to Pennsylvania.','She led her family to freedom.','She helped lead the Combahee River raid.']},
+
+{id:'armstrong',title:'Neil Armstrong: One Small Step',icon:'🌕',cat:'people',lvl:5,
+ tricky:[['astronaut','as-tro-naut'],['experimental','ex-per-i-men-tal'],['boulders','boul-ders'],['mankind','man-kind']],
+ pages:[
+ {t:'Neil Armstrong was born in 1930 in Wapakoneta, Ohio. When he was about six years old, he took his first airplane ride, and he fell in love with flying. As a boy, he built model airplanes and read flying magazines. He worked at a drugstore to pay for flying lessons, and he earned his student pilot\'s license on his sixteenth birthday, before he even had a license to drive a car.',
+  q:'What did Neil earn on his sixteenth birthday?',o:['A student pilot\'s license','A driver\'s license','A model airplane'],e:'he earned his student pilot\'s license on his sixteenth birthday',k:'detail'},
+ {t:'Neil studied aerospace engineering at Purdue University and flew fighter jets for the U.S. Navy during the Korean War. Later, he became a test pilot, flying experimental planes to learn how they behaved. One of them, the X-15, was a rocket plane that flew so high it nearly reached space. Test pilots needed to stay calm when things went wrong, and Neil was known for his cool head. In 1962, NASA chose him to become an astronaut.',
+  q:'Why did test pilots need to stay calm?',o:['Experimental planes could have problems','They had to talk on the radio','They flew only at night'],e:'Test pilots needed to stay calm when things went wrong',k:'inference'},
+ {t:'On July 16, 1969, Neil Armstrong, Buzz Aldrin, and Michael Collins blasted off on Apollo 11. Four days later, Neil and Buzz rode the lunar module, named the Eagle, toward the Moon while Collins stayed in orbit. As they came down, Neil saw that the computer was steering them toward a field of large boulders. He took control and flew the Eagle himself, searching for a safe spot. When they landed, they had less than a minute of landing fuel left.',
+  q:'Why did Neil take control of the Eagle?',o:['The computer was steering toward boulders','Buzz asked him to','The radio stopped working'],e:'the computer was steering them toward a field of large boulders.',k:'detail'},
+ {t:'Neil radioed, "The Eagle has landed." Hours later, he climbed down the ladder and became the first person to walk on the Moon. As his boot touched the dusty ground, he said, "That\'s one small step for man, one giant leap for mankind." He and Buzz collected rocks, took pictures, and planted an American flag. Their footprints are still there today, because the Moon has no wind to blow them away.',
+  q:'Why are their footprints still on the Moon?',o:['There is no wind to blow them away','Someone guards them','They were made of metal'],e:'because the Moon has no wind to blow them away.',k:'inference'}],
+ seq:['Neil took his first airplane ride.','He flew the X-15 rocket plane.','Apollo 11 blasted off.','Neil walked on the Moon.']}
+];
+
+const CATS = {fun:'Fun stories', people:'Real people', mine:'My new stories'};
+const SHOP = [
+ ['🦊',30],['🐢',30],['🐙',40],['🦉',40],['🚀',50],['🌈',50],['🦖',60],['🐉',70],
+ ['🏰',80],['🛸',90],['🦄',100],['🌋',110],['🏆',130],['👑',150],['💎',200],['🪐',250]];
+const AVATARS = ['🦊','🐼','🐯','🐸','🐙','🦉','🐢','🦁','🐨','🐧','🦈','🐲'];
+const TITLES = ['Page Turner','Word Explorer','Story Seeker','Book Adventurer','Chapter Champion','Reading Wizard','Library Legend'];
+const STOPS = 15;               // stops on the story map
+const VAULT_DAYS = [1,3,7,14];  // memory vault spacing
+
+// ---------- Storage ----------
+const KEY = 'pagequest.v1';
+let storageOk = true;
+function load(){
+  try{ const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); }catch(e){ storageOk = false; }
+  return {profiles:[], cur:null};
+}
+let S = load();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ storageOk = false; } }
+function me(){ return S.profiles.find(p => p.id === S.cur) || null; }
+function today(d){ d = d || new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function addDays(n){ const d = new Date(); d.setDate(d.getDate()+n); return today(d); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function shuffle(a){ a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function allStories(){ const p = me(); return STORIES.concat(p ? (p.custom||[]) : []); }
+function storyById(id){ return allStories().find(s => s.id === id); }
+
+function newProfile(name, grade, av){
+  return {id:'p'+Date.now().toString(36), name, grade, av, coins:0, xp:0, owned:[], done:{}, completed:0, chests:0,
+    streak:{d:'',n:0}, vault:[], skills:{}, wpm:[], minutes:0, mode:null, pace:grade<=3?70:95, size:1, custom:[]};
+}
+function level(p){ let lv=0, need=100, xp=p.xp; while (xp >= need){ xp -= need; lv++; need += 50; } return {lv, xp, need, title:TITLES[Math.min(lv,TITLES.length-1)]}; }
+function addCoins(n, label){ const p = me(); p.coins += n; p.xp += n; save(); floatText('+'+n+(label?' '+label:'')); }
+function bumpStreak(){
+  const p = me(), t = today();
+  if (p.streak.d === t) return;
+  p.streak.n = (p.streak.d === addDays(-1)) ? p.streak.n + 1 : 1;
+  p.streak.d = t; save();
+}
+function skillMark(k, ok){ const p = me(); const s = p.skills[k] || [0,0]; s[1]++; if (ok) s[0]++; p.skills[k] = s; save(); }
+
+// ---------- Actions & rendering ----------
+let ACTS = {}, actN = 0;
+function A(fn){ const id = 'a'+(++actN); ACTS[id] = fn; return id; }
+document.addEventListener('click', e => { const el = e.target.closest('[data-a]'); if (!el) return; const f = ACTS[el.dataset.a]; if (f) f(e, el); });
+const app = document.getElementById('app');
+let view = {name:'profiles'};
+function go(v){ stopAll(); view = v; render(); window.scrollTo({top:0}); }
+function render(){
+  ACTS = {}; closePop();
+  const p = me();
+  if (!p && !['profiles','newProfile','grownups'].includes(view.name)) view = {name:'profiles'};
+  ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
+    read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown})[view.name]();
+}
+function topbar(back){
+  const p = me(), L = level(p);
+  return `<div class="topbar">
+    ${back ? `<button class="btn ghost small" data-a="${A(back)}" aria-label="Back">← Back</button>` : ''}
+    <div class="avatar">${p.av}</div>
+    <div class="grow"><b style="font-family:var(--display);font-size:1.3rem">${esc(p.name)}</b>
+      <div class="mut" style="font-size:.9rem">Level ${L.lv+1} · ${L.title}${p.streak.n>1?` · 🔥 ${p.streak.n} days`:''}</div>
+      <div class="xp"><i style="width:${Math.round(L.xp/L.need*100)}%"></i></div></div>
+    <span class="coins"><span class="coin"></span>${p.coins}</span></div>`;
+}
+
+// ---------- Screens: profiles ----------
+function vProfiles(){
+  app.innerHTML = `
+  <div class="row spread"><div class="brand">Page Quest<small>Read, remember, and earn treasure</small></div></div>
+  <div class="card"><h2 style="margin-bottom:14px">Who's reading today?</h2>
+    <div class="who">
+      ${S.profiles.map(p => `<button data-a="${A(()=>{S.cur=p.id; save(); go({name:'hub'});})}"><span class="big">${p.av}</span><b>${esc(p.name)}</b><span class="mut">Grade ${p.grade} · ${p.coins} coins</span></button>`).join('')}
+      <button data-a="${A(()=>go({name:'newProfile'}))}" style="border-style:dashed"><span class="big">＋</span><b>New reader</b><span class="mut">Make a profile</span></button>
+    </div></div>
+  ${!storageOk ? `<p class="notice">This browser is not saving progress, so coins and stories will reset when the page closes.</p>` : ''}
+  <div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'grownups'}))}">Grown-ups</button></div>`;
+}
+function vNewProfile(){
+  const d = view.d || (view.d = {name:'', grade:3, av:AVATARS[0]});
+  app.innerHTML = `
+  <div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'profiles'}))}">← Back</button></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:18px">
+    <h2>Make your reader</h2>
+    <div><label class="lab" for="pname">Your name</label><input type="text" id="pname" maxlength="20" value="${esc(d.name)}" autocomplete="off"></div>
+    <div><span class="lab">Your grade</span><div class="pick words">
+      ${[2,3,4,5,6].map(g => `<button class="${d.grade===g?'on':''}" data-a="${A(()=>{d.name=val('pname'); d.grade=g; render();})}">Grade ${g}</button>`).join('')}</div></div>
+    <div><span class="lab">Pick your animal</span><div class="pick">
+      ${AVATARS.map(a => `<button class="${d.av===a?'on':''}" aria-label="${a}" data-a="${A(()=>{d.name=val('pname'); d.av=a; render();})}">${a}</button>`).join('')}</div></div>
+    <div><button class="btn" data-a="${A(()=>{
+      const n = val('pname').trim(); if (!n){ document.getElementById('pname').focus(); document.getElementById('pname').classList.add('shake'); return; }
+      const p = newProfile(n, d.grade, d.av); S.profiles.push(p); S.cur = p.id; save(); go({name:'hub'}); })}">Start my quest</button></div>
+  </div>`;
+}
+function val(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+
+// ---------- Hub ----------
+function vaultDue(){ const p = me(), t = today(); return p.vault.filter(v => v.due <= t && storyById(v.s)); }
+function vHub(){
+  const p = me(), due = vaultDue();
+  app.innerHTML = `${topbar(null)}
+  ${due.length ? `<div class="card vault row spread"><div><h3>Memory Vault is open!</h3><p class="mut">${due.length} question${due.length>1?'s':''} from stories you read before. Remember them for bonus coins.</p></div>
+    <button class="btn sun" data-a="${A(()=>go({name:'vault', items:shuffle(due).slice(0,5), i:0}))}">Open the vault</button></div>` : ''}
+  <div class="card"><div class="row spread" style="margin-bottom:8px"><h2>Your story path</h2><span class="chip">${p.completed} stor${p.completed===1?'y':'ies'} read</span></div>
+    ${mapSvg(p)}
+    <p class="mut" style="margin-top:6px">Every story moves you one stop. Treasure chests wait at stops 5, 10 and 15.</p></div>
+  <div class="tiles">
+    <button class="tile" data-a="${A(()=>go({name:'library', tab:'rec'}))}"><span class="ic">📚</span><span><b>Pick a story</b><span class="mut">Read, answer, earn coins</span></span></button>
+    <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">${p.owned.length} treasure${p.owned.length===1?'':'s'} collected</span></span></button>
+    <button class="tile" data-a="${A(()=>{S.cur=null; save(); go({name:'profiles'});})}"><span class="ic">👋</span><span><b>Switch reader</b><span class="mut">Back to the start</span></span></button>
+  </div>`;
+}
+function mapSvg(p){
+  const W = 700, H = 210, pts = [];
+  for (let i=0;i<=STOPS;i++){ const x = 30 + i*(W-60)/STOPS; const y = 105 + Math.sin(i*0.9)*60; pts.push([x,y]); }
+  const pos = Math.min(p.completed, STOPS);
+  let d = 'M'+pts[0].join(' ');
+  for (let i=1;i<pts.length;i++){ const [x0,y0]=pts[i-1],[x1,y1]=pts[i]; const mx=(x0+x1)/2; d += ` C${mx} ${y0} ${mx} ${y1} ${x1} ${y1}`; }
+  const stops = pts.map(([x,y],i) => {
+    const chest = i>0 && i%5===0, reached = p.completed >= i;
+    if (chest) return `<text x="${x}" y="${y+10}" text-anchor="middle" font-size="30">${reached?'🎁':'🧰'}</text>`;
+    return `<circle cx="${x}" cy="${y}" r="13" fill="${reached?'var(--good)':'var(--panel)'}" stroke="${reached?'var(--good)':'var(--path)'}" stroke-width="4"/>`;
+  }).join('');
+  const [ax, ay] = pts[pos];
+  return `<svg class="map" viewBox="0 0 ${W} ${H}" role="img" aria-label="Story path: ${p.completed} of ${STOPS} stops">
+    <path d="${d}" fill="none" stroke="var(--path)" stroke-width="10" stroke-linecap="round" stroke-dasharray="2 18"/>
+    ${stops}<text x="${ax}" y="${ay-22}" text-anchor="middle" font-size="36">${p.av}</text></svg>`;
+}
+
+// ---------- Library ----------
+function vLibrary(){
+  const p = me(), tab = view.tab || 'rec';
+  const lvlFor = s => p.grade >= 5 ? s.lvl >= 4 : s.lvl <= 4;
+  let list;
+  if (tab === 'rec') list = allStories().filter(lvlFor).concat(allStories().filter(s => !lvlFor(s)));
+  else if (tab === 'mine') list = p.custom || [];
+  else list = STORIES.filter(s => s.cat === tab);
+  if (tab === 'rec') list = list.filter(s => !p.done[s.id]).concat(list.filter(s => p.done[s.id]));
+  const tabs = [['rec','For you'],['fun','Fun stories'],['people','Real people']];
+  if ((p.custom||[]).length) tabs.push(['mine','My new stories']);
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <h1>Pick a story</h1>
+  <div class="tabs">${tabs.map(([k,l]) => `<button class="${tab===k?'on':''}" data-a="${A(()=>{view.tab=k; render();})}">${l}</button>`).join('')}</div>
+  <div class="books">
+    ${sampleFn ? `<button class="book new" data-a="${A(()=>go({name:'make'}))}"><span class="ic">✨</span><b>Make a brand-new story</b><span class="mut">Tell Claude what you want to read about.</span></button>` : ''}
+    ${list.map(s => { const d = p.done[s.id]; return `<button class="book" data-a="${A(()=>go({name:'intro', id:s.id}))}">
+      <span class="ic">${s.icon}</span><b>${esc(s.title)}</b>
+      <span class="meta"><span class="chip">${CATS[s.cat]||'Story'}</span><span class="chip">Level ${s.lvl}</span>${d?`<span class="stars" aria-label="${d.stars} stars">${'★'.repeat(d.stars)}${'☆'.repeat(3-d.stars)}</span>`:''}</span></button>`; }).join('')}
+  </div>`;
+}
+
+// ---------- Make a story with Claude (only where the page can ask Claude) ----------
+let sampleFn = null, makeCtl = null;
+(async () => { try{ if (window.claude && window.claude.use){ sampleFn = await window.claude.use('sample'); if (sampleFn && view.name === 'library') render(); } }catch(e){} })();
+function vMake(){
+  const p = me(), d = view.d || (view.d = {kind: p.grade >= 5 ? 'people' : 'fun', topic:'', busy:false, err:''});
+  const ideas = d.kind === 'people' ? ['Simone Biles','Thomas Edison','Sally Ride','Abraham Lincoln','Roberto Clemente','Marie Curie']
+                                    : ['Dinosaurs','A soccer game','A haunted treehouse','Talking pets','A pirate ship','Outer space'];
+  app.innerHTML = `${topbar(()=>{ if (makeCtl) makeCtl.abort(); go({name:'library'}); })}
+  <div class="card" style="display:flex;flex-direction:column;gap:16px">
+    <h2>Make a brand-new story</h2>
+    <div class="pick words">
+      <button class="${d.kind==='fun'?'on':''}" data-a="${A(()=>{d.topic=val('topic'); d.kind='fun'; render();})}">A made-up story</button>
+      <button class="${d.kind==='people'?'on':''}" data-a="${A(()=>{d.topic=val('topic'); d.kind='people'; render();})}">A true story about a real person</button></div>
+    <div><label class="lab" for="topic">${d.kind==='people'?'Which person?':'What should it be about?'}</label>
+      <input type="text" id="topic" maxlength="80" value="${esc(d.topic)}" autocomplete="off" ${d.busy?'disabled':''}></div>
+    <div class="pick words">${ideas.map(t => `<button data-a="${A(()=>{d.topic=t; render();})}">${esc(t)}</button>`).join('')}</div>
+    ${d.err ? `<p class="notice">${esc(d.err)}</p>` : ''}
+    <div class="row">
+      <button class="btn" ${d.busy?'disabled':''} data-a="${A(()=>makeStory(d))}">${d.busy?'Writing your story…':'Write my story'}</button>
+      ${d.busy ? `<button class="btn ghost small" data-a="${A(()=>makeCtl && makeCtl.abort())}">Stop</button><span class="mut">This can take up to a minute.</span>` : ''}
+    </div></div>`;
+}
+async function makeStory(d){
+  const p = me(); d.topic = val('topic').trim();
+  if (!d.topic){ d.err = 'Type or pick a topic first.'; render(); return; }
+  d.busy = true; d.err = ''; render();
+  const lvl = Math.max(2, Math.min(6, p.grade));
+  const words = lvl <= 3 ? '60 to 80' : lvl === 4 ? '80 to 100' : '100 to 130';
+  const prompt = `You write reading-practice stories for a child in grade ${lvl} who reads slowly and is working on decoding and fluency.
+Write ${d.kind==='people' ? `a TRUE, carefully fact-checked biography of ${d.topic}. Use only well-established facts; if you are unsure of a detail, leave it out. If this is not a real, widely known person who is appropriate for children, write instead about Amelia Earhart.` : `an original, funny, kind story about: ${d.topic}.`}
+Rules: suitable for children, no scary violence, short clear sentences, grade-${lvl} vocabulary, exactly 4 pages of ${words} words each, plain text (straight quotes, no markdown).
+After each page, one question with 3 answer choices. The FIRST choice must be correct; the other two must be clearly wrong to a careful reader. Mix question types: detail, inference, vocabulary, main idea.
+"e" must be copied EXACTLY, word for word, from that page's text: the sentence that proves the answer.
+"tricky": 4 longer words from the story, each with its syllables joined by hyphens.
+"seq": 4 short sentences, one event from each page, in story order.
+Answer ONLY with JSON in this shape:
+{"title":"...","icon":"one emoji","tricky":[["word","syl-la-bles"]],"pages":[{"t":"page text","q":"question","o":["correct","wrong","wrong"],"e":"exact sentence","k":"detail|inference|vocabulary|main idea"}],"seq":["...","...","...","..."]}`;
+  makeCtl = new AbortController();
+  try{
+    const j = await sampleFn.json(prompt, {signal: makeCtl.signal, cache:false});
+    const s = cleanStory(j, d.kind, lvl);
+    if (!s) throw {code:'bad_story'};
+    p.custom = p.custom || []; p.custom.unshift(s); save();
+    view.d = null; go({name:'intro', id:s.id});
+  }catch(e){
+    d.busy = false;
+    d.err = e && e.code === 'cancelled' ? 'Stopped.' :
+            e && e.code === 'not_granted' ? 'A grown-up needs to allow this page to ask Claude.' :
+            e && e.code === 'rate_limited' ? 'Too many stories at once. Try again in a minute.' :
+            'That story did not come out right. Try again, or pick a different topic.';
+    if (view.name === 'make') render();
+  }finally{ makeCtl = null; }
+}
+function cleanStory(j, kind, lvl){
+  if (!j || !Array.isArray(j.pages) || j.pages.length < 3) return null;
+  const pages = j.pages.slice(0,5).map(pg => {
+    const t = String(pg.t||'').trim(); const o = (pg.o||[]).map(String).slice(0,3);
+    if (!t || o.length < 3 || !pg.q) return null;
+    let e = String(pg.e||''); if (!t.includes(e) || !e) e = (t.match(/[^.!?]+[.!?]/)||[t])[0];
+    return {t, q:String(pg.q), o, e, k:['detail','inference','vocabulary','main idea'].includes(pg.k)?pg.k:'detail'};
+  });
+  if (pages.some(x => !x)) return null;
+  const seq = Array.isArray(j.seq) && j.seq.length >= 3 ? j.seq.slice(0,4).map(String) : pages.map(pg => (pg.t.match(/[^.!?]+[.!?]/)||[pg.t])[0]);
+  const tricky = (Array.isArray(j.tricky)?j.tricky:[]).filter(x => Array.isArray(x) && x[0]).slice(0,4).map(x => [String(x[0]), String(x[1]||x[0])]);
+  return {id:'c'+Date.now().toString(36), title:String(j.title||'My Story').slice(0,70), icon:String(j.icon||'✨').slice(0,4), cat:'mine', lvl, custom:true, tricky, pages, seq};
+}
+
+// ---------- Story intro & tricky-word warm-up ----------
+function vIntro(){
+  const s = storyById(view.id), p = me();
+  if (!s){ go({name:'library'}); return; }
+  const tw = view.tw || (view.tw = s.tricky.map(([w,parts]) => ({w, parts:parts.split('-'), lit:0})));
+  const allLit = tw.every(x => x.lit >= x.parts.length);
+  app.innerHTML = `${topbar(()=>go({name:'library'}))}
+  <div class="card" style="display:flex;flex-direction:column;gap:14px">
+    <div class="row"><span class="big-emoji">${s.icon}</span><div><h1>${esc(s.title)}</h1><p class="mut">${s.pages.length} pages · a question after every page</p></div></div>
+  </div>
+  ${tw.length ? `<div class="card tw">
+    <h2>Warm up: tricky words</h2>
+    <p class="mut">Tap each chunk and say it out loud. Then say the whole word.</p>
+    ${tw.map((x,i) => `<div class="twrow">${x.parts.map((pt,j) => `<button class="syl ${j < x.lit ? 'lit':''}" ${j===x.lit?`data-a="${A(()=>{x.lit++; render();})}"`:''} ${j>x.lit?'disabled':''}>${esc(pt)}</button>`).join('')}
+      ${x.lit >= x.parts.length ? `<span class="twdone">→ ${esc(x.w)} ✓</span>` : ''}</div>`).join('')}
+  </div>` : ''}
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <h3>How do you want to read?</h3>
+    ${modePicker(p)}
+    <div><button class="btn" data-a="${A(()=>{ if (allLit && tw.length && !view.warmPaid){ view.warmPaid = true; addCoins(5,'warm-up'); } startStory(s); })}">Start reading</button></div>
+  </div>`;
+}
+const MODES = {
+  mic:{label:'🎤 Read out loud', sub:'Words turn green as you say them'},
+  pace:{label:'🖍️ Read along', sub:'A highlighter moves; read each word out loud'},
+  solo:{label:'📖 Read on my own', sub:'Read at your own speed'}};
+function modePicker(p){
+  if (!p.mode) p.mode = SR ? 'mic' : 'pace';
+  return `<div class="modes">${Object.entries(MODES).filter(([k]) => k !== 'mic' || SR).map(([k,m]) =>
+    `<button class="${p.mode===k?'on':''}" data-a="${A(()=>{p.mode=k; save(); render();})}" title="${m.sub}">${m.label}</button>`).join('')}</div>
+    <p class="mut" style="font-size:.9rem">${MODES[p.mode].sub}${micBlocked && p.mode==='mic' ? ' (the microphone is not available on this page, so the highlighter will be used)' : ''}</p>`;
+}
+
+// ---------- Reading ----------
+let R = null; // the story session
+function startStory(s){
+  R = {s, page:0, firstTry:[], coins:0, t0:Date.now()};
+  go({name:'read', phase:'text'});
+}
+function wordsOf(text){
+  // split into display tokens with character offsets, and a normalised form for matching
+  const out = []; const re = /\S+/g; let m;
+  while ((m = re.exec(text))) out.push({raw:m[0], at:m.index, end:m.index+m[0].length, n:norm(m[0])});
+  return out;
+}
+function norm(w){ return w.toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9]/g,''); }
+function evidenceIdx(text, ev, words){
+  const at = text.indexOf(ev); if (at < 0 || !ev) return new Set();
+  const end = at + ev.length, set = new Set();
+  words.forEach((w,i) => { if (w.end > at && w.at < end) set.add(i); });
+  return set;
+}
+function vRead(){
+  const p = me(), s = R.s, pg = s.pages[R.page], phase = view.phase;
+  document.documentElement.style.setProperty('--fs', p.size || 1);
+  const head = `${topbar(()=>{ go({name:'library'}); })}
+  <div class="rhead"><div class="dots">${s.pages.map((_,i)=>`<i class="${i<R.page?'done':i===R.page?'now':''}"></i>`).join('')}</div>
+    <span class="mut">Page ${R.page+1} of ${s.pages.length}</span><span style="flex:1"></span>
+    <button class="btn ghost small" aria-label="Smaller text" data-a="${A(()=>sizeBy(-0.1))}">A−</button>
+    <button class="btn ghost small" aria-label="Bigger text" data-a="${A(()=>sizeBy(0.1))}">A+</button></div>`;
+  if (phase === 'text' || phase === 'look'){
+    const words = wordsOf(pg.t);
+    const ev = phase === 'look' ? evidenceIdx(pg.t, pg.e, words) : new Set();
+    view.words = words;
+    app.innerHTML = `${head}
+    <div class="card lv${s.lvl>=5?5:3}">
+      ${phase==='look' ? `<p class="notice" style="margin-bottom:12px">Look back! The highlighted part has the answer. Read it again out loud.</p>` : ''}
+      <p class="passage" id="passage">${words.map((w,i) => `<span class="w${ev.has(i)?' ev':''}" data-i="${i}">${esc(w.raw)}</span>`).join(' ')}</p>
+    </div>
+    ${phase==='look' ? `<div><button class="btn" data-a="${A(()=>{ view.phase='q'; render(); })}">Try the question again</button></div>`
+      : `<div class="card" style="display:flex;flex-direction:column;gap:12px">${modePicker(p)}<div id="ctrl"></div></div>`}`;
+    document.getElementById('passage').addEventListener('click', e => { const w = e.target.closest('.w'); if (w) wordHelp(+w.dataset.i, w); });
+    if (phase === 'text') setupMode();
+  } else if (phase === 'q'){
+    const q = view.q || (view.q = {order: shuffle([0,1,2]), wrong:[], tries:0});
+    app.innerHTML = `${head}
+    <div class="card" style="display:flex;flex-direction:column;gap:16px">
+      <span class="skill">${esc(pg.k)} question</span>
+      <p class="q">${esc(pg.q)}</p>
+      <div class="opts">${q.order.map(i => `<button class="opt ${q.reveal ? (i===0?'right':'wrong') : q.wrong.includes(i)?'wrong':''}" ${q.reveal || q.wrong.includes(i)?'disabled':''} data-a="${A((e,el)=>answer(i, el))}">${esc(pg.o[i])}</button>`).join('')}</div>
+      ${q.reveal ? `<div class="result">The answer is "${esc(pg.o[0])}". The story says: “${esc(pg.e)}”</div><div><button class="btn" data-a="${A(nextPage)}">Keep going</button></div>`
+        : q.tries ? '' : `<p class="mut" style="font-size:.9rem">Try to answer from memory first.</p>`}
+    </div>`;
+  }
+}
+function sizeBy(d){ const p = me(); p.size = Math.max(0.8, Math.min(1.6, Math.round(((p.size||1)+d)*10)/10)); save(); document.documentElement.style.setProperty('--fs', p.size); }
+function answer(i, el){
+  const s = R.s, pg = s.pages[R.page], q = view.q;
+  if (q.locked) return;
+  if (i === 0){
+    q.locked = true;
+    el.classList.add('right');
+    const first = q.tries === 0;
+    R.firstTry[R.page] = first; skillMark(pg.k, first);
+    const c = first ? 10 : 5; R.coins += c; addCoins(c);
+    confetti(first ? 40 : 15);
+    setTimeout(nextPage, 900);
+  } else {
+    q.tries++; q.wrong.push(i); el.classList.add('wrong','shake');
+    if (q.tries === 1){ setTimeout(()=>{ view.phase = 'look'; render(); }, 700); }
+    else {
+      R.firstTry[R.page] = false; skillMark(pg.k, false);
+      q.locked = true;
+      setTimeout(()=>{ q.reveal = true; render(); }, 600);
+    }
+  }
+}
+function nextPage(){
+  if (R.page < R.s.pages.length - 1){ R.page++; go({name:'read', phase:'text'}); }
+  else go({name:'seq', order: shuffle(R.s.seq.map((_,i)=>i)), placed:[]});
+}
+
+// ----- word help: syllable chunks (no audio, by design) -----
+function syllables(word){
+  const w = word.replace(/[^A-Za-z]/g,''); if (w.length <= 3) return [w];
+  const l = w.toLowerCase(), isV = (i) => 'aeiou'.includes(l[i]) || (l[i]==='y' && i>0 && !'aeiou'.includes(l[i-1]));
+  const silentE = l.endsWith('e') && !l.endsWith('le') && !'aeiou'.includes(l[l.length-2]);
+  const silentEd = l.endsWith('ed') && !/[td]ed$/.test(l) && !/[^aeiou]led$/.test(l);
+  const groups = []; // [start,end) of vowel groups
+  for (let i=0;i<l.length;i++){
+    if (!isV(i)) continue;
+    if ((silentE && i===l.length-1) || (silentEd && i===l.length-2)) continue;
+    if (groups.length && groups[groups.length-1][1] === i) groups[groups.length-1][1] = i+1; else groups.push([i,i+1]);
+  }
+  if (groups.length < 2) return [w];
+  const keep = ['ch','sh','th','ph','wh','ck','ng','qu','bl','br','cl','cr','dr','fl','fr','gl','gr','pl','pr','sc','sk','sl','sm','sn','sp','st','sw','tr','tw'];
+  const cuts = [];
+  for (let g=0; g<groups.length-1; g++){
+    const a = groups[g][1], b = groups[g+1][0], n = b - a;
+    let cut;
+    if (n === 0) cut = a; else if (n === 1) cut = l[a]==='x' ? a+1 : a;
+    else if (n === 2) cut = keep.slice(0,8).includes(l.slice(a,b)) ? a : a+1;
+    else cut = keep.includes(l.slice(b-2,b)) ? b-2 : a+1;
+    if (l.endsWith('le') && g === groups.length-2) cut = l.length-3;
+    cuts.push(cut);
+  }
+  const parts = []; let prev = 0;
+  for (const c of cuts){ if (c > prev && c < w.length){ parts.push(w.slice(prev,c)); prev = c; } }
+  parts.push(w.slice(prev));
+  return parts.filter(Boolean);
+}
+let popEl = null;
+function closePop(){ if (popEl){ popEl.remove(); popEl = null; } }
+function wordHelp(i, el){
+  closePop();
+  const w = view.words[i]; const tr = R.s.tricky.find(t => norm(t[0]) === w.n);
+  const parts = tr ? tr[1].split('-') : syllables(w.raw);
+  popEl = document.createElement('div'); popEl.className = 'pop';
+  popEl.innerHTML = `<div class="syls">${parts.map(pt => `<span class="syl">${esc(pt)}</span>`).join('')}</div>
+    <div class="row">${mic.on ? `<button class="btn ghost small" data-a="${A(()=>{ mic.ptr = Math.max(mic.ptr, i+1); mic.seg = mic.ptr; paintRead(); closePop(); checkMicDone(); })}">Skip this word</button>` : ''}
+    <button class="btn small" data-a="${A(closePop)}">Got it</button></div>`;
+  document.body.appendChild(popEl);
+}
+
+// ----- the three ways to read -----
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+let micBlocked = false;
+const mic = {on:false, rec:null, ptr:0, seg:0, t0:0, done:false};
+const pace = {timer:null, i:0, run:false};
+function stopAll(){ stopMic(); stopPace(); closePop(); }
+function setupMode(){
+  const p = me();
+  let mode = p.mode || 'pace'; if (mode === 'mic' && (!SR || micBlocked)) mode = 'pace';
+  view.mode = mode; view.t0 = Date.now();
+  const ctrl = document.getElementById('ctrl');
+  const qBtn = (label) => `<button class="btn" data-a="${A(()=>{ readDone(); })}">${label}</button>`;
+  if (mode === 'mic'){
+    ctrl.innerHTML = `<div class="ctrl"><button class="btn sun" id="micBtn" data-a="${A(()=> mic.on ? stopMic() : startMic())}">🎤 Start reading out loud</button>
+      <span id="micState" class="mut">Tap the button, then read the page out loud.</span></div>
+      <div id="micOut"></div>
+      <div class="ctrl">${qBtn("I'm done reading")}</div>`;
+  } else if (mode === 'pace'){
+    ctrl.innerHTML = `<div class="ctrl"><button class="btn sun" id="paceBtn" data-a="${A(()=> pace.run ? pausePace() : runPace())}">▶ Start the highlighter</button>
+      <label class="speed">🐢<input type="range" id="paceRange" min="40" max="160" step="5" value="${p.pace}" aria-label="Highlighter speed">🐇</label>
+      <span class="mut" id="paceVal">${p.pace} words a minute</span></div>
+      <div class="ctrl">${qBtn("I'm done reading")}</div>`;
+    const r = document.getElementById('paceRange');
+    r.addEventListener('input', () => { p.pace = +r.value; save(); document.getElementById('paceVal').textContent = p.pace + ' words a minute'; });
+    pace.i = 0;
+  } else {
+    ctrl.innerHTML = `<p class="mut">Read the whole page. Tap any word to see it in chunks.</p><div class="ctrl">${qBtn("I'm done reading")}</div>`;
+  }
+}
+function readDone(){
+  const mode = view.mode, secs = (Date.now() - view.t0)/1000, p = me();
+  stopAll();
+  if (mode === 'solo' && secs > 8){ logWpm(view.words.length, secs, 'solo'); }
+  if (mode !== 'solo' && !view.readPaid){ view.readPaid = true; R.coins += 3; addCoins(3, 'read aloud'); }
+  p.minutes = (p.minutes||0) + secs/60; save();
+  view.phase = 'q'; view.q = null; render();
+}
+function logWpm(n, secs, how){
+  const p = me(); const w = Math.round(n / (secs/60));
+  if (w < 15 || w > 300) return w;
+  p.wpm.push({d:today(), w, how, s:R.s.id}); if (p.wpm.length > 60) p.wpm.shift(); save(); return w;
+}
+
+// Read out loud: speech recognition follows along and turns words green.
+function startMic(){
+  if (!SR) return;
+  mic.on = true; mic.done = false; mic.ptr = 0; mic.seg = 0; mic.t0 = 0; paintRead();
+  const btn = document.getElementById('micBtn'); if (btn) btn.textContent = '■ Stop';
+  setMicState(`<span class="listen"><i></i>Listening… read out loud</span>`);
+  document.getElementById('micOut').innerHTML = '';
+  let rec;
+  try{ rec = new SR(); }catch(e){ micFail(); return; }
+  mic.rec = rec; rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+  rec.onresult = e => { let t = ''; for (let i=0;i<e.results.length;i++) t += e.results[i][0].transcript + ' '; alignHeard(t); };
+  rec.onerror = e => { if (['not-allowed','service-not-allowed','audio-capture'].includes(e.error)) micFail(); };
+  rec.onend = () => { if (mic.on && !mic.done && mic.rec === rec){ mic.seg = mic.ptr; try{ rec.start(); }catch(_){ } } };
+  try{ rec.start(); }catch(e){ micFail(); }
+}
+function stopMic(){
+  const r = mic.rec; mic.on = false; mic.rec = null;
+  if (r){ try{ r.onend = null; r.abort(); }catch(e){} }
+  const btn = document.getElementById('micBtn'); if (btn) btn.textContent = '🎤 Read it again';
+}
+function micFail(){
+  stopMic(); micBlocked = true;
+  setMicState('');
+  const out = document.getElementById('micOut');
+  if (out) out.innerHTML = `<p class="notice">The microphone can't be used on this page, so let's use the highlighter instead.</p>`;
+  setTimeout(()=>{ if (view.name==='read' && view.phase==='text'){ render(); } }, 1600);
+}
+function setMicState(h){ const el = document.getElementById('micState'); if (el) el.innerHTML = h; }
+const SAME = {to:['two','too'],two:['to','too'],too:['to','two'],there:['their','theyre'],their:['there','theyre'],for:['four'],four:['for'],one:['won'],won:['one'],ms:['miss','mrs','mz'],mr:['mister'],mrs:['missus'],dr:['doctor'],st:['street','saint'],ok:['okay']};
+function sameWord(h, w){
+  if (!h || !w) return false;
+  if (h === w) return true;
+  if (SAME[w] && SAME[w].includes(h)) return true;
+  if (/^\d+$/.test(w)) return false;
+  if (w.length >= 4 && h.length >= 3 && (w.startsWith(h) || h.startsWith(w.slice(0, Math.max(3, w.length-2))))) return true;
+  return w.length >= 5 && lev(h, w) <= 1;
+}
+function lev(a, b){ const d = Array.from({length:a.length+1}, (_,i)=>[i]); for (let j=1;j<=b.length;j++) d[0][j]=j;
+  for (let i=1;i<=a.length;i++) for (let j=1;j<=b.length;j++) d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return d[a.length][b.length]; }
+function alignHeard(text){
+  if (!mic.on) return;
+  const words = view.words, heard = text.toLowerCase().split(/\s+/).map(norm).filter(Boolean);
+  let p = mic.seg;
+  for (let i=0;i<heard.length && p<words.length;i++){
+    for (let k=0;k<4 && p+k<words.length;k++){
+      const w = words[p+k].n;
+      if (sameWord(heard[i], w) || (heard[i+1] && heard[i]+heard[i+1] === w)){ if (heard[i]+(heard[i+1]||'') === w && heard[i] !== w) i++; p = p+k+1; break; }
+    }
+  }
+  if (p > mic.ptr){ if (!mic.t0) mic.t0 = Date.now(); mic.ptr = p; paintRead(); }
+  checkMicDone();
+}
+function checkMicDone(){
+  const words = view.words; if (!words || mic.ptr < words.length || mic.done) return;
+  mic.done = true; stopMic();
+  const secs = Math.max(1, (Date.now() - (mic.t0 || view.t0))/1000);
+  const key = R.s.id+'#'+R.page, p = me();
+  const w = logWpm(words.length, secs, 'mic');
+  p.best = p.best || {}; const prev = p.best[key];
+  const beat = prev && w > prev;
+  if (!prev || w > prev) p.best[key] = w; save();
+  setMicState('');
+  document.getElementById('micOut').innerHTML = `<div class="result">You read ${words.length} words in ${Math.round(secs)} seconds. That's <b>${w} words a minute</b>${beat?`, faster than last time (${prev})! 🎉`: prev?` (your best is ${prev}).`:'.'}</div>`;
+  if (beat){ R.coins += 5; addCoins(5,'new best'); }
+  confetti(20);
+}
+function paintRead(){
+  document.querySelectorAll('#passage .w').forEach((el,i) => { el.classList.toggle('read', i < mic.ptr); el.classList.toggle('now', mic.on && i === mic.ptr); });
+}
+// Read along: a highlighter moves across the words at the chosen speed.
+function runPace(){
+  const p = me(), words = view.words; if (pace.i >= words.length) pace.i = 0;
+  pace.run = true; document.getElementById('paceBtn').textContent = '⏸ Pause';
+  const step = () => {
+    if (!pace.run) return;
+    document.querySelectorAll('#passage .w').forEach((el,i) => { el.classList.toggle('now', i === pace.i); el.classList.toggle('read', i < pace.i); });
+    const w = words[pace.i]; if (!w){ pace.run = false; const b = document.getElementById('paceBtn'); if (b) b.textContent = '↻ Read it again'; pace.i = 0; return; }
+    let ms = 60000 / p.pace; if (/[.!?]["”]?$/.test(w.raw)) ms *= 2; else if (/[,;:]["”]?$/.test(w.raw)) ms *= 1.5;
+    pace.i++; pace.timer = setTimeout(step, ms);
+  };
+  step();
+}
+function pausePace(){ pace.run = false; clearTimeout(pace.timer); const b = document.getElementById('paceBtn'); if (b) b.textContent = '▶ Keep going'; }
+function stopPace(){ pace.run = false; clearTimeout(pace.timer); }
+
+// ---------- Sequence check & finish ----------
+function vSeq(){
+  const s = R.s, st = view;
+  app.innerHTML = `${topbar(null)}
+  <div class="card" style="display:flex;flex-direction:column;gap:14px">
+    <h2>Memory check: what happened first?</h2>
+    <p class="mut">Tap the events in the order they happened in the story.</p>
+    <div class="slots">${s.seq.map((_,i) => `<div class="slot ${st.placed[i]!=null?'full':''}"><span class="n">${i+1}</span>${st.placed[i]!=null?esc(s.seq[st.placed[i]]):''}</div>`).join('')}</div>
+    <div class="opts">${st.order.filter(i => !st.placed.includes(i)).map(i => `<button class="opt" data-a="${A((e,el)=>{
+      if (i === st.placed.length){ st.placed.push(i); if (st.placed.length === s.seq.length){ if (!st.miss) { R.coins += 10; addCoins(10,'perfect order'); } render(); setTimeout(finishStory, 700); } else render(); }
+      else { st.miss = (st.miss||0)+1; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+    })}">${esc(s.seq[i])}</button>`).join('')}</div>
+  </div>`;
+}
+function finishStory(){
+  const p = me(), s = R.s;
+  const right = R.firstTry.filter(Boolean).length, total = s.pages.length;
+  const stars = right === total ? 3 : right >= total/2 ? 2 : 1;
+  const first = !p.done[s.id];
+  p.done[s.id] = {stars: Math.max(stars, (p.done[s.id]||{}).stars||0), d:today()};
+  let bonus = first ? 25 : 10;
+  p.completed++;
+  let chest = 0;
+  if (p.completed <= STOPS && p.completed % 5 === 0){ chest = 50; p.chests++; }
+  // add this story's questions to the memory vault
+  s.pages.forEach((_,i) => { if (!p.vault.some(v => v.s === s.id && v.i === i)) p.vault.push({s:s.id, i, due:addDays(1), b:0}); });
+  if (p.completed >= STOPS && p.completed % STOPS === 0){ /* lap finished: keep going around */ }
+  bumpStreak(); save();
+  R.coins += bonus + chest; addCoins(bonus + chest, chest ? 'treasure chest!' : 'story done');
+  confetti(80);
+  go({name:'finish', stars, right, total, chest, coins:R.coins});
+}
+function vFinish(){
+  const v = view, p = me();
+  app.innerHTML = `${topbar(null)}
+  <div class="card" style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+    <span class="big-emoji">${R.s.icon}</span>
+    <h1>You finished the story!</h1>
+    <div class="stars" style="font-size:2.6rem">${'★'.repeat(v.stars)}${'☆'.repeat(3-v.stars)}</div>
+    <p>You got <b>${v.right} of ${v.total}</b> questions right on the first try.</p>
+    <span class="coins"><span class="coin"></span>+${v.coins} coins this story</span>
+    ${v.chest ? `<p class="notice">🎁 You reached a treasure chest on your path: +${v.chest} coins!</p>` : ''}
+    <p class="mut">These questions will come back in your Memory Vault tomorrow.</p>
+    <div class="row" style="justify-content:center">
+      <button class="btn" data-a="${A(()=>go({name:'library'}))}">Read another story</button>
+      <button class="btn ghost" data-a="${A(()=>go({name:'hub'}))}">See my path</button>
+      <button class="btn ghost" data-a="${A(()=>go({name:'shop'}))}">Shop</button></div>
+  </div>`;
+}
+
+// ---------- Memory vault ----------
+function vVault(){
+  const v = view, p = me();
+  if (v.i >= v.items.length){
+    bumpStreak();
+    app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <span class="big-emoji">🔐</span><h1>Vault closed!</h1><p>You remembered <b>${v.right||0} of ${v.items.length}</b>.</p>
+      <button class="btn" data-a="${A(()=>go({name:'library'}))}">Pick a story</button></div>`;
+    return;
+  }
+  const it = v.items[v.i], s = storyById(it.s), pg = s.pages[it.i];
+  const order = v.order || (v.order = shuffle([0,1,2]));
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <div class="card" style="display:flex;flex-direction:column;gap:16px">
+    <div class="row spread"><span class="chip">${s.icon} ${esc(s.title)}</span><span class="mut">${v.i+1} of ${v.items.length}</span></div>
+    <span class="skill">Do you remember?</span>
+    <p class="q">${esc(pg.q)}</p>
+    <div class="opts" id="vopts">${order.map(i => `<button class="opt" data-a="${A((e,el)=>vaultAnswer(i, el))}">${esc(pg.o[i])}</button>`).join('')}</div>
+    <div id="vres"></div>
+  </div>`;
+}
+function vaultAnswer(i, el){
+  const v = view, it = v.items[v.i], s = storyById(it.s), pg = s.pages[it.i], p = me();
+  if (v.locked) return; v.locked = true;
+  const stored = p.vault.find(x => x.s === it.s && x.i === it.i);
+  document.querySelectorAll('#vopts .opt').forEach(b => b.disabled = true);
+  if (i === 0){
+    el.classList.add('right'); v.right = (v.right||0)+1; addCoins(5); confetti(15);
+    if (stored){ stored.b++; if (stored.b >= VAULT_DAYS.length) p.vault = p.vault.filter(x => x !== stored); else stored.due = addDays(VAULT_DAYS[stored.b]); }
+  } else {
+    el.classList.add('wrong','shake');
+    if (stored){ stored.b = 0; stored.due = addDays(1); }
+  }
+  save();
+  document.getElementById('vres').innerHTML = `${i===0?'':`<div class="result">The answer is "${esc(pg.o[0])}". The story said: “${esc(pg.e)}”</div>`}
+    <div style="margin-top:12px"><button class="btn" data-a="${A(()=>{ v.i++; v.order=null; v.locked=false; render(); })}">Next</button></div>`;
+}
+
+// ---------- Shop ----------
+function vShop(){
+  const p = me();
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <h1>Treasure shop</h1>
+  <div class="card"><h3 style="margin-bottom:8px">My treasure shelf</h3>
+    <div class="shelf">${p.owned.length ? p.owned.join(' ') : '<span class="mut" style="font-size:1rem">Nothing yet. Read stories to earn coins!</span>'}</div></div>
+  <div class="shop">${SHOP.map(([e,c]) => { const own = p.owned.includes(e), can = p.coins >= c;
+    return `<div class="item ${own?'own':''}"><span class="big">${e}</span>
+      ${own ? '<span class="chip">Yours!</span>' : `<button class="btn small ${can?'sun':'ghost'}" ${can?'':'disabled'} data-a="${A(()=>{ if (p.coins < c) return; p.coins -= c; p.owned.push(e); save(); confetti(40); render(); })}"><span class="coin"></span>${c}</button>`}</div>`; }).join('')}</div>`;
+}
+
+// ---------- Grown-ups ----------
+function vGrown(){
+  const g = view.g || (view.g = {a: 6+Math.floor(Math.random()*4), b: 6+Math.floor(Math.random()*4), ok:false, del:null});
+  if (!g.ok){
+    app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: me() ? 'hub' : 'profiles'}))}">← Back</button></div>
+    <div class="card" style="display:flex;flex-direction:column;gap:12px;max-width:420px">
+      <h2>Grown-ups only</h2><label class="lab" for="gate">What is ${g.a} × ${g.b}?</label>
+      <input type="text" id="gate" inputmode="numeric" autocomplete="off">
+      <div><button class="btn" data-a="${A(()=>{ if (+val('gate') === g.a*g.b){ g.ok = true; render(); } else { const el=document.getElementById('gate'); el.value=''; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); } })}">Open</button></div></div>`;
+    return;
+  }
+  const BM = {3:112, 5:139, 2:89, 4:133, 6:146}; // end-of-year 50th percentile oral reading fluency (Hasbrouck & Tindal, 2017)
+  app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: me() ? 'hub' : 'profiles'}))}">← Back</button></div>
+  <h1>Reading progress</h1>
+  ${S.profiles.length ? '' : '<p class="mut">No readers yet.</p>'}
+  ${S.profiles.map(p => {
+    const sk = Object.entries(p.skills); const tot = sk.reduce((a,[,v])=>a+v[1],0), ok = sk.reduce((a,[,v])=>a+v[0],0);
+    const loud = p.wpm.filter(x => x.how === 'mic'), silent = p.wpm.filter(x => x.how === 'solo');
+    const avg = a => a.length ? Math.round(a.slice(-5).reduce((s,x)=>s+x.w,0)/Math.min(5,a.length)) : null;
+    return `<div class="card" style="display:flex;flex-direction:column;gap:12px">
+      <div class="row spread"><h2>${p.av} ${esc(p.name)} <span class="mut" style="font-size:1rem">Grade ${p.grade}</span></h2><span class="coins"><span class="coin"></span>${p.coins}</span></div>
+      <div class="row"><span class="chip">${p.completed} stories finished</span><span class="chip">${Object.keys(p.done).length} different stories</span>
+        <span class="chip">${Math.round(p.minutes||0)} minutes reading</span><span class="chip">${tot ? Math.round(ok/tot*100) : '–'}% right on first try</span>
+        <span class="chip">${p.vault.length} in memory vault</span></div>
+      <div class="tablewrap"><table><tr><th>Question type</th><th>Right first try</th><th></th></tr>
+        ${['detail','inference','vocabulary','main idea'].map(k => { const v = p.skills[k] || [0,0]; const pc = v[1] ? Math.round(v[0]/v[1]*100) : 0;
+          return `<tr><td>${k[0].toUpperCase()+k.slice(1)}</td><td>${v[1] ? `${v[0]} of ${v[1]}` : '–'}</td><td><div class="bar"><i style="width:${pc}%"></i></div></td></tr>`; }).join('')}
+      </table></div>
+      <p><b>Reading speed.</b> Out loud (last 5): ${avg(loud) ? avg(loud)+' words a minute' : 'not measured yet'}. Silent (last 5): ${avg(silent) ? avg(silent)+' words a minute' : 'not measured yet'}.
+        ${BM[p.grade] ? `<span class="mut">The typical end-of-year out-loud rate for grade ${p.grade} is about ${BM[p.grade]} words a minute. This app's count is a rough guide, not a test.</span>` : ''}</p>
+      ${loud.length ? `<p class="mut">Recent out-loud speeds: ${loud.slice(-10).map(x => x.w).join(', ')}</p>` : ''}
+      <div class="row">${g.del === p.id
+        ? `<span>Delete ${esc(p.name)} and all progress?</span><button class="btn small" style="background:var(--oops)" data-a="${A(()=>{ S.profiles = S.profiles.filter(x => x.id !== p.id); if (S.cur === p.id) S.cur = null; save(); g.del=null; render(); })}">Yes, delete</button><button class="btn ghost small" data-a="${A(()=>{g.del=null; render();})}">Cancel</button>`
+        : `<button class="btn ghost small" data-a="${A(()=>{g.del=p.id; render();})}">Delete this reader</button>`}</div>
+    </div>`; }).join('')}
+  <div class="card"><h3>How the game works</h3>
+    <p class="mut" style="margin-top:6px">Each story starts with a tricky-word warm-up in syllable chunks. Every page is read out loud (the microphone follows along where the browser allows it, otherwise a highlighter paces the reading) and is followed by one question. A wrong answer sends the reader back to the sentence that holds the answer. Finished stories return in the Memory Vault after 1, 3, 7 and 14 days. Progress is saved on this device only.</p></div>`;
+}
+
+// ---------- Celebration ----------
+function floatText(t){ const d = document.createElement('div'); d.className = 'float'; d.textContent = t; document.body.appendChild(d); setTimeout(()=>d.remove(), 1200); }
+const fx = document.getElementById('fx'), ctx = fx.getContext('2d'); let parts = [], fxOn = false;
+function confetti(n){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  fx.width = innerWidth; fx.height = innerHeight;
+  const cols = ['#f4b324','#2a5bd7','#1c8f5a','#e2553a','#9b6bff'];
+  for (let i=0;i<n;i++) parts.push({x:innerWidth/2, y:innerHeight*0.45, vx:(Math.random()-.5)*12, vy:-Math.random()*12-4, r:4+Math.random()*5, c:cols[i%cols.length], life:70+Math.random()*30});
+  if (!fxOn){ fxOn = true; requestAnimationFrame(tick); }
+}
+function tick(){
+  ctx.clearRect(0,0,fx.width,fx.height);
+  parts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .35; p.life--; ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.r, p.r*1.6); });
+  parts = parts.filter(p => p.life > 0 && p.y < fx.height+20);
+  if (parts.length) requestAnimationFrame(tick); else { fxOn = false; ctx.clearRect(0,0,fx.width,fx.height); }
+}
+
+// ---------- Start ----------
+if (S.cur && me()) view = {name:'hub'};
+render();
+</script>
+
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+</script>
+</body>
+</html>
