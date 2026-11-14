@@ -8,7 +8,7 @@
       // table in "along" (A, 0..1000, P1 defends A=0) and "across" (X, 0..560)
       const LEN = 1000, WID = 560, MID = LEN/2, PR = 24, KR = 44, GOAL_LO = 175, GOAL_HI = 385, WIN = 7;
       const RAIL = 26, MAXV = 1700, E_WALL = 0.9;
-      const AI = {easy: {speed: 360, home: 900, lag: 3, err: 40}, medium: {speed: 600, home: 880, lag: 6, err: 18}, hard: {speed: 880, home: 860, lag: 12, err: 4}};
+      const AI = {easy: {speed: 360, home: 900, lag: 3, err: 40, read: 0}, medium: {speed: 620, home: 890, lag: 7, err: 18, read: 0.6}, hard: {speed: 950, home: 900, lag: 14, err: 4, read: 1}};
 
       const cv = document.createElement('canvas');
       cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none';
@@ -127,6 +127,13 @@
           ta = Math.min(LEN - KR - 4, puck.a + 70); tx = puck.x + (puck.x > WID/2 ? -80 : 80);
         } else {
           ta = P.home; tx = WID/2 + (puck.x - WID/2)*0.65;
+          if (toward && P.read) { // read where the puck will cross the goal line (with rail bounces)
+            const t = (P.home - puck.a)/puck.va, span = WID - 2*PR;
+            let px = (puck.x - PR + puck.vx*t) % (2*span); if (px < 0) px += 2*span;
+            if (px > span) px = 2*span - px;
+            const gx = Math.max(GOAL_LO - 20, Math.min(GOAL_HI + 20, PR + px));
+            tx = tx + (gx - tx)*P.read;
+          }
         }
         // lag: easy follows sluggishly
         const k = Math.min(1, dt*P.lag);

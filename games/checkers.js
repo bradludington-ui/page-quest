@@ -68,7 +68,7 @@
       const lines = [];
       if (o.headline) lines.push({text:o.headline, big:true, color:o.headColor});
       if (o.score != null) lines.push({text:(o.scoreLabel || 'Score') + ': ' + o.score, big:true});
-      if (o.res) lines.push(o.res.isBest ? {text:'🏆 New best!', big:true, color:C.good} : 'Best: ' + o.res.best);
+      if (o.res) lines.push(o.res.isBest && o.score > 0 ? {text:'🏆 New best!', big:true, color:C.good} : 'Best: ' + o.res.best);
       (o.extra || []).forEach(x => lines.push(x));
       const buttons = [{label:'Play again', primary:true, onClick:o.again}];
       if (o.menu) buttons.push({label:'Change players', onClick:o.menu});
