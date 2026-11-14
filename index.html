@@ -564,6 +564,7 @@ const SAY = {
   anansi:[['Anansi','uh-NAHN-see']], midas:[['Midas','MY-dus']], earhart:[['Earhart','AIR-hart']],
   aryabhata:[['Aryabhata','AR-yah-BAH-tah']], cailun:[['Cai Lun','tsy LOON'],['Han','hahn']],
   anning:[['ichthyosaur','IK-thee-oh-sor'],['plesiosaur','PLEE-zee-oh-sor'],['pterosaur','TAIR-oh-sor']]};
+function sayOf(s){ return s && (SAY[s.id] || s.say) || null; }
 const CATS = {fun:'Fun stories', tales:'Tales, myths & poems', fiction:'Realistic fiction', people:'Real people', mine:'My new stories'};
 const SKILLS = ['detail','inference','vocabulary','main idea','character','figurative language','memory'];
 const SHOP = [
@@ -893,8 +894,8 @@ function vIntro(){
     <div class="row"><span class="big-emoji">${s.icon}</span><div style="min-width:0"><h1>${esc(s.title)}</h1><p class="mut">${s.pages.length} pages · a question after every page</p>
       ${s.school?`<p class="chip school" style="margin-top:6px">🏫 ${esc(s.school)}</p>`:''}${s.series?`<p class="chip" style="margin-top:6px">📖 Chapter ${s.chap+1} of ${s.chapters}</p>`:''}</div></div>
   </div>
-  ${SAY[s.id] ? `<div class="card tw"><h2>Say it like this</h2><p class="mut">These names are real, so they stay. Here is how to say them:</p>
-    ${SAY[s.id].map(([n, how]) => `<div class="twrow"><span class="twdone" style="color:var(--ink)">${esc(n)}</span><span class="syl lit">${esc(how)}</span></div>`).join('')}</div>` : ''}
+  ${sayOf(s) ? `<div class="card tw"><h2>Say it like this</h2><p class="mut">These names are real, so they stay. Here is how to say them:</p>
+    ${sayOf(s).map(([n, how]) => `<div class="twrow"><span class="twdone" style="color:var(--ink)">${esc(n)}</span><span class="syl lit">${esc(how)}</span></div>`).join('')}</div>` : ''}
   ${tw.length ? `<div class="card tw">
     <h2>Warm up: tricky words</h2>
     <p class="mut">Tap each chunk and say it out loud. Then say the whole word and read what it means.</p>
@@ -1047,7 +1048,7 @@ function wordHelp(i, el){
   closePop();
   const w = view.words[i]; bankAdd(w.raw);
   const tr = ((view.name === 'read' && R) ? R.s.tricky : []).find(t => norm(t[0]) === w.n);
-  const say = (view.name === 'read' && R && SAY[R.s.id] || []).find(([n]) => n.split(' ').some(x => norm(x) === w.n));
+  const say = (view.name === 'read' && R && sayOf(R.s) || []).find(([n]) => n.split(' ').some(x => norm(x) === w.n));
   const parts = say ? [say[1]] : tr ? tr[1].split('-') : syllables(w.raw);
   popEl = document.createElement('div'); popEl.className = 'pop';
   popEl.innerHTML = `<div class="syls">${parts.map(pt => `<span class="syl">${esc(pt)}</span>`).join('')}</div>

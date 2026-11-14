@@ -105,7 +105,7 @@
       const ROWS = [{z:3.6, pts:10, col:'#2fa36b'}, {z:4.8, pts:20, col:'#2f7fd6'}, {z:6.0, pts:30, col:'#8a4fd6'}];
       const RING_COLS = ['#ff5a5f', '#ffb020', '#36c2ff', '#7be05a', '#ff7ad9', '#ffffff'];
       let F = 1, HOR = 0, MID = 0;
-      const layout = () => { MID = k.W / 2; HOR = k.H * 0.2; F = Math.min(k.H * 1.3, k.W * 1.05); };
+      const layout = () => { MID = k.W / 2; F = Math.min(k.H * 1.3, k.W * 1.05); HOR = Math.max(k.H * 0.2, k.H * 0.93 - CAM_H * F / TABLE_NEAR); };
       k.onResize = layout; layout();
       const P = (x, h, z) => ({x: MID + x * F / z, y: HOR + (CAM_H - h) * F / z, s: F / z});
       let bottles = [], rings = [], pops = [], cur = null, left = 10, score = 0, state = 'menu', tossN = 0, hint = 0, goldTimer = 0;
@@ -241,7 +241,7 @@
           k.chip('Score ' + score, k.W - 12, 10, 'right', 20);
           const w = k.chip('Rings ' + left + (cur ? '' : ''), 12, 10, 'left', 20);
           for (let i = 0; i < 10; i++){ cx.strokeStyle = i < left ? RING_COLS[i % RING_COLS.length] : 'rgba(255,255,255,.2)'; cx.lineWidth = 3; cx.beginPath(); cx.ellipse(24 + w + i * 16, 27, 6, 6, 0, 0, 7); cx.stroke(); }
-          if (hint > 0 && state === 'play' && cur){ cx.globalAlpha = clamp(hint, 0, 1); k.chip('👆 Flick up to toss!', k.W / 2, k.H - 56, 'center', 20); cx.globalAlpha = 1; }
+          if (hint > 0 && state === 'play' && cur){ cx.globalAlpha = clamp(hint, 0, 1); k.chip('👆 Flick up to toss!', k.W / 2, Math.max(50, HOR * 0.8), 'center', 20); cx.globalAlpha = 1; }
         }
       }
       k.frame(dt => { if (state === 'play' || state === 'end') update(dt); draw(); });
