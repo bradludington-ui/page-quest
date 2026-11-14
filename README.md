@@ -6,6 +6,10 @@ along where Safari allows it, otherwise a highlighter paces the reading), and a 
 each page has to be answered to move on. Finished stories come back in the Memory Vault after
 1, 3, 7 and 14 days. Coins, levels, a story path and a treasure shop are the rewards.
 
+The **Game Arcade** is earned by reading: 2 tickets per finished story, 1 per Memory Vault visit,
+1 ticket per game. Word Catcher (catch real words, dodge made-up ones), Syllable Smash (build
+long words from chunks against the clock) and Memory Match (match words to pictures).
+
 Play: https://bradludington-ui.github.io/page-quest/
 
 ## Put it on an iPad
