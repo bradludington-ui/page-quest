@@ -188,6 +188,34 @@ a{color:var(--accent)}
 @media (max-width:520px){.mgrid{grid-template-columns:repeat(3,1fr)}}
 .chip.school{background:var(--sun-soft)}
 .w.ptitle{font-weight:600}
+
+/* quest, gym, chapters, retell */
+.quest{border-color:var(--accent)}
+.ring{display:flex;align-items:center;gap:8px;font-size:.85rem;line-height:1.2}
+.qlist{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.qitem{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;border-radius:14px;background:var(--soft);border:2px solid var(--line);font-weight:600;min-height:52px}
+.qitem.done{background:var(--good-soft);border-color:var(--good);opacity:.85}
+.qcheck{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);display:grid;place-items:center;flex:none;color:var(--good);font-weight:800;background:var(--panel)}
+.qitem.done .qcheck{border-color:var(--good)}
+.gchart{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:end;height:170px;padding:0 10px}
+.gbar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.gbar i{display:block;width:60%;min-height:4px;background:var(--accent);border-radius:10px 10px 4px 4px}
+.gbar b{font-family:var(--display);font-size:1.3rem;font-variant-numeric:tabular-nums}
+.gbar span{color:var(--mut);font-size:.85rem}
+.w.err{background:var(--oops-soft);color:var(--oops);text-decoration:line-through}
+.keys{display:flex;flex-wrap:wrap;gap:8px}
+.kchip{padding:8px 14px;border-radius:999px;background:var(--soft);border:2px dashed var(--line);font-weight:600;min-width:64px;text-align:center}
+.kchip.on{background:var(--good-soft);border:2px solid var(--good);color:var(--good)}
+.def{flex-basis:100%;color:var(--mut);font-size:1.05rem;padding-left:4px}
+.wparts{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.wparts .plus{font-family:var(--display);font-size:1.8rem;color:var(--mut)}
+.opt.chap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.chapbook{border-color:var(--accent)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:110px;margin-top:10px}
+.wday{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px;font-size:.8rem}
+.wday i{display:block;width:70%;min-height:3px;background:var(--path);border-radius:6px 6px 2px 2px}
+.wday i.met{background:var(--good)}
+.wday span{color:var(--mut)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -487,7 +515,7 @@ STORIES.push(
 );
 
 const CATS = {fun:'Fun stories', tales:'Tales, myths & poems', fiction:'Realistic fiction', people:'Real people', mine:'My new stories'};
-const SKILLS = ['detail','inference','vocabulary','main idea','character','figurative language'];
+const SKILLS = ['detail','inference','vocabulary','main idea','character','figurative language','memory'];
 const SHOP = [
  ['🦊',30],['🐢',30],['🐙',40],['🦉',40],['🚀',50],['🌈',50],['🦖',60],['🐉',70],
  ['🏰',80],['🛸',90],['🦄',100],['🌋',110],['🏆',130],['👑',150],['💎',200],['🪐',250]];
@@ -511,7 +539,7 @@ function addDays(n){ const d = new Date(); d.setDate(d.getDate()+n); return toda
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function shuffle(a){ a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function allStories(){ const p = me(); return STORIES.concat(p ? (p.custom||[]) : []); }
-function storyById(id){ return allStories().find(s => s.id === id); }
+function storyById(id){ return allStories().concat(chapterStories()).find(s => s.id === id); }
 
 function newProfile(name, grade, av){
   return {id:'p'+Date.now().toString(36), name, grade, av, coins:0, xp:0, owned:[], done:{}, completed:0, chests:0,
@@ -540,7 +568,8 @@ function render(){
   if (!p && !['profiles','newProfile','grownups'].includes(view.name)) view = {name:'profiles'};
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
-    arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch})[view.name]();
+    arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch,
+    gym:vGym, checkin:vCheckin, sum:vSum, series:vSeries, g_parts:vParts})[view.name]();
 }
 function topbar(back){
   const p = me(), L = level(p);
@@ -584,21 +613,28 @@ function vNewProfile(){
 function val(id){ const el = document.getElementById(id); return el ? el.value : ''; }
 
 // ---------- Hub ----------
-function vaultDue(){ const p = me(), t = today(); return p.vault.filter(v => v.due <= t && storyById(v.s)); }
+function vaultDue(){ const p = me(), t = today(); return p.vault.filter(v => { if (v.due > t) return false; const s = storyById(v.s); return s && (v.w ? !!defOf(v.w, s) : !!s.pages[v.i]); }); }
 function vHub(){
-  const p = me(), due = vaultDue();
+  const p = me(), qi = questItems(p), ch = nextChapter(p), qdone = qi.filter(i => i.done).length;
   app.innerHTML = `${topbar(null)}
-  ${due.length ? `<div class="card vault row spread"><div><h3>Memory Vault is open!</h3><p class="mut">${due.length} question${due.length>1?'s':''} from stories you read before. Remember them for bonus coins.</p></div>
-    <button class="btn sun" data-a="${A(()=>go({name:'vault', items:shuffle(due).slice(0,5), i:0}))}">Open the vault</button></div>` : ''}
+  <div class="card quest">
+    <div class="row spread"><div style="min-width:0"><h2>Today's quest</h2><p class="mut">${qdone === qi.length ? '🎉 All done today! Bonus ticket and 20 coins earned.' : `Finish all ${qi.length} for a bonus ticket and 20 coins.`}</p></div>
+      <div class="ring" title="Minutes read today">${ringSvg(p)}<span class="mut">of ${goalOf(p)} min<br>today</span></div></div>
+    <div class="qlist">${qi.map(i => `<button class="qitem ${i.done?'done':''}" ${i.done?'disabled':''} data-a="${A(i.run)}"><span class="qcheck">${i.done?'✓':''}</span><span>${i.icon} ${esc(i.label)}</span></button>`).join('')}</div>
+  </div>
+  ${ch ? `<div class="card row spread"><div class="row" style="min-width:0"><span class="big-emoji">${ch.se.icon}</span><div style="min-width:0"><h3>${esc(ch.se.title)}</h3><p class="mut">${ch.locked ? `Chapter ${ch.n+1} unlocks tomorrow. What do you think will happen?` : `Chapter ${ch.n+1} of ${ch.se.chapters.length} is ready!`}</p></div></div>
+    <button class="btn ${ch.locked?'ghost':''}" data-a="${A(()=>go({name:'series', id:ch.se.id}))}">${ch.locked ? 'See chapters' : 'Read chapter ' + (ch.n+1)}</button></div>` : ''}
   <div class="card"><div class="row spread" style="margin-bottom:8px"><h2>Your story path</h2><span class="chip">${p.completed} stor${p.completed===1?'y':'ies'} read</span></div>
     ${mapSvg(p)}
-    <p class="mut" style="margin-top:6px">Every story moves you one stop. Treasure chests wait at stops 5, 10 and 15.</p></div>
+    <p class="mut" style="margin-top:6px">Every story or chapter moves you one stop. Treasure chests wait at stops 5, 10 and 15.</p></div>
   <div class="tiles">
     <button class="tile" data-a="${A(()=>go({name:'library', tab:'rec'}))}"><span class="ic">📚</span><span><b>Pick a story</b><span class="mut">Read, answer, earn coins</span></span></button>
+    <button class="tile" data-a="${A(()=>go({name:'gym'}))}"><span class="ic">🏋️</span><span><b>Fluency Gym</b><span class="mut">Read it 3 times, get faster</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'arcade'}))}"><span class="ic">🎮</span><span><b>Game arcade</b><span class="mut">${tix(p)} ticket${tix(p)===1?'':'s'} to play</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">${p.owned.length} treasure${p.owned.length===1?'':'s'} collected</span></span></button>
     <button class="tile" data-a="${A(()=>{S.cur=null; save(); go({name:'profiles'});})}"><span class="ic">👋</span><span><b>Switch reader</b><span class="mut">Back to the start</span></span></button>
-  </div>`;
+  </div>
+  ${checkDue(p) ? `<p class="mut">📏 This month's reading check-in is ready. Ask a grown-up to start it from the Grown-ups page.</p>` : ''}`;
 }
 function mapSvg(p){
   const W = 700, H = 210, pts = [];
@@ -619,22 +655,27 @@ function mapSvg(p){
 
 // ---------- Library ----------
 function vLibrary(){
-  const p = me(), tab = view.tab || 'rec';
+  const p = me(), tab = view.tab || 'rec', f = p.focus || {};
   const lvlFor = s => p.grade >= 5 ? s.lvl >= 4 : s.lvl <= 4;
-  let list;
-  if (tab === 'rec') list = allStories().filter(lvlFor).concat(allStories().filter(s => !lvlFor(s)));
+  const boost = s => (s.school && lvlFor(s) ? 4 : 0) + (lvlFor(s) ? 2 : 0)
+    + (f.lit && ['fiction','tales','fun'].includes(s.cat) ? 1 : 0) + (f.info && (s.cat === 'people' || /Science|Social/.test(s.school||'')) ? 1 : 0);
+  const doneLast = (a, b) => (p.done[a.id] ? 1 : 0) - (p.done[b.id] ? 1 : 0);
+  let list = [];
+  if (tab === 'rec') list = allStories().slice().sort((a,b) => doneLast(a,b) || boost(b) - boost(a));
+  else if (tab === 'school') list = allStories().filter(s => s.school && lvlFor(s)).sort(doneLast);
   else if (tab === 'mine') list = p.custom || [];
-  else list = STORIES.filter(s => s.cat === tab);
-  if (tab === 'school') list = allStories().filter(s => s.school && lvlFor(s));
-  if (tab === 'rec' || tab === 'school') list = list.filter(s => !p.done[s.id]).concat(list.filter(s => p.done[s.id]));
-  if (tab === 'rec') list = list.filter(s => s.school && lvlFor(s) && !p.done[s.id]).concat(list.filter(s => !(s.school && lvlFor(s) && !p.done[s.id])));
-  const tabs = [['rec','For you'],['school','Like class'],['fun','Fun stories'],['tales','Tales & poems'],['fiction','Realistic fiction'],['people','Real people']];
+  else if (tab !== 'series') list = STORIES.filter(s => s.cat === tab);
+  const series = (tab === 'rec' || tab === 'series') ? SERIES.slice().sort((a,b) => (lvlFor(b)?1:0) - (lvlFor(a)?1:0)).filter(se => tab === 'series' || lvlFor(se)) : [];
+  const tabs = [['rec','For you'],['series','Chapter books'],['school','Like class'],['fun','Fun stories'],['tales','Tales & poems'],['fiction','Realistic fiction'],['people','Real people']];
   if ((p.custom||[]).length) tabs.push(['mine','My new stories']);
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}
   <h1>Pick a story</h1>
   <div class="tabs">${tabs.map(([k,l]) => `<button class="${tab===k?'on':''}" data-a="${A(()=>{view.tab=k; render();})}">${l}</button>`).join('')}</div>
   <div class="books">
-    ${sampleFn ? `<button class="book new" data-a="${A(()=>go({name:'make'}))}"><span class="ic">✨</span><b>Make a brand-new story</b><span class="mut">Tell Claude what you want to read about.</span></button>` : ''}
+    ${series.map(se => { const c = chapterInfo(p, se); return `<button class="book chapbook" data-a="${A(()=>go({name:'series', id:se.id}))}">
+      <span class="ic">${se.icon}</span><b>${esc(se.title)}</b><span class="mut" style="font-size:.9rem">${esc(se.blurb||'')}</span>
+      <span class="meta"><span class="chip">📖 Chapter book</span><span class="chip">Level ${se.lvl}</span><span class="chip">${c.done ? '🏆 Finished' : c.locked ? `🔒 Ch. ${c.n+1} tomorrow` : `Ch. ${c.n+1} of ${se.chapters.length}`}</span></span></button>`; }).join('')}
+    ${tab !== 'series' && sampleFn ? `<button class="book new" data-a="${A(()=>go({name:'make'}))}"><span class="ic">✨</span><b>Make a brand-new story</b><span class="mut">Tell Claude what you want to read about.</span></button>` : ''}
     ${list.map(s => { const d = p.done[s.id]; return `<button class="book" data-a="${A(()=>go({name:'intro', id:s.id}))}">
       <span class="ic">${s.icon}</span><b>${esc(s.title)}</b>
       <span class="meta"><span class="chip">${CATS[s.cat]||'Story'}</span><span class="chip">Level ${s.lvl}</span>${s.school?'<span class="chip school">🏫 Like class</span>':''}${d?`<span class="stars" aria-label="${d.stars} stars">${'★'.repeat(d.stars)}${'☆'.repeat(3-d.stars)}</span>`:''}</span></button>`; }).join('')}
@@ -712,22 +753,29 @@ function cleanStory(j, kind, lvl){
 function vIntro(){
   const s = storyById(view.id), p = me();
   if (!s){ go({name:'library'}); return; }
-  const tw = view.tw || (view.tw = s.tricky.map(([w,parts]) => ({w, parts:parts.split('-'), lit:0})));
-  const allLit = tw.every(x => x.lit >= x.parts.length);
-  app.innerHTML = `${topbar(()=>go({name:'library'}))}
+  if (s.series){ const c = chapterInfo(p, SERIES.find(x => x.id === s.series)); if (!c.done && s.chap > c.n || (s.chap === c.n && c.locked)){ go({name:'series', id:s.series}); return; } }
+  if (!view.tw){
+    const tw = s.tricky.map(t => ({w:t[0], parts:t[1].split('-'), lit:0, def:defOf(t[0], s)}));
+    const have = new Set(tw.map(x => bankKey(x.w)));
+    bankWords(p).filter(k => !have.has(k)).slice(0, 2).forEach(k => tw.push({w:k, parts:syllables(k), lit:0, def:(EXTRA.defs||{})[k] || '', bank:true}));
+    view.tw = tw;
+  }
+  const tw = view.tw, allLit = tw.every(x => x.lit >= x.parts.length);
+  app.innerHTML = `${topbar(()=>go({name: s.series ? 'series' : 'library', id:s.series}))}
   <div class="card" style="display:flex;flex-direction:column;gap:14px">
-    <div class="row"><span class="big-emoji">${s.icon}</span><div><h1>${esc(s.title)}</h1><p class="mut">${s.pages.length} pages · a question after every page</p>${s.school?`<p class="chip school" style="margin-top:6px">🏫 ${esc(s.school)}</p>`:''}</div></div>
+    <div class="row"><span class="big-emoji">${s.icon}</span><div style="min-width:0"><h1>${esc(s.title)}</h1><p class="mut">${s.pages.length} pages · a question after every page</p>
+      ${s.school?`<p class="chip school" style="margin-top:6px">🏫 ${esc(s.school)}</p>`:''}${s.series?`<p class="chip" style="margin-top:6px">📖 Chapter ${s.chap+1} of ${s.chapters}</p>`:''}</div></div>
   </div>
   ${tw.length ? `<div class="card tw">
     <h2>Warm up: tricky words</h2>
-    <p class="mut">Tap each chunk and say it out loud. Then say the whole word.</p>
-    ${tw.map((x,i) => `<div class="twrow">${x.parts.map((pt,j) => `<button class="syl ${j < x.lit ? 'lit':''}" ${j===x.lit?`data-a="${A(()=>{x.lit++; render();})}"`:''} ${j>x.lit?'disabled':''}>${esc(pt)}</button>`).join('')}
-      ${x.lit >= x.parts.length ? `<span class="twdone">→ ${esc(x.w)} ✓</span>` : ''}</div>`).join('')}
+    <p class="mut">Tap each chunk and say it out loud. Then say the whole word and read what it means.</p>
+    ${tw.map(x => `<div class="twrow">${x.bank ? '<span class="chip school">From your word bank</span>' : ''}${x.parts.map((pt,j) => `<button class="syl ${j < x.lit ? 'lit':''}" ${j===x.lit?`data-a="${A(()=>{x.lit++; render();})}"`:''} ${j>x.lit?'disabled':''}>${esc(pt)}</button>`).join('')}
+      ${x.lit >= x.parts.length ? `<span class="twdone">→ ${esc(x.w)} ✓</span>${x.def ? `<span class="def">means: ${esc(x.def)}</span>` : ''}` : ''}</div>`).join('')}
   </div>` : ''}
   <div class="card" style="display:flex;flex-direction:column;gap:12px">
     <h3>How do you want to read?</h3>
     ${modePicker(p)}
-    <div><button class="btn" data-a="${A(()=>{ if (allLit && tw.length && !view.warmPaid){ view.warmPaid = true; addCoins(5,'warm-up'); } startStory(s); })}">Start reading</button></div>
+    <div><button class="btn" data-a="${A(()=>{ if (allLit && tw.length && !view.warmPaid){ view.warmPaid = true; tw.filter(x => x.bank).forEach(x => bankOk(x.w)); addCoins(5,'warm-up'); } startStory(s); })}">${s.recall ? 'Start the chapter' : 'Start reading'}</button></div>
   </div>`;
 }
 const MODES = {
@@ -745,7 +793,7 @@ function modePicker(p){
 let R = null; // the story session
 function startStory(s){
   R = {s, page:0, firstTry:[], coins:0, t0:Date.now()};
-  go({name:'read', phase:'text'});
+  go({name:'read', phase: s.recall ? 'recall' : 'text'});
 }
 function wordsOf(text){
   // split into display tokens with character offsets, and a normalised form for matching
@@ -768,6 +816,18 @@ function vRead(){
     <span class="mut">Page ${R.page+1} of ${s.pages.length}</span><span style="flex:1"></span>
     <button class="btn ghost small" aria-label="Smaller text" data-a="${A(()=>sizeBy(-0.1))}">A−</button>
     <button class="btn ghost small" aria-label="Bigger text" data-a="${A(()=>sizeBy(0.1))}">A+</button></div>`;
+  if (phase === 'recall'){
+    const rc = s.recall, q = view.rq || (view.rq = {order: shuffle([0,1,2]), ans:null});
+    app.innerHTML = `${head}
+    <div class="card" style="display:flex;flex-direction:column;gap:16px">
+      <span class="skill">Previously…</span><p class="mut">Before you read, remember the last chapter.</p>
+      <p class="q">${esc(rc.q)}</p>
+      <div class="opts">${q.order.map(i => `<button class="opt ${q.ans!=null ? (i===0 ? 'right' : i===q.ans ? 'wrong' : '') : ''}" ${q.ans!=null?'disabled':''} data-a="${A(()=>{
+        q.ans = i; skillMark('memory', i === 0); if (i === 0){ R.coins += 10; addCoins(10, 'you remembered!'); confetti(20); } render(); })}">${esc(rc.o[i])}</button>`).join('')}</div>
+      ${q.ans != null ? `${q.ans !== 0 && s.prevSum ? `<div class="result">Here's what happened last time: ${esc(s.prevSum)}</div>` : ''}<div><button class="btn" data-a="${A(()=>{ view.phase = 'text'; render(); })}">Start the chapter</button></div>` : ''}
+    </div>`;
+    return;
+  }
   if (phase === 'text' || phase === 'look'){
     const words = wordsOf(pg.t);
     const ev = phase === 'look' ? evidenceIdx(pg.t, pg.e, words) : new Set();
@@ -853,7 +913,8 @@ let popEl = null;
 function closePop(){ if (popEl){ popEl.remove(); popEl = null; } }
 function wordHelp(i, el){
   closePop();
-  const w = view.words[i]; const tr = R.s.tricky.find(t => norm(t[0]) === w.n);
+  const w = view.words[i]; bankAdd(w.raw);
+  const tr = ((view.name === 'read' && R) ? R.s.tricky : []).find(t => norm(t[0]) === w.n);
   const parts = tr ? tr[1].split('-') : syllables(w.raw);
   popEl = document.createElement('div'); popEl.className = 'pop';
   popEl.innerHTML = `<div class="syls">${parts.map(pt => `<span class="syl">${esc(pt)}</span>`).join('')}</div>
@@ -867,7 +928,7 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
 let micBlocked = false;
 const mic = {on:false, rec:null, ptr:0, seg:0, t0:0, done:false};
 const pace = {timer:null, i:0, run:false};
-function stopAll(){ stopMic(); stopPace(); closePop(); gameStop(); }
+function stopAll(){ stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); }
 function setupMode(){
   const p = me();
   let mode = p.mode || 'pace'; if (mode === 'mic' && (!SR || micBlocked)) mode = 'pace';
@@ -896,7 +957,7 @@ function readDone(){
   stopAll();
   if (mode === 'solo' && secs > 8){ logWpm(view.words.length, secs, 'solo'); }
   if (mode !== 'solo' && !view.readPaid){ view.readPaid = true; R.coins += 3; addCoins(3, 'read aloud'); }
-  p.minutes = (p.minutes||0) + secs/60; save();
+  addMinutes(secs/60);
   view.phase = 'q'; view.q = null; render();
 }
 function logWpm(n, secs, how){
@@ -909,6 +970,11 @@ function logWpm(n, secs, how){
 function startMic(){
   if (!SR) return;
   mic.on = true; mic.done = false; mic.ptr = 0; mic.seg = 0; mic.t0 = 0; paintRead();
+  mic.last = Date.now(); mic.stalled = new Set(); clearInterval(mic.stall);
+  mic.stall = setInterval(() => { // a word the reader is stuck on for 4 seconds goes into their word bank
+    if (!mic.on || !mic.t0 || !view.words || mic.ptr >= view.words.length) return;
+    if (Date.now() - mic.last > 4000 && !mic.stalled.has(mic.ptr)){ mic.stalled.add(mic.ptr); bankAdd(view.words[mic.ptr].raw); }
+  }, 1000);
   const btn = document.getElementById('micBtn'); if (btn) btn.textContent = '■ Stop';
   setMicState(`<span class="listen"><i></i>Listening… read out loud</span>`);
   document.getElementById('micOut').innerHTML = '';
@@ -921,7 +987,7 @@ function startMic(){
   try{ rec.start(); }catch(e){ micFail(); }
 }
 function stopMic(){
-  const r = mic.rec; mic.on = false; mic.rec = null;
+  const r = mic.rec; mic.on = false; mic.rec = null; clearInterval(mic.stall);
   if (r){ try{ r.onend = null; r.abort(); }catch(e){} }
   const btn = document.getElementById('micBtn'); if (btn) btn.textContent = '🎤 Read it again';
 }
@@ -930,7 +996,8 @@ function micFail(){
   setMicState('');
   const out = document.getElementById('micOut');
   if (out) out.innerHTML = `<p class="notice">The microphone can't be used on this page, so let's use the highlighter instead.</p>`;
-  setTimeout(()=>{ if (view.name==='read' && view.phase==='text'){ render(); } }, 1600);
+  setTimeout(()=>{ if (view.name==='read' && view.phase==='text'){ render(); }
+    else if (view.name==='gym' || view.name==='checkin'){ gymStopTimer(); view.mode = 'grown'; view.run = false; if (view.stage) view.stage = 'ready'; render(); } }, 1600);
 }
 function setMicState(h){ const el = document.getElementById('micState'); if (el) el.innerHTML = h; }
 const SAME = {to:['two','too'],two:['to','too'],too:['to','two'],there:['their','theyre'],their:['there','theyre'],for:['four'],four:['for'],one:['won'],won:['one'],ms:['miss','mrs','mz'],mr:['mister'],mrs:['missus'],dr:['doctor'],st:['street','saint'],ok:['okay']};
@@ -954,13 +1021,14 @@ function alignHeard(text){
       if (sameWord(heard[i], w) || (heard[i+1] && heard[i]+heard[i+1] === w)){ if (heard[i]+(heard[i+1]||'') === w && heard[i] !== w) i++; p = p+k+1; break; }
     }
   }
-  if (p > mic.ptr){ if (!mic.t0) mic.t0 = Date.now(); mic.ptr = p; paintRead(); }
+  if (p > mic.ptr){ if (!mic.t0) mic.t0 = Date.now(); mic.ptr = p; mic.last = Date.now(); paintRead(); }
   checkMicDone();
 }
 function checkMicDone(){
   const words = view.words; if (!words || mic.ptr < words.length || mic.done) return;
   mic.done = true; stopMic();
   const secs = Math.max(1, (Date.now() - (mic.t0 || view.t0))/1000);
+  if (view.onMicDone){ const f = view.onMicDone; view.onMicDone = null; f(secs); return; }
   const key = R.s.id+'#'+R.page, p = me();
   const w = logWpm(words.length, secs, 'mic');
   p.best = p.best || {}; const prev = p.best[key];
@@ -999,7 +1067,7 @@ function vSeq(){
     <p class="mut">Tap the events in the order they happened in the story.</p>
     <div class="slots">${s.seq.map((_,i) => `<div class="slot ${st.placed[i]!=null?'full':''}"><span class="n">${i+1}</span>${st.placed[i]!=null?esc(s.seq[st.placed[i]]):''}</div>`).join('')}</div>
     <div class="opts">${st.order.filter(i => !st.placed.includes(i)).map(i => `<button class="opt" data-a="${A((e,el)=>{
-      if (i === st.placed.length){ st.placed.push(i); if (st.placed.length === s.seq.length){ if (!st.miss) { R.coins += 10; addCoins(10,'perfect order'); } render(); setTimeout(finishStory, 700); } else render(); }
+      if (i === st.placed.length){ st.placed.push(i); if (st.placed.length === s.seq.length){ if (!st.miss) { R.coins += 10; addCoins(10,'perfect order'); } render(); setTimeout(afterSeq, 700); } else render(); }
       else { st.miss = (st.miss||0)+1; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
     })}">${esc(s.seq[i])}</button>`).join('')}</div>
   </div>`;
@@ -1010,64 +1078,81 @@ function finishStory(){
   const stars = right === total ? 3 : right >= total/2 ? 2 : 1;
   const first = !p.done[s.id];
   p.done[s.id] = {stars: Math.max(stars, (p.done[s.id]||{}).stars||0), d:today()};
-  let bonus = first ? 25 : 10;
+  const bonus = first ? 25 : 10;
   p.completed++;
   let chest = 0;
   if (p.completed <= STOPS && p.completed % 5 === 0){ chest = 50; p.chests++; }
-  // add this story's questions to the memory vault
-  s.pages.forEach((_,i) => { if (!p.vault.some(v => v.s === s.id && v.i === i)) p.vault.push({s:s.id, i, due:addDays(1), b:0}); });
-  if (p.completed >= STOPS && p.completed % STOPS === 0){ /* lap finished: keep going around */ }
+  // this story's questions and word meanings come back in the memory vault
+  s.pages.forEach((_,i) => { if (!p.vault.some(v => v.s === s.id && v.i === i && !v.w)) p.vault.push({s:s.id, i, due:addDays(1), b:0}); });
+  s.tricky.forEach(t => { if (defOf(t[0], s) && !p.vault.some(v => v.s === s.id && v.w === t[0])) p.vault.push({s:s.id, w:t[0], due:addDays(2), b:0}); });
+  let book = '', bookBonus = 0;
+  if (s.series){
+    p.series = p.series || {}; const st = seriesState(p, s.series);
+    if (s.chap >= st.ch){ st.ch = s.chap + 1; st.d = today(); p.series[s.series] = st; if (st.ch >= s.chapters){ book = 'done'; bookBonus = 50; } else book = 'next'; }
+  }
   bumpStreak(); giveTickets(2); save();
-  R.coins += bonus + chest; addCoins(bonus + chest, chest ? 'treasure chest!' : 'story done');
-  confetti(80);
-  go({name:'finish', stars, right, total, chest, coins:R.coins});
+  R.coins += bonus + chest + bookBonus; addCoins(bonus + chest + bookBonus, book === 'done' ? 'book finished!' : chest ? 'treasure chest!' : 'story done');
+  questMark('story');
+  confetti(book === 'done' ? 140 : 80);
+  go({name:'finish', stars, right, total, chest, coins:R.coins, book});
 }
 function vFinish(){
-  const v = view, p = me();
+  const v = view, p = me(), s = R.s;
   app.innerHTML = `${topbar(null)}
   <div class="card" style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
-    <span class="big-emoji">${R.s.icon}</span>
-    <h1>You finished the story!</h1>
+    <span class="big-emoji">${v.book === 'done' ? '🏆' : s.icon}</span>
+    <h1>${v.book === 'done' ? 'You finished the whole book!' : s.series ? `Chapter ${s.chap+1} done!` : 'You finished the story!'}</h1>
     <div class="stars" style="font-size:2.6rem">${'★'.repeat(v.stars)}${'☆'.repeat(3-v.stars)}</div>
     <p>You got <b>${v.right} of ${v.total}</b> questions right on the first try.</p>
-    <span class="coins"><span class="coin"></span>+${v.coins} coins this story</span>
+    <span class="coins"><span class="coin"></span>+${v.coins} coins this ${s.series ? 'chapter' : 'story'}</span>
     ${v.chest ? `<p class="notice">🎁 You reached a treasure chest on your path: +${v.chest} coins!</p>` : ''}
     <p class="notice">🎟️ You earned 2 game tickets! You have ${tix(p)} now.</p>
-    <p class="mut">These questions will come back in your Memory Vault tomorrow.</p>
+    ${v.book === 'next' ? `<p class="result">Chapter ${s.chap+2} unlocks tomorrow. It starts with a question about this chapter, so remember what happened!</p>` : ''}
+    <p class="mut">These questions and words will come back in your Memory Vault.</p>
     <div class="row" style="justify-content:center">
-      <button class="btn" data-a="${A(()=>go({name:'library'}))}">Read another story</button>
-      <button class="btn ghost" data-a="${A(()=>go({name:'hub'}))}">See my path</button>
-      <button class="btn ghost" data-a="${A(()=>go({name:'arcade'}))}">Play a game</button>
-      <button class="btn ghost" data-a="${A(()=>go({name:'shop'}))}">Shop</button></div>
+      <button class="btn" data-a="${A(()=>go({name:'hub'}))}">Today's quest</button>
+      <button class="btn ghost" data-a="${A(()=>go({name:'library'}))}">Read another story</button>
+      <button class="btn ghost" data-a="${A(()=>go({name:'arcade'}))}">Play a game</button></div>
   </div>`;
 }
 
 // ---------- Memory vault ----------
+function vaultQ(it){
+  const s = storyById(it.s);
+  if (it.w){
+    const def = defOf(it.w, s);
+    const others = shuffle([...new Set(Object.values(EXTRA.defs||{}))].filter(d => d !== def)).slice(0, 2);
+    return {s, q:`What does the word “${it.w}” mean?`, o:[def].concat(others), why:`“${it.w}” means: ${def}`, k:'vocabulary'};
+  }
+  const pg = s.pages[it.i];
+  return {s, q:pg.q, o:pg.o, why:`The story said: “${pg.e}”`, k:'memory'};
+}
 function vVault(){
-  const v = view, p = me();
+  const v = view;
   if (v.i >= v.items.length){
-    bumpStreak(); if (!v.paid){ v.paid = true; giveTickets(1); }
+    bumpStreak(); if (!v.paid){ v.paid = true; giveTickets(1); questMark('vault'); }
     app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
       <span class="big-emoji">🔐</span><h1>Vault closed!</h1><p>You remembered <b>${v.right||0} of ${v.items.length}</b>.</p><p class="notice">🎟️ +1 game ticket</p>
-      <button class="btn" data-a="${A(()=>go({name:'library'}))}">Pick a story</button></div>`;
+      <button class="btn" data-a="${A(()=>go({name:'hub'}))}">Today's quest</button></div>`;
     return;
   }
-  const it = v.items[v.i], s = storyById(it.s), pg = s.pages[it.i];
+  const it = v.items[v.i], d = v.qd || (v.qd = vaultQ(it));
   const order = v.order || (v.order = shuffle([0,1,2]));
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}
   <div class="card" style="display:flex;flex-direction:column;gap:16px">
-    <div class="row spread"><span class="chip">${s.icon} ${esc(s.title)}</span><span class="mut">${v.i+1} of ${v.items.length}</span></div>
-    <span class="skill">Do you remember?</span>
-    <p class="q">${esc(pg.q)}</p>
-    <div class="opts" id="vopts">${order.map(i => `<button class="opt" data-a="${A((e,el)=>vaultAnswer(i, el))}">${esc(pg.o[i])}</button>`).join('')}</div>
+    <div class="row spread"><span class="chip">${d.s.icon} ${esc(d.s.title)}</span><span class="mut">${v.i+1} of ${v.items.length}</span></div>
+    <span class="skill">${it.w ? 'Word meaning' : 'Do you remember?'}</span>
+    <p class="q">${esc(d.q)}</p>
+    <div class="opts" id="vopts">${order.map(i => `<button class="opt" data-a="${A((e,el)=>vaultAnswer(i, el))}">${esc(d.o[i])}</button>`).join('')}</div>
     <div id="vres"></div>
   </div>`;
 }
 function vaultAnswer(i, el){
-  const v = view, it = v.items[v.i], s = storyById(it.s), pg = s.pages[it.i], p = me();
+  const v = view, it = v.items[v.i], d = v.qd, p = me();
   if (v.locked) return; v.locked = true;
-  const stored = p.vault.find(x => x.s === it.s && x.i === it.i);
+  const stored = p.vault.find(x => x.s === it.s && x.i === it.i && x.w === it.w);
   document.querySelectorAll('#vopts .opt').forEach(b => b.disabled = true);
+  skillMark(d.k, i === 0);
   if (i === 0){
     el.classList.add('right'); v.right = (v.right||0)+1; addCoins(5); confetti(15);
     if (stored){ stored.b++; if (stored.b >= VAULT_DAYS.length) p.vault = p.vault.filter(x => x !== stored); else stored.due = addDays(VAULT_DAYS[stored.b]); }
@@ -1076,8 +1161,8 @@ function vaultAnswer(i, el){
     if (stored){ stored.b = 0; stored.due = addDays(1); }
   }
   save();
-  document.getElementById('vres').innerHTML = `${i===0?'':`<div class="result">The answer is "${esc(pg.o[0])}". The story said: “${esc(pg.e)}”</div>`}
-    <div style="margin-top:12px"><button class="btn" data-a="${A(()=>{ v.i++; v.order=null; v.locked=false; render(); })}">Next</button></div>`;
+  document.getElementById('vres').innerHTML = `${i===0?'':`<div class="result">The answer is "${esc(d.o[0])}". ${esc(d.why)}</div>`}
+    <div style="margin-top:12px"><button class="btn" data-a="${A(()=>{ v.i++; v.order=null; v.qd=null; v.locked=false; render(); })}">Next</button></div>`;
 }
 
 // ---------- Shop ----------
@@ -1093,43 +1178,63 @@ function vShop(){
 }
 
 // ---------- Grown-ups ----------
+let grownOk = false; // stays open for this visit once the times-table gate is passed
 function vGrown(){
-  const g = view.g || (view.g = {a: 6+Math.floor(Math.random()*4), b: 6+Math.floor(Math.random()*4), ok:false, del:null});
+  const g = view.g || (view.g = {a: 6+Math.floor(Math.random()*4), b: 6+Math.floor(Math.random()*4), ok:grownOk, del:null});
   if (!g.ok){
     app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: me() ? 'hub' : 'profiles'}))}">← Back</button></div>
     <div class="card" style="display:flex;flex-direction:column;gap:12px;max-width:420px">
       <h2>Grown-ups only</h2><label class="lab" for="gate">What is ${g.a} × ${g.b}?</label>
       <input type="text" id="gate" inputmode="numeric" autocomplete="off">
-      <div><button class="btn" data-a="${A(()=>{ if (+val('gate') === g.a*g.b){ g.ok = true; render(); } else { const el=document.getElementById('gate'); el.value=''; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); } })}">Open</button></div></div>`;
+      <div><button class="btn" data-a="${A(()=>{ if (+val('gate') === g.a*g.b){ g.ok = grownOk = true; render(); } else { const el=document.getElementById('gate'); el.value=''; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); } })}">Open</button></div></div>`;
     return;
   }
-  const BM = {3:112, 5:139, 2:89, 4:133, 6:146}; // end-of-year 50th percentile oral reading fluency (Hasbrouck & Tindal, 2017)
+  const FOCUS = [['phonics','Phonics (sounding out words)'],['vocab','Vocabulary'],['lit','Understanding stories'],['info','Understanding nonfiction']];
+  const week = [...Array(7)].map((_,i) => addDays(i-6));
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: me() ? 'hub' : 'profiles'}))}">← Back</button></div>
   <h1>Reading progress</h1>
   ${S.profiles.length ? '' : '<p class="mut">No readers yet.</p>'}
   ${S.profiles.map(p => {
     const sk = Object.entries(p.skills); const tot = sk.reduce((a,[,v])=>a+v[1],0), ok = sk.reduce((a,[,v])=>a+v[0],0);
-    const loud = p.wpm.filter(x => x.how === 'mic'), silent = p.wpm.filter(x => x.how === 'solo');
-    const avg = a => a.length ? Math.round(a.slice(-5).reduce((s,x)=>s+x.w,0)/Math.min(5,a.length)) : null;
-    return `<div class="card" style="display:flex;flex-direction:column;gap:12px">
+    const f = p.focus || {}, gym = (p.gym||[]).slice(-6), checks = (p.checks||[]).slice(-8), bank = bankWords(p);
+    const maxDay = Math.max(goalOf(p), ...week.map(d => (p.daily||{})[d]||0));
+    return `<div class="card" style="display:flex;flex-direction:column;gap:14px">
       <div class="row spread"><h2>${p.av} ${esc(p.name)} <span class="mut" style="font-size:1rem">Grade ${p.grade}</span></h2><span class="coins"><span class="coin"></span>${p.coins}</span></div>
-      <div class="row"><span class="chip">${p.completed} stories finished</span><span class="chip">${Object.keys(p.done).length} different stories</span>
-        <span class="chip">${Math.round(p.minutes||0)} minutes reading</span><span class="chip">${tot ? Math.round(ok/tot*100) : '–'}% right on first try</span>
-        <span class="chip">${p.vault.length} in memory vault</span>
+      <div class="row"><span class="chip">${p.completed} stories and chapters</span><span class="chip">${Math.round(p.minutes||0)} minutes reading</span>
+        <span class="chip">${tot ? Math.round(ok/tot*100) : '–'}% right on first try</span><span class="chip">${p.vault.length} in memory vault</span>
         <span class="chip">${Object.values(p.games||{}).reduce((a,g)=>a+g.plays,0)} games played</span></div>
+
+      <div><h3>Focus areas</h3><p class="mut" style="font-size:.9rem">Tick the areas where school reports show ${esc(p.name)} below grade level. Each one adds daily practice to Today's Quest and changes which stories come first.</p>
+        <div class="pick words" style="margin-top:8px">${FOCUS.map(([k,l]) => `<button class="${f[k]?'on':''}" aria-pressed="${!!f[k]}" data-a="${A(()=>{ p.focus = Object.assign({}, p.focus, {[k]: !f[k]}); save(); render(); })}">${f[k]?'✓ ':''}${l}</button>`).join('')}</div></div>
+
+      <div><h3>Daily reading goal</h3><div class="pick words" style="margin-top:8px">${[10,15,20,30].map(m => `<button class="${goalOf(p)===m?'on':''}" data-a="${A(()=>{ p.goal = m; save(); render(); })}">${m} min</button>`).join('')}</div>
+        <div class="week">${week.map(d => { const m = Math.floor((p.daily||{})[d]||0); return `<div class="wday"><i style="height:${Math.round(m/maxDay*100)}%" class="${m>=goalOf(p)?'met':''}"></i><b>${m}</b><span>${new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'short'})}</span></div>`; }).join('')}</div></div>
+
       <div class="tablewrap"><table><tr><th>Question type</th><th>Right first try</th><th></th></tr>
         ${SKILLS.map(k => { const v = p.skills[k] || [0,0]; const pc = v[1] ? Math.round(v[0]/v[1]*100) : 0;
           return `<tr><td>${k[0].toUpperCase()+k.slice(1)}</td><td>${v[1] ? `${v[0]} of ${v[1]}` : '–'}</td><td><div class="bar"><i style="width:${pc}%"></i></div></td></tr>`; }).join('')}
       </table></div>
-      <p><b>Reading speed.</b> Out loud (last 5): ${avg(loud) ? avg(loud)+' words a minute' : 'not measured yet'}. Silent (last 5): ${avg(silent) ? avg(silent)+' words a minute' : 'not measured yet'}.
-        ${BM[p.grade] ? `<span class="mut">The typical end-of-year out-loud rate for grade ${p.grade} is about ${BM[p.grade]} words a minute. This app's count is a rough guide, not a test.</span>` : ''}</p>
-      ${loud.length ? `<p class="mut">Recent out-loud speeds: ${loud.slice(-10).map(x => x.w).join(', ')}</p>` : ''}
+
+      <div><h3>Fluency Gym</h3>${gym.length ? `<p>First read → third read, words correct per minute:</p><p>${gym.map(x => `<span class="chip">${x.w[0]} → <b>${x.w[2]}</b></span>`).join(' ')}</p>` : '<p class="mut">No sessions yet.</p>'}</div>
+
+      <div><h3>Monthly check-in</h3>
+        <p class="mut" style="font-size:.9rem">A one-minute read of a new passage, once a month. The typical (50th percentile) reader in grade ${p.grade} reads about ${benchFor(p.grade, today())} words correct per minute at this time of year (Hasbrouck & Tindal, 2017).</p>
+        ${checks.length ? `<div class="tablewrap"><table><tr><th>Date</th><th>Words correct per minute</th><th>Typical for grade</th><th>Scored by</th></tr>
+          ${checks.map(c => `<tr><td>${c.d}</td><td><b>${c.w}</b></td><td>${benchFor(p.grade, c.d)}</td><td>${c.m==='mic'?'Microphone':'Grown-up'}</td></tr>`).join('')}</table></div>` : ''}
+        <div style="margin-top:8px"><button class="btn small ${checkDue(p)?'sun':'ghost'}" data-a="${A(()=>{ S.cur = p.id; save(); go({name:'checkin'}); })}">${checkDue(p) ? 'Start this month\'s check-in' : 'Do another check-in'}</button></div></div>
+
+      <div><h3>Word bank</h3><p class="mut" style="font-size:.9rem">Words ${esc(p.name)} tapped for help, skipped or got stuck on. They come back in warm-ups and games until read correctly 3 times. ${p.mastered ? `<b>${p.mastered} mastered so far.</b>` : ''}</p>
+        <p style="margin-top:6px">${bank.length ? bank.slice(0, 30).map(k => `<span class="chip">${esc(k)}${p.bank[k].n > 1 ? ' ×' + p.bank[k].n : ''}</span>`).join(' ') : '<span class="mut">Empty for now.</span>'}</p></div>
+
+      ${seriesFor(p).length ? `<div><h3>Chapter books</h3>${seriesFor(p).map(se => { const c = chapterInfo(p, se); return `<p class="row"><span>${se.icon} ${esc(se.title)}: ${c.done ? 'finished' : `chapter ${c.n+1} of ${se.chapters.length}${c.locked ? ' (unlocks tomorrow)' : ''}`}</span>
+        ${c.locked ? `<button class="btn ghost small" data-a="${A(()=>{ const st = seriesState(p, se.id); st.d = ''; p.series[se.id] = st; save(); render(); })}">Unlock now</button>` : ''}</p>`; }).join('')}</div>` : ''}
+
       <div class="row">${g.del === p.id
         ? `<span>Delete ${esc(p.name)} and all progress?</span><button class="btn small" style="background:var(--oops)" data-a="${A(()=>{ S.profiles = S.profiles.filter(x => x.id !== p.id); if (S.cur === p.id) S.cur = null; save(); g.del=null; render(); })}">Yes, delete</button><button class="btn ghost small" data-a="${A(()=>{g.del=null; render();})}">Cancel</button>`
         : `<button class="btn ghost small" data-a="${A(()=>{g.del=p.id; render();})}">Delete this reader</button>`}</div>
     </div>`; }).join('')}
   <div class="card"><h3>How the game works</h3>
-    <p class="mut" style="margin-top:6px">Each story starts with a tricky-word warm-up in syllable chunks. Every page is read out loud (the microphone follows along where the browser allows it, otherwise a highlighter paces the reading) and is followed by one question. A wrong answer sends the reader back to the sentence that holds the answer. Finished stories return in the Memory Vault after 1, 3, 7 and 14 days. Progress is saved on this device only.</p></div>`;
+    <p class="mut" style="margin-top:6px">Each day's quest includes a Fluency Gym session (one passage read aloud three times), a story or a chapter, the Memory Vault when it has questions due, and extra practice for each focus area you tick. Stories start with a tricky-word warm-up with meanings and end with a summary choice and a spoken retell. Chapter books unlock one chapter a day, and each chapter starts with a question about the one before. Words a reader stumbles on go into a personal word bank that feeds the warm-ups and games. Progress is saved on this device only.</p></div>`;
 }
 
 // ---------- Game arcade ----------
@@ -1138,7 +1243,8 @@ function vGrown(){
 const GAMES = {
   catch:{name:'Word Catcher', icon:'🧺', blurb:'Catch the real words. Dodge the made-up ones!', learn:'Reading real words quickly', medals:[100,250,450]},
   smash:{name:'Syllable Smash', icon:'🔨', blurb:'Snap chunks together to build words before the clock runs out.', learn:'Reading long words in chunks', medals:[60,150,280]},
-  match:{name:'Memory Match', icon:'🃏', blurb:'Flip cards to match each word with its picture.', learn:'Reading words and remembering them', medals:[40,70,90]}};
+  match:{name:'Memory Match', icon:'🃏', blurb:'Flip cards to match each word with its picture.', learn:'Reading words and remembering them', medals:[40,70,90]},
+  parts:{name:'Word Parts', icon:'🧩', blurb:'Snap prefixes and suffixes onto words and figure out what they mean.', learn:'Working out word meanings', medals:[60,110,160]}};
 const REAL3 = ['jump','frog','ship','cake','train','green','smile','chest','bring','cloud','sleep','plant','shark','storm','bread','light','sunny','puppy','rocket','garden','window','basket','monkey','rabbit','picnic','kitten','snack','brave','grass','splash','thumb','queen','whale','candy','music','drum','goat','moon','dragon','muffin'];
 const FAKE3 = ['blim','frap','zunk','clabe','drem','plost','snib','chorp','trell','fleem','spof','wunch','brabe','glimp','skad','thrup','nolt','quisp','dreb','molp','sprin','clunt','vog','plaim','gorch','smeb','twib','jasket','rabbon','pelk'];
 const REAL5 = ['harbor','journey','enormous','distance','gravity','mountain','festival','scientist','history','champion','ancient','curious','telescope','adventure','invent','courage','balance','freedom','victory','explore','harvest','orbit','compass','engine','pilot','canyon','galaxy','famous','island','question','silver','captain','museum','rhythm','language','thunder'];
@@ -1158,14 +1264,14 @@ function tix(p){ if (p.tickets == null) p.tickets = 2; return p.tickets; }
 function giveTickets(n){ const p = me(); tix(p); p.tickets += n; save(); }
 function gameStat(k){ const p = me(); p.games = p.games || {}; return p.games[k] || (p.games[k] = {best:0, plays:0}); }
 function medal(k, score){ const m = GAMES[k].medals; return score >= m[2] ? '🥇' : score >= m[1] ? '🥈' : score >= m[0] ? '🥉' : ''; }
-function startGame(k){ const p = me(); if (tix(p) < 1) return; p.tickets--; gameStat(k).plays++; save(); go({name:'g_'+k}); }
+function startGame(k, free){ const p = me(); if (!free){ if (tix(p) < 1) return; p.tickets--; } gameStat(k).plays++; save(); go({name:'g_'+k}); }
 let G = null;
 function gameStop(){ if (!G) return; G.stop = true; if (G.raf) cancelAnimationFrame(G.raf); if (G.timer) clearInterval(G.timer); if (G.cleanup) G.cleanup(); G = null; }
 function endGame(k, score, extra){
   const st = gameStat(k), newBest = score > st.best, prevMedal = medal(k, st.best);
   if (newBest) st.best = score;
   const coins = Math.max(2, Math.min(20, Math.round(score/15)));
-  save(); addCoins(coins, 'game');
+  save(); addCoins(coins, 'game'); questMark(k);
   if (newBest) confetti(60);
   go({name:'gameOver', k, score, newBest, coins, extra:extra||{}, gotMedal: medal(k, score) && medal(k, score) !== prevMedal && newBest ? medal(k, score) : ''});
 }
@@ -1193,6 +1299,7 @@ function vGameOver(){
     ${v.gotMedal ? `<p class="notice">You earned a ${v.gotMedal} medal!</p>` : ''}
     <span class="coins"><span class="coin"></span>+${v.coins} coins</span>
     ${v.extra.words != null ? `<p>You built <b>${v.extra.words}</b> word${v.extra.words===1?'':'s'}.</p>` : ''}
+    ${v.extra.right != null ? `<p>You knew <b>${v.extra.right} of ${v.extra.total}</b> word meanings.</p>` : ''}
     ${v.extra.moves != null ? `<p>You matched every pair in <b>${v.extra.moves}</b> tries.</p>` : ''}
     ${fakes.length ? `<p class="result">These are not real words: <b>${fakes.map(esc).join(', ')}</b>. Watch out for them next time!</p>` : ''}
     <div class="row" style="justify-content:center">
@@ -1217,7 +1324,7 @@ function vCatch(){
   const dpr = window.devicePixelRatio || 1; cv.style.height = H+'px'; cv.width = W*dpr; cv.height = H*dpr; cx.scale(dpr, dpr);
   const css = getComputedStyle(document.documentElement), col = n => css.getPropertyValue(n).trim();
   const C = {panel:col('--panel'), line:col('--line'), ink:col('--ink'), good:col('--good'), oops:col('--oops'), sun:col('--sun')};
-  const real = hard ? REAL5 : REAL3, fake = hard ? FAKE5 : FAKE3, fs = W < 500 ? 18 : 22, base = hard ? 50 : 42;
+  const bankW = bankWords(p), real = (hard ? REAL5 : REAL3).concat(bankW, bankW), fake = hard ? FAKE5 : FAKE3, fs = W < 500 ? 18 : 22, base = hard ? 50 : 42;
   const g = G = {k:'catch', score:0, lives:3, x:W/2, items:[], t:0, next:0.5, last:performance.now(), fake:[], hud:''};
   const move = e => { const r = cv.getBoundingClientRect(); g.x = Math.max(46, Math.min(W-46, e.clientX - r.left)); };
   cv.addEventListener('pointerdown', move); cv.addEventListener('pointermove', move);
@@ -1240,7 +1347,7 @@ function vCatch(){
       it.y += it.vy*dt;
       if (it.y >= by-16 && it.y <= by+12 && Math.abs(it.x - g.x) < 40 + it.w/2){
         it.hit = true; it.fade = 0;
-        if (it.real){ g.score += 10; it.fx = '+10'; } else { g.lives--; g.fake.push(it.word); it.fx = '✗ '+it.word; }
+        if (it.real){ g.score += 10; it.fx = '+10'; bankOk(it.word); } else { g.lives--; g.fake.push(it.word); it.fx = '✗ '+it.word; }
       }
     }
     g.items = g.items.filter(it => it.hit ? it.fade < 0.5 : it.y < H + 30);
@@ -1267,7 +1374,7 @@ function nextSmash(){
   const g = G, item = g.pool[g.i % g.pool.length], w = typeof item === 'string' ? item : item.w; g.i++;
   const parts = w.split('-'); let order = shuffle(parts.map((_,i)=>i));
   if (parts.length > 1 && order.every((x,i)=>x===i)) order.reverse();
-  g.cur = {w: parts.join(''), parts, order, placed:[], done:false, p: typeof item === 'string' ? '' : item.p};
+  g.cur = {w: parts.join(''), parts, order, placed:[], done:false, p: typeof item === 'string' ? '' : item.p, bank: typeof item === 'string' ? '' : item.bank};
 }
 function vSmash(){
   const p = me();
@@ -1278,6 +1385,7 @@ function vSmash(){
     const spell = p.grade <= 4 ? SPELL3.flatMap(x => x.w.map(w => ({w, p:x.p}))) : [];
     const pool = []; const a = shuffle(spell), b = shuffle(base);
     while (a.length || b.length){ if (a.length) pool.push(a.pop()); if (b.length) pool.push(b.pop()); }
+    pool.unshift(...shuffle(bankWords(p).map(k => ({w: syllables(k).join('-'), p:'Your tricky word', bank:k})).filter(x => x.w.includes('-'))).slice(0, 8));
     G = {k:'smash', pool, i:0, score:0, combo:1, left:60, words:0};
     G.timer = setInterval(() => {
       if (!G || G.k !== 'smash') return;
@@ -1291,7 +1399,7 @@ function vSmash(){
   <div class="card" style="display:flex;flex-direction:column;gap:16px">
     <div class="row spread"><h2>🔨 Syllable Smash</h2>
       <span class="row"><span class="chip" style="font-size:1rem">⏱ <b id="sTime">${g.left}s</b></span><span class="chip" style="font-size:1rem">Score <b>${g.score}</b>${g.combo>1?` · ×${g.combo}`:''}</span></span></div>
-    ${c.p ? `<p style="text-align:center"><span class="chip school">✏️ Spelling pattern from class: ${esc(c.p)}</span></p>` : ''}
+    ${c.p ? `<p style="text-align:center"><span class="chip school">✏️ ${c.bank ? esc(c.p) : 'Spelling pattern from class: ' + esc(c.p)}</span></p>` : ''}
     <div class="sslots">${c.parts.map((pt,i) => `<span class="sslot ${i < c.placed.length ? 'full' : ''}">${i < c.placed.length ? esc(pt) : ''}</span>`).join('')}</div>
     ${c.done ? `<p class="twdone" style="text-align:center">${esc(c.w)}! Say it out loud.</p>` :
     `<div class="chunks">${c.order.map(j => c.placed.includes(j) ? '' : `<button class="syl" data-a="${A((e,el)=>smashTap(j, el))}">${esc(c.parts[j])}</button>`).join('')}</div>
@@ -1303,7 +1411,7 @@ function smashTap(j, el){
   if (c.parts[j] === c.parts[c.placed.length]){
     c.placed.push(j);
     if (c.placed.length === c.parts.length){
-      c.done = true; g.words++; g.score += 5*c.parts.length*g.combo; g.combo = Math.min(5, g.combo+1);
+      c.done = true; g.words++; if (c.bank) bankOk(c.bank); g.score += 5*c.parts.length*g.combo; g.combo = Math.min(5, g.combo+1);
       render(); setTimeout(() => { if (G === g){ nextSmash(); render(); } }, 900);
     } else render();
   } else { g.combo = 1; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
@@ -1355,6 +1463,639 @@ function tick(){
   parts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .35; p.life--; ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.r, p.r*1.6); });
   parts = parts.filter(p => p.life > 0 && p.y < fx.height+20);
   if (parts.length) requestAnimationFrame(tick); else { fxOn = false; ctx.clearRect(0,0,fx.width,fx.height); }
+}
+
+// ======================================================================
+// Reading-growth features: daily minutes, word bank, Today's Quest,
+// Fluency Gym, monthly check-in, summary & retell, chapter books, word parts.
+// ======================================================================
+// Content: story summaries, word meanings, check-in passages, word parts, chapter books.
+const EXTRA = {
+ sum: {
+  pancake: ['Dad\'s giant pancake rolls away, Mia and Leo chase it and stop it, and Dad makes a small one that won\'t run off.', 'A duck in the pond quacks at the pancake.', 'Mia and Leo eat the giant pancake after it rolls into the mud.'],
+  zee: ['Captain Zee loses a moon rock on her way to the museum, finds an alien licking it, and trades him gummies to get it back.', 'Captain Zee keeps her snacks in a snack drawer.', 'Captain Zee gives the moon rock to Blip and never gets to the museum.'],
+  muffins: ['Sam follows clues to find out that the neighbor\'s dog took Grandma\'s muffins.', 'Sam finds a long gray hair on the windowsill.', 'Sam finds out that a squirrel took the muffins to its nest.'],
+  gus: ['Gus the goat fills in on drums when the drummer gets hurt and becomes a star of the parade.', 'Gus eats one drumstick by accident.', 'Gus the goat gets kicked out of the band for being too loud.'],
+  dot: ['Dot the dragon is afraid of the dark, but she flies into the dark woods to save a lost boy and learns what brave means.', 'A storm knocks out the lights in the village.', 'Dot stays in her cave, and the village finds Theo by itself.'],
+  rex: ['Robot Rex makes mistakes as a class helper, but with Ava\'s help he practices and becomes a super helper.', 'Rex has wheels instead of legs.', 'Rex is sent back to the factory because he cannot learn.'],
+  earhart: ['Amelia Earhart loved adventure, learned to fly, crossed the Atlantic alone, and inspired others before she was lost on a flight around the world.', 'Amelia\'s first plane was yellow and named The Canary.', 'Amelia Earhart was afraid of planes and never learned to fly.'],
+  robinson: ['Jackie Robinson broke baseball\'s color barrier with courage, became a star, and is honored by every team today.', 'Jackie\'s brother Mack won a silver medal in track.', 'Jackie Robinson played only one game before he quit baseball.'],
+  wright: ['The Wright brothers studied balance and control, tested their ideas, and made the first powered, controlled airplane flight in 1903.', 'Their toy helicopter was made of cork, bamboo, and paper.', 'The Wright brothers built a huge engine but never got off the ground.'],
+  tubman: ['Harriet Tubman escaped slavery and then risked her life again and again to lead others to freedom and fight for equal rights.', 'Harriet\'s family called her Minty when she was a child.', 'Harriet Tubman stayed in Pennsylvania and never went back to help anyone.'],
+  armstrong: ['Neil Armstrong loved flying, became a test pilot and astronaut, and was the first person to walk on the Moon.', 'Neil worked at a drugstore to pay for flying lessons.', 'Neil Armstrong flew to Mars alone in a rocket plane.'],
+  tortoise: ['Hare brags and naps during a race, while slow and steady Tortoise keeps going and wins.', 'Fox draws a starting line in the dirt.', 'Hare wins the race easily, and Tortoise learns to run faster.'],
+  anansi: ['Anansi tries to keep all the wisdom for himself, but his son\'s simple idea shows him no one knows everything, and the wisdom spreads around the world.', 'Anansi\'s clay pot is big and round.', 'Anansi hides the pot of wisdom forever, and no one else ever becomes wise.'],
+  midas: ['King Midas wishes that everything he touches turns to gold, but after his food and daughter turn to gold he learns that people matter more.', 'Midas touches a rose in his garden.', 'King Midas becomes happy forever because he can turn anything into gold.'],
+  weather: ['The poems describe wind, rain, snow, and the sun after a storm by comparing them to playful, everyday things.', 'One poem says the snow gives a fence post a hat.', 'The poems are all about a hot, dry summer with no weather at all.'],
+  drip: ['Drip the water drop travels through the water cycle, from the lake to a cloud, back down as rain, and home again.', 'The fish swim over to say hello to Drip.', 'Drip gets stuck in a cloud and never comes back to the lake.'],
+  partner: ['Jada does not want Marcus as a partner, but his ideas and knowledge surprise her, and they win and become friends.', 'Jada wants a glitter title on the poster.', 'Jada does the whole project by herself and Marcus does not help.'],
+  jumpshot: ['When Camila hurts her ankle, she coaches her little brother Leo, and practicing together makes them closer.', 'Camila tells Leo to tuck in his elbow like holding a pizza tray.', 'Leo gives up on basketball because his sister will not help him.'],
+  anning: ['Mary Anning found amazing fossils that changed science, even though she was poor and scientists of her time did not include her.', 'Mary\'s dog was named Tray.', 'Mary Anning was a famous member of the Geological Society who never found a fossil.'],
+  cailun: ['Cai Lun improved papermaking with cheap materials, and paper spread from China to the world, helping ideas travel.', 'People used to write on strips of bamboo tied with string.', 'Cai Lun kept paper a secret, so it never left his palace.'],
+  aryabhata: ['Aryabhata was an ancient Indian mathematician and astronomer whose ideas about math and the sky were so important that a satellite was named for him.', 'Aryabhata wrote his book in short verses like poems.', 'Aryabhata believed a monster swallowed the Sun during eclipses.']
+ },
+ defs: {
+  'wobbled': 'moved from side to side in a shaky way',
+  'puddle': 'a small pool of water on the ground',
+  'farmer': 'a person who grows crops or raises animals',
+  'breath': 'the air you take in and blow out',
+  'package': 'a box or bundle sent to someone',
+  'important': 'matters a lot',
+  'galaxy': 'a huge group of stars in space',
+  'museum': 'a building where special things are shown',
+  'windowsill': 'the flat shelf at the bottom of a window',
+  'mystery': 'something strange that is hard to figure out',
+  'detective': 'a person who uses clues to solve mysteries',
+  'neighbor': 'a person who lives next to you',
+  'instrument': 'a thing you play to make music',
+  'parade': 'a line of people marching in a celebration',
+  'rhythm': 'a steady beat in music',
+  'accident': 'something that happens by mistake',
+  'breathe': 'to take air in and let it out',
+  'whispered': 'said very quietly',
+  'lantern': 'a light you can carry',
+  'shadows': 'dark shapes made when something blocks light',
+  'blinking': 'flashing on and off',
+  'classroom': 'the room where a class learns',
+  'carefully': 'in a slow way that avoids mistakes',
+  'perfectly': 'with no mistakes at all',
+  'adventure': 'an exciting trip or experience',
+  'expensive': 'costing a lot of money',
+  'atlantic': 'the ocean between America and Europe',
+  'navigator': 'the person who plans which way to travel',
+  'treatment': 'the way someone is acted toward',
+  'barrier': 'something that blocks the way',
+  'courage': 'being brave when something is hard or scary',
+  'valuable': 'very important or worth a lot',
+  'helicopter': 'a flying machine with spinning blades on top',
+  'bicycle': 'a two-wheeled ride you pedal',
+  'propellers': 'spinning blades that push a machine forward',
+  'controlled': 'steered and guided on purpose',
+  'slavery': 'owning people and forcing them to work unpaid',
+  'underground': 'secret, or below the ground',
+  'network': 'a group of connected people or things',
+  'passenger': 'a person who rides along on a trip',
+  'astronaut': 'a person trained to travel into space',
+  'experimental': 'new and being tested to see if it works',
+  'boulders': 'very large rocks',
+  'mankind': 'all people on Earth',
+  'bragged': 'talked too proudly about yourself',
+  'tortoise': 'a slow turtle that lives on land',
+  'snoring': 'making loud breathing sounds while asleep',
+  'steady': 'not stopping and not changing',
+  'wisdom': 'good sense and knowing a lot',
+  'anansi': 'a clever spider from West African stories',
+  'creature': 'any living animal',
+  'ashanti': 'a group of people from Ghana in Africa',
+  'dionysus': 'a god in old Greek stories',
+  'shining': 'giving off bright light',
+  'horror': 'a feeling of great fear and shock',
+  'daughter': 'a girl child of a parent',
+  'playful': 'full of fun and wanting to play',
+  'whistles': 'makes a high, sharp sound',
+  'feathers': 'the soft, light covering on birds',
+  'sparkles': 'shines with tiny flashes of light',
+  'evaporation': 'when water warms up and turns into gas',
+  'condensation': 'when water gas cools and turns back to drops',
+  'precipitation': 'water falling from clouds as rain or snow',
+  'collection': 'when water gathers in lakes, rivers, and oceans',
+  'erosion': 'slow wearing away of rock or soil',
+  'sketches': 'quick, simple drawings',
+  'handwriting': 'the way a person writes by hand',
+  'annoyed': 'a little bit angry or bothered',
+  'driveway': 'a short road from the street to a house',
+  'sprained': 'hurt by twisting too far',
+  'crutches': 'sticks that help a hurt person walk',
+  'streetlights': 'tall lights that light up streets at night',
+  'fossils': 'remains of ancient living things saved in rock',
+  'skeleton': 'all the bones of a body',
+  'geology': 'the study of rocks and the Earth',
+  'dynasty': 'a family of rulers over many years',
+  'official': 'a person with an important government job',
+  'historians': 'people who study the past',
+  'centuries': 'periods of one hundred years',
+  'astronomer': 'a scientist who studies stars and planets',
+  'mathematician': 'an expert in math',
+  'eclipses': 'times when one sky object blocks another\'s light',
+  'satellite': 'an object that circles a planet in space'
+ },
+ checkin: {
+  3: [
+   {title: 'The Secret Garden Box', t: 'Nora found an old wooden box under her grandfather\'s porch. It was covered in dust and had a rusty latch. When she opened it, she saw dozens of tiny paper packets. Each one had a word written on it in pencil: beans, carrots, sunflowers, peas. They were seeds! Nora carried the box inside and showed her grandfather. He smiled a slow, happy smile. He told her that he had saved those seeds many years ago, when he still kept a big garden behind the house. Nora asked if the seeds might still grow. Her grandfather was not sure, but he said they could try. That weekend, they cleared a sunny patch of ground. They pulled weeds, raked the soil, and planted a few seeds from every packet. Then they watered them each morning before breakfast. For two weeks, nothing happened. Nora started to worry. Then one morning she spotted a small green shoot pushing up through the dirt.'},
+   {title: 'How Bees Make Honey', t: 'Honey bees are some of the hardest workers in nature. A single hive can hold thousands of bees, and each one has a job to do. Some bees clean the hive. Some bees guard the door. Other bees fly out to find flowers. These are called forager bees. A forager bee uses its long tongue to sip a sweet liquid called nectar from a flower. It stores the nectar in a special part of its body called a honey stomach. When the honey stomach is full, the bee flies back to the hive. There, it passes the nectar to another bee. The bees chew the nectar and add special juices from their bodies. Then they spread it into the small wax rooms of the honeycomb. Next, the bees fan the nectar with their wings. This dries out the water and makes the nectar thick and sticky. When it is ready, the bees cover each room with a wax lid. The honey is now stored for winter.'},
+   {title: 'The Kite Contest', t: 'Every spring, the town of Willow Creek held a kite contest in the big field by the river. This year, Marco wanted to win. He did not want to buy a kite from the store. He wanted to build his own. Marco spent a whole week working in the garage. He used two thin sticks, a large paper bag, some string, and a lot of tape. He painted the paper bright orange with a green dragon in the middle. Then he tied long ribbons to the bottom for a tail. On the morning of the contest, the sky was clear and the wind was strong. Dozens of kites were already flying. There were butterflies, fish, and even a giant purple octopus. Marco held his breath and ran across the grass. At first his kite dipped and spun. Then the wind caught it, and the dragon climbed higher and higher. People pointed and cheered as it rose above the trees.'},
+   {title: 'Life on the Ocean Floor', t: 'The bottom of the deep ocean is one of the strangest places on Earth. Sunlight cannot reach that far down, so it is very dark and very cold. The water above presses down with great weight. For a long time, scientists thought nothing could live there. Then they sent down special machines with bright lights and cameras. What they found surprised them. The deep ocean is full of life. Some fish make their own light. They glow in the dark to find food or to trick other animals. One fish, called the anglerfish, has a glowing rod on its head. Small fish swim toward the light, and the anglerfish snaps them up. There are also giant tube worms that can grow taller than a grown man. They live near cracks in the ocean floor where hot water bubbles up. Scientists believe there are still thousands of deep sea animals that no person has ever seen.'}
+  ],
+  5: [
+   {title: 'The Lighthouse Keeper', t: 'For more than thirty years, Elena Ruiz kept the lighthouse on Gull Point. Every evening before sunset, she climbed the one hundred and twelve steps of the spiral staircase, polished the great glass lens, and lit the lamp. Its beam swept across the dark water, warning ships away from the jagged rocks below. Most nights were peaceful. Elena would sit by the window with a mug of tea and watch the distant lights of fishing boats bobbing on the waves. But on the night of the great November storm, the wind howled so fiercely that the whole tower seemed to tremble. Rain lashed the windows, and waves crashed over the lower rocks. Around midnight, the power failed and the lamp went dark. Elena knew that a cargo ship was due to pass the point that night. Without the light, it would never see the rocks in time. She grabbed a heavy oil lantern from the storage closet, struggled up the staircase in the darkness, and set it inside the lens. Slowly, the old glass caught the flame and threw a faint beam across the water. Hours later, as dawn broke, she watched the ship glide safely into the harbor.'},
+   {title: 'The Mighty Mississippi', t: 'The Mississippi River is one of the longest rivers in North America. It begins as a small, clear stream flowing out of Lake Itasca in northern Minnesota. At that point, it is narrow enough that visitors can walk across it on a row of stepping stones. From there, the river travels about two thousand three hundred miles south until it empties into the Gulf of Mexico. Along the way, it grows enormous. Hundreds of smaller rivers and streams join it, including the Missouri and the Ohio. By the time it reaches Louisiana, parts of the river are more than a mile wide. For thousands of years, the Mississippi has been important to the people who live near it. Native American nations built towns along its banks and traveled its waters in canoes. Later, steamboats carried cotton, lumber, and passengers up and down the river. Today, huge barges still move grain, coal, and other goods along its route. The river also shapes the land itself. Each spring, melting snow and heavy rain can cause floods. When the water spreads across the land, it leaves behind rich soil that farmers depend on to grow their crops.'},
+   {title: 'The Broken Robot Arm', t: 'Priya had been building her robot arm for three months. It was made from cardboard, plastic straws, fishing line, and a tiny motor she had taken out of an old remote control car. When she pressed a button, the arm was supposed to bend at the elbow, open its fingers, and pick up a cup. She planned to show it at the regional science expo on Saturday. On Thursday night, she tested it one last time. The motor whirred, the elbow bent, and then something snapped. The fishing line that pulled the fingers had torn straight through the cardboard. Priya stared at the drooping hand and felt her eyes sting. There was no time to start over. Her older cousin Dev wandered into the kitchen and looked at the mess. Instead of saying it was ruined, he asked her what had gone wrong. Together they studied the broken piece. Priya realized the cardboard was too weak to handle the pull of the line. Dev suggested reinforcing the joint with a strip of thin wood from a craft stick. They worked until nearly midnight. On Saturday, the arm lifted the cup smoothly, and one judge asked Priya to explain exactly how she had solved the problem.'},
+   {title: 'Why Leaves Change Color', t: 'Every autumn, many trees in cooler parts of the world put on a brilliant show. Their green leaves turn shades of yellow, orange, red, and purple before drifting to the ground. This change is not magic. It is chemistry. During spring and summer, leaves are packed with a substance called chlorophyll. Chlorophyll gives leaves their green color, and it also helps them capture energy from sunlight. Leaves use that energy to turn water and carbon dioxide into sugar, which feeds the tree. This process is called photosynthesis. Leaves also contain yellow and orange substances, but during the summer there is so much chlorophyll that these colors stay hidden. As autumn arrives, the days grow shorter and the nights grow cooler. Trees begin to prepare for winter, when there is not enough sunlight or liquid water to keep making food. They slowly stop producing chlorophyll. As the green fades away, the hidden yellows and oranges finally appear. Some trees, such as red maples, also make new red and purple pigments in the fall. Weather affects the show too. Sunny days and cool nights usually produce the brightest colors, while an early frost can make leaves turn brown quickly.'}
+  ]
+ },
+ parts: {
+  3: [
+   {parts: ['un', 'lock'], word: 'unlock', meaning: 'to open with a key', wrong: ['to lock again', 'to lock badly'], tip: 'un- means not or undo'},
+   {parts: ['un', 'happy'], word: 'unhappy', meaning: 'not happy', wrong: ['very happy', 'happy again'], tip: 'un- means not or undo'},
+   {parts: ['un', 'safe'], word: 'unsafe', meaning: 'not safe', wrong: ['safe again', 'safe before'], tip: 'un- means not or undo'},
+   {parts: ['re', 'read'], word: 'reread', meaning: 'to read again', wrong: ['to not read', 'to read before'], tip: 're- means again'},
+   {parts: ['re', 'fill'], word: 'refill', meaning: 'to fill again', wrong: ['to not fill', 'to fill before'], tip: 're- means again'},
+   {parts: ['re', 'build'], word: 'rebuild', meaning: 'to build again', wrong: ['to build wrong', 'to not build'], tip: 're- means again'},
+   {parts: ['pre', 'heat'], word: 'preheat', meaning: 'to heat before using', wrong: ['to heat again', 'to not heat'], tip: 'pre- means before'},
+   {parts: ['pre', 'view'], word: 'preview', meaning: 'to see something before others do', wrong: ['to see again', 'to not see'], tip: 'pre- means before'},
+   {parts: ['pre', 'pay'], word: 'prepay', meaning: 'to pay before you get something', wrong: ['to pay again', 'to not pay'], tip: 'pre- means before'},
+   {parts: ['dis', 'like'], word: 'dislike', meaning: 'to not like', wrong: ['to like a lot', 'to like again'], tip: 'dis- means not or the opposite of'},
+   {parts: ['dis', 'agree'], word: 'disagree', meaning: 'to not agree', wrong: ['to agree again', 'to agree first'], tip: 'dis- means not or the opposite of'},
+   {parts: ['dis', 'obey'], word: 'disobey', meaning: 'to not do what you are told', wrong: ['to obey twice', 'to obey before'], tip: 'dis- means not or the opposite of'},
+   {parts: ['hope', 'ful'], word: 'hopeful', meaning: 'full of hope', wrong: ['without hope', 'one who hopes'], tip: '-ful means full of'},
+   {parts: ['help', 'ful'], word: 'helpful', meaning: 'full of help, giving help', wrong: ['without help', 'helping again'], tip: '-ful means full of'},
+   {parts: ['care', 'less'], word: 'careless', meaning: 'without care', wrong: ['full of care', 'one who cares'], tip: '-less means without'},
+   {parts: ['fear', 'less'], word: 'fearless', meaning: 'without fear', wrong: ['full of fear', 'afraid again'], tip: '-less means without'},
+   {parts: ['teach', 'er'], word: 'teacher', meaning: 'a person who teaches', wrong: ['without teaching', 'to teach again'], tip: '-er means a person who does something'},
+   {parts: ['paint', 'er'], word: 'painter', meaning: 'a person who paints', wrong: ['full of paint', 'to paint before'], tip: '-er means a person who does something'},
+   {parts: ['slow', 'ly'], word: 'slowly', meaning: 'in a slow way', wrong: ['not slow', 'a slow person'], tip: '-ly means in a certain way'},
+   {parts: ['quick', 'ly'], word: 'quickly', meaning: 'in a quick way', wrong: ['without speed', 'quick again'], tip: '-ly means in a certain way'}
+  ],
+  5: [
+   {parts: ['mis', 'spell'], word: 'misspell', meaning: 'to spell wrong', wrong: ['to spell again', 'to not spell at all'], tip: 'mis- means wrongly or badly'},
+   {parts: ['mis', 'read'], word: 'misread', meaning: 'to read wrong', wrong: ['to read before', 'to read many times'], tip: 'mis- means wrongly or badly'},
+   {parts: ['non', 'stop'], word: 'nonstop', meaning: 'without stopping', wrong: ['stopping often', 'stopping again'], tip: 'non- means not or without'},
+   {parts: ['non', 'fiction'], word: 'nonfiction', meaning: 'writing about real facts and events', wrong: ['very made-up stories', 'stories told again'], tip: 'non- means not or without'},
+   {parts: ['sub', 'marine'], word: 'submarine', meaning: 'a ship that travels under the sea', wrong: ['a ship above the clouds', 'a ship that sails twice'], tip: 'sub- means under or below'},
+   {parts: ['sub', 'way'], word: 'subway', meaning: 'a train that runs under the ground', wrong: ['a road over a bridge', 'a path between two towns'], tip: 'sub- means under or below'},
+   {parts: ['inter', 'act'], word: 'interact', meaning: 'to act with each other', wrong: ['to act alone', 'to act again'], tip: 'inter- means between or among'},
+   {parts: ['inter', 'national'], word: 'international', meaning: 'between or among nations', wrong: ['inside one nation only', 'not part of any nation'], tip: 'inter- means between or among'},
+   {parts: ['read', 'able'], word: 'readable', meaning: 'able to be read', wrong: ['not able to read', 'a person who reads'], tip: '-able means able to be'},
+   {parts: ['wash', 'able'], word: 'washable', meaning: 'able to be washed', wrong: ['washed too much', 'without washing'], tip: '-able means able to be'},
+   {parts: ['enjoy', 'ment'], word: 'enjoyment', meaning: 'the feeling of enjoying something', wrong: ['to enjoy again', 'without any joy'], tip: '-ment means the act or result of'},
+   {parts: ['pay', 'ment'], word: 'payment', meaning: 'money that is paid', wrong: ['to pay wrongly', 'a person who pays'], tip: '-ment means the act or result of'},
+   {parts: ['kind', 'ness'], word: 'kindness', meaning: 'the quality of being kind', wrong: ['without being kind', 'kind again'], tip: '-ness means the state of being'},
+   {parts: ['dark', 'ness'], word: 'darkness', meaning: 'the state of being dark', wrong: ['to make dark again', 'a person who is dark'], tip: '-ness means the state of being'},
+   {parts: ['invent', 'ion'], word: 'invention', meaning: 'something that has been invented', wrong: ['a person who invents', 'to invent again'], tip: '-tion (or -ion) turns an action into a thing'},
+   {parts: ['collect', 'ion'], word: 'collection', meaning: 'a group of things that were collected', wrong: ['to collect wrongly', 'without collecting'], tip: '-tion (or -ion) turns an action into a thing'},
+   {parts: ['danger', 'ous'], word: 'dangerous', meaning: 'full of danger', wrong: ['without danger', 'a person in danger'], tip: '-ous means full of'},
+   {parts: ['joy', 'ous'], word: 'joyous', meaning: 'full of joy', wrong: ['without joy', 'joy again'], tip: '-ous means full of'},
+   {parts: ['art', 'ist'], word: 'artist', meaning: 'a person who makes art', wrong: ['full of art', 'without art'], tip: '-ist means a person who does or studies something'},
+   {parts: ['cartoon', 'ist'], word: 'cartoonist', meaning: 'a person who draws cartoons', wrong: ['a show of cartoons', 'not a cartoon'], tip: '-ist means a person who does or studies something'},
+   {parts: ['back', 'ward'], word: 'backward', meaning: 'toward the back', wrong: ['away from the back', 'under the back'], tip: '-ward means in the direction of'},
+   {parts: ['up', 'ward'], word: 'upward', meaning: 'toward a higher place', wrong: ['toward a lower place', 'up again'], tip: '-ward means in the direction of'},
+   {parts: ['multi', 'color'], word: 'multicolor', meaning: 'having many colors', wrong: ['having no color', 'colored wrongly'], tip: 'multi- means many'},
+   {parts: ['multi', 'purpose'], word: 'multipurpose', meaning: 'having many uses', wrong: ['having no use', 'used only once'], tip: 'multi- means many'},
+   {parts: ['dis', 'connect'], word: 'disconnect', meaning: 'to undo a connection', wrong: ['to connect again', 'to connect many things'], tip: 'dis- means not or the opposite of'},
+   {parts: ['re', 'write'], word: 'rewrite', meaning: 'to write again', wrong: ['to write wrongly', 'to write before'], tip: 're- means again'},
+   {parts: ['pre', 'historic'], word: 'prehistoric', meaning: 'from the time before history was written', wrong: ['from the future', 'not historic at all'], tip: 'pre- means before'},
+   {parts: ['un', 'break', 'able'], word: 'unbreakable', meaning: 'not able to be broken', wrong: ['able to be broken again', 'broken many times'], tip: 'un- means not, and -able means able to be'},
+   {parts: ['power', 'less'], word: 'powerless', meaning: 'without power', wrong: ['full of power', 'a person with power'], tip: '-less means without'},
+   {parts: ['peace', 'ful'], word: 'peaceful', meaning: 'full of peace', wrong: ['without peace', 'making peace again'], tip: '-ful means full of'}
+  ]
+ }
+};
+
+const SERIES = [
+{id:'s3-mystery', title:'Nia and Gus: The Case of the Vanishing Cupcakes', icon:'🧁', lvl:3,
+ blurb:'Twelve strawberry cupcakes vanish on bake sale day, and two kid detectives and one sleepy dog must find them!',
+ chapters:[
+  {title:'Crumbs on the Porch',
+   tricky:[['porch table','win-dow-sill','the ledge at the bottom of a window'],['detective','de-tec-tive','a person who solves mysteries'],['delicious','de-li-cious','tastes very, very good'],['whispered','whis-pered','said something very quietly']],
+   pages:[
+    {t:'Nia Brooks and Gus Romero lived on Maple Street. They were best friends and also detectives. Their dog, Pickles, was a detective too. Well, Pickles mostly sniffed things and snored. On Saturday morning, the kids had a big choice to make. They could go to soccer practice, or they could help at the bake sale. "Let\'s help," said Nia. "Mrs. Ochoa needs us." Gus nodded. Mrs. Ochoa made the most delicious strawberry cupcakes in town.',
+     q:'What choice did Nia and Gus make on Saturday morning?', o:['They chose to help at the bake sale','They chose to go to soccer practice','They chose to stay home and sleep'], e:'"Let\'s help," said Nia.', k:'detail'},
+    {t:'When they got to Mrs. Ochoa\'s house, she was standing on her porch. Her face looked worried. "My cupcakes are gone!" she cried. "I set twelve cupcakes on the porch table to cool. Now the cupcakes and the basket are gone." Gus pulled out his notebook. Nia looked closely at the porch table. There were pink crumbs on the ledge. There were more crumbs on the grass below. "A trail!" Nia whispered. Pickles wagged his tail and sniffed the ground.',
+     q:'Why did Nia whisper, "A trail!"?', o:['The crumbs might lead to the cupcakes','She saw a cupcake on the porch','Pickles was fast asleep'], e:'There were more crumbs on the grass below.', k:'inference'},
+    {t:'The crumbs led across the yard to the back fence. Gus bent down. "Look at this," he said. In the mud was a small sneaker print. It had a star on the heel. "This shoe is tiny," said Nia. "It must belong to a little kid." Just then, Pickles began to bark. He pushed his nose under the fence. Something on the other side was moving. Something was rustling in the bushes, and it was coming closer!',
+     q:'What clue made Nia think a little kid was part of the mystery?', o:['A tiny sneaker print in the mud','A blue feather on the fence','A note left on the porch'], e:'"This shoe is tiny," said Nia.', k:'inference'}
+   ],
+   seq:['Nia and Gus choose to help at the bake sale','Mrs. Ochoa says her cupcakes are gone','The kids follow a trail of pink crumbs','Gus finds a small sneaker print by the fence'],
+   sum:['Nia and Gus start solving the case of Mrs. Ochoa\'s missing cupcakes by following a trail of clues.','Pickles the dog likes to sniff things and snore.','Nia and Gus win their soccer game and eat cupcakes.']},
+
+  {title:'The Grumpy Neighbor',
+   tricky:[['embarrassed','em-bar-rassed','feeling silly because others saw a mistake'],['allergic','al-ler-gic','your body gets sick from something'],['grumbled','grum-bled','said something in a cranky, low voice'],['different','dif-fer-ent','not the same']],
+   recall:{q:'In Chapter 1, what did Gus find in the mud by the fence?', o:['A small sneaker print with a star','A big boot print','A squished strawberry cupcake']},
+   pages:[
+    {t:'The rustling stopped. A gray cat jumped out of the bushes and ran away. Pickles sat down, looking a little embarrassed. Nia laughed. "False alarm," she said. On the other side of the fence lived Mr. Grady. He was famous for being grumpy. He yelled when balls rolled into his yard. "Maybe he took the cupcakes," Gus said. "He is always mad at everybody." Nia frowned. "We need proof first," she said. Pickles barked once, as if he agreed.',
+     q:'What was making the rustling sound in the bushes?', o:['A gray cat','Mr. Grady','A little kid'], e:'A gray cat jumped out of the bushes and ran away.', k:'detail'},
+    {t:'Gus wanted to march over and shout, "Give back the cupcakes!" But Nia had a different idea. "Let\'s just ask him nicely," she said. So they knocked on Mr. Grady\'s door. He opened it with a scowl. "What do you want?" he grumbled. Nia smiled. "Sir, Mrs. Ochoa\'s strawberry cupcakes are missing. Did you see anything?" Mr. Grady\'s face got softer. "Strawberries?" he said. "I can\'t eat those. I am allergic. They make me sneeze for days."',
+     q:'Why do you think Mr. Grady\'s face got softer?', o:['Nia spoke to him kindly instead of blaming him','Gus shouted at him','Pickles licked his hand'], e:'"Sir, Mrs. Ochoa\'s strawberry cupcakes are missing. Did you see anything?"', k:'character'},
+    {t:'So Mr. Grady did not take the cupcakes. Gus crossed his name off the list. "I am glad we asked first," he admitted. Mr. Grady scratched his chin. "I did see something strange this morning," he said. "A little kid ran past my window. He was carrying a basket." Nia and Gus looked at each other. Then a loud crash came from Mrs. Ochoa\'s garden shed. The door of the shed was slowly creaking open.',
+     q:'What does the word "admitted" mean on this page?', o:['Said something true, even if it was a little hard','Ran away very fast','Wrote a list in a notebook'], e:'"I am glad we asked first," he admitted.', k:'vocabulary'}
+   ],
+   seq:['A gray cat jumps out of the bushes','Nia decides to ask Mr. Grady nicely','Mr. Grady says he is allergic to strawberries','A loud crash comes from the garden shed'],
+   sum:['By asking politely, Nia and Gus learn that Mr. Grady did not take the cupcakes, but he saw a little kid with a basket.','A gray cat ran out of the bushes.','Mr. Grady stole the cupcakes and hid them in his house.']},
+
+  {title:'The Note in the Shed',
+   tricky:[['flashlight','flash-light','a small lamp you carry in your hand'],['tangled','tan-gled','twisted up and stuck'],['carefully','care-ful-ly','slowly, so nothing goes wrong'],['whoever','who-ev-er','any person at all']],
+   recall:{q:'In Chapter 2, why could Mr. Grady not have eaten the cupcakes?', o:['He is allergic to strawberries','He was at soccer practice','He was away on a trip']},
+   pages:[
+    {t:'Nia and Gus tiptoed toward the shed. Their hearts were pounding. Gus held a flashlight. Nia held her breath. Slowly, she pulled the door all the way open. Inside, Pickles was tangled in a garden hose! A rake had fallen on the floor. Pickles looked up and wagged his tail. "Pickles!" Gus groaned. "You scared us!" Nia giggled. Their brave detective dog had gotten himself stuck again. She helped him wiggle free. Then she noticed something on the shelf.',
+     q:'What most likely made the loud crash in the shed?', o:['Pickles knocked over a rake','Mr. Grady dropped a box','A raccoon broke a window'], e:'A rake had fallen on the floor.', k:'inference'},
+    {t:'On the shelf sat a glass jar. Inside the jar were coins, three buttons, and a folded note. Nia carefully opened the note. The writing was big and wobbly. It said, "Sorry. I took two cupcakes. I will pay you back. From B." Gus read it twice. "Two cupcakes?" he said. "But twelve are missing. And who is B?" Nia tapped her chin. "Whoever B is," she said, "they feel bad about it." The big, wobbly letters gave her an idea.',
+     q:'What can you tell about B from the note?', o:['B feels sorry and wants to make it right','B is proud of taking the cupcakes','B plans to take more cupcakes'], e:'"they feel bad about it."', k:'character'},
+    {t:'Gus made a list in his notebook. Clue one was the tiny sneaker print with a star. Clue two was the big, wobbly writing. Clue three was the letter B. "A little kid wrote this," said Nia. "Somebody who is still learning to write." Gus snapped his fingers. "I know a little kid whose name starts with B!" Just then, they heard a small voice outside the shed. "Is anybody in there?" the voice asked.',
+     q:'What is the main idea of this page?', o:['The kids put their clues together to figure out who B might be','Gus likes to write in his notebook','The shed is too dark to see inside'], e:'"A little kid wrote this," said Nia.', k:'main idea'}
+   ],
+   seq:['The kids open the shed door','They find Pickles tangled in a hose','Nia reads a note from someone named B','The kids hear a small voice outside'],
+   sum:['In the shed, Nia and Gus find a note from someone named B and use their clues to guess that B is a little kid.','Pickles got tangled in a garden hose.','The kids find all twelve cupcakes hidden in the shed.']},
+
+  {title:'Benny Tells the Truth',
+   tricky:[['hospital','hos-pi-tal','a place where sick people get care'],['sniffled','snif-fled','sniffed like someone about to cry'],['honest','hon-est','telling the truth'],['remembered','re-mem-bered','thought about something from before']],
+   recall:{q:'In Chapter 3, what did the note in the jar say B took?', o:['Two cupcakes','The whole basket','Mrs. Ochoa\'s rake']},
+   pages:[
+    {t:'Standing outside the shed was Benny Lee. He was six years old and lived across the street. He wore blue sneakers with stars on the heels. His lip was shaking. Gus opened his mouth to say, "Gotcha!" Then he stopped. Benny looked scared, not sneaky. Gus remembered how well it went when they were kind to Mr. Grady. So he knelt down instead. "Hi, Benny," he said softly. "Do you want to tell us something?"',
+     q:'Why did Gus decide to be gentle with Benny?', o:['He remembered that being kind worked with Mr. Grady','He was too tired to talk loudly','Nia told him to go home'], e:'Gus remembered how well it went when they were kind to Mr. Grady.', k:'character'},
+    {t:'Benny sniffled. "My grandpa is in the hospital," he said. "He loves strawberry cupcakes more than anything. I saw the basket on the grass by the fence. I only took two for Grandpa. Then I put the basket by the shed and left a note." He held up his piggy bank. "I want to pay Mrs. Ochoa back." Nia smiled. "That was honest of you, Benny," she said. "But we still have ten cupcakes to find."',
+     q:'Why did Benny take two cupcakes?', o:['To give to his grandpa in the hospital','To eat them all by himself','To sell them at the bake sale'], e:'I only took two for Grandpa.', k:'detail'},
+    {t:'The three of them walked back to the shed. Benny pointed to a spot on the ground. "I left the basket right here," he said. But the basket was gone! Gus looked at Nia. Nia looked at Benny. Benny shrugged. Then Nia noticed something new. There was another trail of pink crumbs. These crumbs did not lead to a sneaker print. They led to big, round paw prints, and the paw prints went straight toward Gus\'s backyard.',
+     q:'Who most likely moved the basket this time?', o:['An animal, maybe a dog','Benny','Mrs. Ochoa'], e:'They led to big, round paw prints', k:'inference'}
+   ],
+   seq:['Benny appears outside the shed','Gus kneels down and speaks kindly','Benny explains he took two cupcakes for his grandpa','Nia finds paw prints leading to Gus\'s backyard'],
+   sum:['Benny admits he took two cupcakes for his sick grandpa, and a new trail of paw prints shows who may have the rest.','Benny has blue sneakers with stars on them.','Benny took all twelve cupcakes and ate them.']},
+
+  {title:'The Real Cupcake Thief',
+   tricky:[['wonderful','won-der-ful','very, very good'],['measured','meas-ured','found out how much of something'],['success','suc-cess','something that goes really well'],['explained','ex-plained','told how or why something happened']],
+   recall:{q:'In Chapter 4, why did Benny take the two cupcakes?', o:['For his grandpa in the hospital','For his teacher at school','For his pet hamster']},
+   pages:[
+    {t:'The kids followed the paw prints into Gus\'s backyard. The prints ended at the doghouse. Gus got down on his knees and peeked inside. There sat the basket! Ten cupcakes were tucked inside, safe and sound. Next to it, Pickles was licking crumbs off his nose. "Pickles!" Gus cried. "You were the thief all along!" Pickles thumped his tail. Benny laughed so hard he fell over. Even Gus had to giggle. Their detective dog had solved the case by causing it.',
+     q:'What is the main idea of this page?', o:['The kids discover that Pickles took the basket of cupcakes','Benny laughs so hard he falls over','The doghouse is in Gus\'s backyard'], e:'"You were the thief all along!"', k:'main idea'},
+    {t:'They carried the basket back to Mrs. Ochoa. Nia explained everything. Benny held out his piggy bank. "I am sorry I took two cupcakes," he said. "They were for my grandpa." Mrs. Ochoa knelt down and hugged him. "Keep your money," she said. "You told the truth. That is worth more than cupcakes." Then she had an idea. "Would you three like to help me bake a new batch? We can make extra for your grandpa."',
+     q:'How did Benny\'s choice to tell the truth change things for him?', o:['Mrs. Ochoa forgave him and invited him to bake','Mrs. Ochoa made him pay for the cupcakes','Mrs. Ochoa told him to go home'], e:'"You told the truth. That is worth more than cupcakes."', k:'character'},
+    {t:'That afternoon, the kitchen smelled wonderful. Nia measured the flour. Gus stirred the batter. Benny dropped in the strawberries, one by one. Even Mr. Grady stopped by to help carry trays, though he did not taste a single bite. The bake sale was a giant success. Later, Benny took a whole box of cupcakes to his grandpa. Gus closed his notebook. "Case closed," he said. Pickles was not allowed near the kitchen ever again.',
+     q:'Why did Mr. Grady not taste the cupcakes?', o:['He is allergic to strawberries','He thought they tasted bad','He was too busy selling them'], e:'though he did not taste a single bite', k:'inference'}
+   ],
+   seq:['The kids find the basket in Pickles\'s doghouse','Benny says sorry to Mrs. Ochoa','Everyone bakes a new batch of cupcakes','Benny brings cupcakes to his grandpa'],
+   sum:['The kids learn Pickles took the basket, Benny is forgiven for telling the truth, and everyone bakes cupcakes together.','Nia measured the flour for the cupcakes.','Mr. Grady was the real thief and had to pay for the cupcakes.']}
+ ]},
+
+{id:'s5-friends', title:'Room for Three', icon:'🌳', lvl:5,
+ blurb:'Jonah thinks his tree house only has room for two best friends, until a new neighbor, a storm, and his grandfather\'s old secret change his mind.',
+ chapters:[
+  {title:'The Rule of Two',
+   tricky:[['permanent','per-ma-nent','lasting forever, never changing'],['particular','par-tic-u-lar','one special or specific one'],['announced','an-nounced','told everyone something important'],['privacy','pri-va-cy','being alone, away from others']],
+   pages:[
+    {t:'Jonah Reyes and Felix Okafor had built the tree house in the old maple behind Jonah\'s house the summer they were nine. Two summers later, it was still the most important place in Jonah\'s world. Painted on the trapdoor, in letters that had faded to pale orange, was their one and only rule: MEMBERS ONLY, TWO MAXIMUM. Felix had suggested it as a joke, but Jonah had taken it seriously. To him, the rule meant something permanent. People changed schools, teachers, and haircuts, but the tree house stayed the same. Every Saturday, the boys climbed up with a bag of pretzels and a stack of comic books, and nothing interrupted them. At least, nothing had until this particular Saturday.',
+     q:'What does the rule on the trapdoor show about Jonah?', o:['He wants things in his life to stay the same','He wants to meet as many new people as possible','He does not really care about the tree house'], e:'To him, the rule meant something permanent.', k:'character'},
+    {t:'That morning, Jonah\'s mom had announced that Pop, Jonah\'s grandfather, was moving in. Pop had lived alone in a small apartment across town since Grandma died, but lately he had been forgetting to eat lunch and leaving the stove on. "He needs family nearby," Mom explained gently. "And he\'ll need your room, Jonah. You can share with your little brother." Jonah stared at his cereal until it turned soggy. He loved Pop, but Pop was quiet and old-fashioned, and he smelled like peppermints and motor oil. Jonah never knew what to say to him. Now he was losing his room, his privacy, and maybe his Saturday mornings, all at once.',
+     q:'Why is Pop moving in with Jonah\'s family?', o:['He has been forgetting things and needs family nearby','He wants to help build the tree house','His apartment was much too big for him'], e:'"He needs family nearby," Mom explained gently.', k:'detail'},
+    {t:'By noon, Pop\'s boxes filled the hallway. Jonah escaped to the tree house and waited for Felix, who was late. When Felix finally appeared at the bottom of the ladder, he was not alone. Beside him stood a girl Jonah had never seen before. She had a backpack covered in patches and a toolbox in one hand. "This is Priya," Felix called up cheerfully. "She just moved in next door to me. She knows how to wire lights, Jonah. Real lights! Can she come up?" Jonah looked down at the two of them. Then he looked at the faded orange letters on the trapdoor. His hand tightened on the edge of the floorboards.',
+     q:'Why does the author end the chapter with Jonah looking at the faded letters?', o:['To build suspense about whether he will follow the rule','To describe what color the tree house is painted','To show that Jonah is planning to repaint the trapdoor'], e:'Then he looked at the faded orange letters on the trapdoor.', k:'inference'}
+   ],
+   seq:['Jonah and Felix follow their two-member rule each Saturday','Mom announces that Pop is moving in','Pop\'s boxes fill the hallway','Felix brings Priya to the tree house'],
+   sum:['Jonah, who wants everything to stay the same, faces two big changes when Pop moves in and Felix brings a new friend to the tree house.','The tree house rule is painted in faded orange letters.','Jonah happily gives Pop his room and invites Priya up right away.']},
+
+  {title:'Two Maximum',
+   tricky:[['easygoing','eas-y-go-ing','relaxed and not easily upset'],['disappeared','dis-ap-peared','went out of sight'],['maximum','max-i-mum','the most allowed'],['understanding','un-der-stand-ing','knowing what something means']],
+   recall:{q:'In Chapter 1, what was Priya carrying when she arrived at the tree house?', o:['A toolbox','A bag of pretzels','A stack of comic books']},
+   pages:[
+    {t:'"Sorry," Jonah said, and his voice came out harder than he meant it to. "Members only. Two maximum. You know the rule." Felix laughed, waiting for Jonah to laugh too. When he didn\'t, Felix\'s smile slowly disappeared. Priya shifted her toolbox to her other hand and studied the grass. "It\'s fine," she said quietly. "I should finish unpacking anyway." "No, wait," Felix said. He squinted up at Jonah. "That rule was a joke, man. I made it up when we were nine." "Well, I didn\'t think it was a joke," Jonah replied. The words hung in the air between them like a rope pulled too tight, ready to snap. Neither of them said anything for a long, awful moment.',
+     q:'What does the simile "like a rope pulled too tight" suggest about the friendship?', o:['The friendship is tense and could break','The boys are about to play tug-of-war','Jonah needs a new rope for the ladder'], e:'like a rope pulled too tight, ready to snap', k:'vocabulary'},
+    {t:'Felix was usually the most easygoing person Jonah knew. He never stayed angry for more than five minutes, and he shared his snacks with anybody who asked. So it surprised Jonah when Felix crossed his arms. "You know what, Jonah? You\'re acting like the tree house is a castle and you\'re the king," Felix said. "Priya is nice. You haven\'t even said hello to her." Jonah felt his face burn. He knew Felix was partly right, which only made him angrier. "Then go hang out at her house," he snapped. Felix stared at him for a long moment. Then he turned and walked away with Priya, and he did not look back.',
+     q:'Why is it surprising that Felix crosses his arms and argues?', o:['Felix is usually easygoing and rarely gets angry','Felix is always grumpy with everyone','Felix has never liked the tree house'], e:'Felix was usually the most easygoing person Jonah knew.', k:'character'},
+    {t:'Jonah stayed in the tree house all afternoon, reading the same comic book three times without understanding a single page. He told himself he was glad to have the place to himself. That was the whole point of the rule, wasn\'t it? But the tree house felt larger and emptier than it ever had. At dinner, Pop tried to ask him about school, and Jonah answered with one-word replies until Pop gave up. The next morning, Jonah biked past Felix\'s street on his way to the store. He slowed down when he heard hammering. In Priya\'s backyard, Felix and Priya were nailing boards together, building something big, and they were both laughing.',
+     q:'What does the tree house feeling "larger and emptier" show about Jonah?', o:['He misses Felix more than he wants to admit','He thinks the tree house needs more furniture','He is truly happy to be alone'], e:'But the tree house felt larger and emptier than it ever had.', k:'character'}
+   ],
+   seq:['Jonah refuses to let Priya come up','Felix tells Jonah he is acting like a king','Felix walks away with Priya','Jonah sees Felix and Priya building together'],
+   sum:['Jonah\'s refusal to share the tree house causes an argument that pushes Felix away and toward Priya.','Jonah reads the same comic book three times.','Felix agrees with Jonah and tells Priya to go home.']},
+
+  {title:'Pop\'s Radio',
+   tricky:[['magnifying','mag-ni-fy-ing','making something look bigger'],['patiently','pa-tient-ly','calmly, without hurrying or getting upset'],['regret','re-gret','to feel sorry about something you did'],['envelopes','en-ve-lopes','paper covers that hold letters']],
+   recall:{q:'In Chapter 2, what did Jonah see when he biked past Priya\'s backyard?', o:['Felix and Priya building something and laughing','Felix sitting alone and looking sad','Priya painting a new rule on a trapdoor']},
+   pages:[
+    {t:'For three days, Jonah avoided everyone. He took the long way to the bus stop so he would not pass Felix\'s street, and he ate lunch in the library. At home, he stayed out of Pop\'s way. On the fourth evening, Pop knocked on the doorframe of the room Jonah now shared with his little brother, Mateo. In his hands was an old radio with a cracked wooden case. "This was my father\'s," Pop said. "It hasn\'t worked in years. My eyes aren\'t good enough for the tiny parts anymore. Would you help me?" Jonah almost said no. Then he noticed how carefully Pop was holding it, as if it were a sleeping bird.',
+     q:'What does the comparison to "a sleeping bird" tell the reader about the radio?', o:['It is precious and fragile to Pop','It makes chirping noises when it plays','It actually belongs to Mateo'], e:'as if it were a sleeping bird', k:'vocabulary'},
+    {t:'They worked at the kitchen table with a magnifying glass and a set of tiny screwdrivers. Pop explained each part patiently, never once hurrying Jonah, even when he dropped a screw on the floor for the third time. As they worked, Pop began to talk. He told Jonah about Walt, his best friend from when he was a boy. "We did everything together," Pop said. "Fished, built go-karts, fixed engines. Then Walt met a fellow named Henry at work, and suddenly it was the three of them. I didn\'t like that one bit." Pop tightened a wire. "So I said some things I regret. Walt stopped calling. That was fifty years ago."',
+     q:'How is Pop\'s story about Walt similar to Jonah\'s problem?', o:['Both were jealous when a best friend made a new friend','Both of them loved going fishing','Both of them broke an old radio'], e:'and suddenly it was the three of them. I didn\'t like that one bit.', k:'character'},
+    {t:'Jonah didn\'t say anything, but he listened harder than he had listened to anyone in weeks. Finally, Pop connected the last wire and turned the dial. At first there was only crackling static. Then, faintly, a trumpet came through, playing an old song. Pop closed his eyes and smiled. Later that night, Jonah went to the garage to return the screwdrivers to Pop\'s toolbox. Underneath the tray, he found a bundle of envelopes tied with string. The top one was addressed to Pop in shaky handwriting. The return address said Walter Dunn. Jonah turned it over. The envelope had never been opened, and the postmark was from just last spring.',
+     q:'Why might Pop have never opened Walt\'s letter?', o:['He may be afraid of what Walt wrote','He did not have time to read his mail','He thought it was a bill from the bank'], e:'The envelope had never been opened', k:'inference'}
+   ],
+   seq:['Jonah avoids Felix and Pop for three days','Pop asks Jonah to help fix an old radio','Pop tells Jonah about his lost friend Walt','Jonah finds an unopened letter from Walt'],
+   sum:['While fixing a radio, Pop shares how jealousy cost him his best friend, and Jonah discovers an unopened letter from that friend.','Pop and Jonah used a magnifying glass and tiny screwdrivers.','Pop tells Jonah to stop being friends with Felix.']},
+
+  {title:'The Unopened Letter',
+   tricky:[['apology','a-pol-o-gy','words that say you are sorry'],['protecting','pro-tect-ing','keeping something safe from harm'],['argument','ar-gu-ment','an angry talk where people disagree'],['lightning','light-ning','a bright flash in the sky during storms']],
+   recall:{q:'In Chapter 3, who was Walt?', o:['Pop\'s best friend from when he was a boy','Jonah\'s new science teacher','Priya\'s older brother']},
+   pages:[
+    {t:'Jonah carried the envelope inside and set it on the table in front of Pop. For a long moment, Pop just looked at it. "Walt wrote you last spring," Jonah said. "Why didn\'t you open it?" Pop rubbed his thumb across the shaky handwriting. "Because I was a coward," he admitted. "I figured it was either an apology or an argument. If it was an apology, I would have to admit I was wrong too. If it was an argument, I would lose him all over again." He set the letter down. "Pride is a funny thing, Jonah. It feels like strength, but mostly it just keeps you lonely." Jonah felt the words land somewhere deep inside him.',
+     q:'What does Pop mean when he says pride "keeps you lonely"?', o:['Being too proud to admit mistakes can push people away','Proud people prefer to live alone','Pride makes you stronger than your friends'], e:'It feels like strength, but mostly it just keeps you lonely.', k:'main idea'},
+    {t:'Jonah lay awake that night listening to Mateo snore. He kept thinking about the faded letters on the trapdoor and about Felix\'s face when Jonah said the rule wasn\'t a joke. He had told himself that he was protecting the tree house. Now he wondered whether he had really been protecting himself, from the fear that Felix would like Priya better. At breakfast, Jonah tore a page from his notebook and wrote a note. It was short, because every longer version sounded wrong. "I was a jerk. I\'m sorry. The rule was dumb. Jonah." He slipped it into Felix\'s mailbox on his way to school, his heart thudding the whole time.',
+     q:'How has Jonah changed since Chapter 2?', o:['He realizes he was wrong and decides to apologize','He decides to put a lock on the tree house','He becomes even angrier at Felix'], e:'"I was a jerk. I\'m sorry. The rule was dumb. Jonah."', k:'character'},
+    {t:'Felix did not answer that day, or the next. Jonah checked his own mailbox so many times that Mateo started teasing him about it. Maybe Pop had been right to be afraid, Jonah thought. Maybe some things could not be fixed once they were broken. On Friday night, a storm rolled in. Thunder shook the windows, and wind howled through the backyard. Jonah sat at the window with Pop, watching the maple tree bend and sway. Then, with a crack louder than any thunder, a huge branch split away from the trunk. In the next flash of lightning, Jonah saw the tree house tilting sideways, half its floor hanging in the air.',
+     q:'Why might the author have the storm break the tree house right after Jonah worries about broken things?', o:['It makes Jonah\'s fear feel real and raises the stakes','It shows that Felix has finally answered the note','It makes the ending feel calm and peaceful'], e:'Maybe some things could not be fixed once they were broken.', k:'inference'}
+   ],
+   seq:['Jonah asks Pop why he never opened the letter','Pop explains how pride kept him lonely','Jonah writes an apology note to Felix','A storm breaks the tree house'],
+   sum:['After Pop admits that pride kept him from his friend, Jonah apologizes to Felix, but then a storm wrecks the tree house.','Mateo snores loudly at night.','Felix answers Jonah\'s note right away, and they fix the tree house together.']},
+
+  {title:'Room for Three',
+   tricky:[['splintered','splin-tered','broken into sharp, thin pieces'],['practicing','prac-tic-ing','doing something again to get better'],['finally','fi-nal-ly','at last, after a long wait'],['rebuilt','re-built','built again after it broke']],
+   recall:{q:'In Chapter 4, what did Jonah write in his note to Felix?', o:['That he was sorry and the rule was dumb','That Felix could never come back','That Pop wanted to meet Priya']},
+   pages:[
+    {t:'In the morning, the backyard was a mess of leaves and splintered boards. Jonah stood at the bottom of the maple, staring at what was left of the tree house. The trapdoor lay in the mud, its orange letters facing the sky. He was trying not to cry when he heard footsteps. Felix was walking up the driveway. Priya was right behind him, carrying her patched backpack and her toolbox. "I got your note," Felix said. "Sorry I took so long. I was still kind of mad." He looked up at the broken floor. "Priya and I have been practicing on her shed. We figured you might need some help."',
+     q:'What does Felix\'s choice to come and help show about him?', o:['He is forgiving and still cares about Jonah','He wants to take over the tree house','He is still too angry to talk'], e:'We figured you might need some help.', k:'character'},
+    {t:'Jonah swallowed hard. He turned to Priya. "I\'m sorry I didn\'t even say hello," he said. "That wasn\'t fair to you." Priya shrugged, but she was smiling. "I\'ve moved four times," she said. "Everybody is weird about new people at first." Then Pop came out of the house in his old work boots, carrying his own toolbox. All weekend, the four of them rebuilt the tree house. Pop showed them how to brace the beams so the next storm would not knock them loose. Priya wired a string of lights along the roof. When they finished, the new floor was wider than before, wide enough for three, or even four.',
+     q:'Why might the author make the new floor wider than the old one?', o:['To show the friendship now has room for more people','Because the old wood was too heavy','To give Pop a place to sleep'], e:'the new floor was wider than before, wide enough for three, or even four', k:'inference'},
+    {t:'That evening, Felix found the old trapdoor in the mud and held it up. "What should we do with the rule?" he asked. Jonah thought for a moment. Then he took a can of paint and wrote across the faded letters in bright blue: ALWAYS ROOM FOR ONE MORE. Inside the house, Pop was sitting at the kitchen table with the radio playing softly. In his hand was Walt\'s letter, finally open. He looked up as Jonah came in, his eyes shining. "Walt says he has been wanting to call for years," Pop said, reaching for the phone. "I think it\'s time I let him." Out in the yard, the new lights in the tree house flickered on, one by one.',
+     q:'How does the new rule show how Jonah has changed?', o:['He now welcomes others instead of keeping them out','He wants the tree house to be private again','He thinks only Pop should be allowed inside'], e:'ALWAYS ROOM FOR ONE MORE', k:'character'}
+   ],
+   seq:['Felix and Priya arrive to help','Jonah apologizes to Priya','Everyone rebuilds the tree house with a wider floor','Jonah paints a new rule and Pop opens Walt\'s letter'],
+   sum:['Jonah\'s friendships are repaired as Felix and Priya help rebuild a bigger tree house, and Pop finally reaches out to Walt.','Priya wired a string of lights along the roof.','Jonah decides to tear down the tree house forever.']}
+ ]}
+];
+
+
+// ---------- Daily reading minutes (matches the class reading logs) ----------
+function goalOf(p){ return p.goal || (p.grade >= 5 ? 20 : 15); }
+function minsToday(p){ return Math.floor(((p.daily||{})[today()]||0)); }
+function addMinutes(m){
+  const p = me(); if (!p || !(m > 0)) return;
+  m = Math.min(m, 15); // one sitting never counts more than 15 minutes (a page left open is not reading)
+  p.minutes = (p.minutes||0) + m; p.daily = p.daily || {};
+  const t = today(); p.daily[t] = (p.daily[t]||0) + m; save();
+  if (p.goalPaid !== t && minsToday(p) >= goalOf(p)){ p.goalPaid = t; save(); giveTickets(1); addCoins(10, 'daily goal!'); confetti(50); }
+}
+function ringSvg(p){
+  const done = Math.min(1, minsToday(p)/goalOf(p)), r = 26, c = 2*Math.PI*r;
+  return `<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--soft)" stroke-width="8"/>
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--good)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${c*done} ${c}" transform="rotate(-90 32 32)"/>
+    <text x="32" y="37" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)" font-family="Baloo 2, sans-serif">${minsToday(p)}</text></svg>`;
+}
+
+// ---------- Word bank: the words this reader actually struggles with ----------
+const BANK_SKIP = new Set('the and a an to of in is it was he she they you i we on at for with his her that this but not are be as had have said from or one all were so up out can no if my me do did what when there then them some him its our your'.split(' '));
+function bankKey(w){ return String(w).toLowerCase().replace(/[’']s$/,'').replace(/[^a-z]/g,''); }
+function bankAdd(w){
+  const p = me(); if (!p) return; const k = bankKey(w);
+  if (k.length < 4 || BANK_SKIP.has(k)) return;
+  p.bank = p.bank || {}; const b = p.bank[k] || (p.bank[k] = {n:0, ok:0, d:today()});
+  b.n++; b.ok = 0; b.d = today(); save();
+}
+function bankOk(w){
+  const p = me(), k = bankKey(w); if (!p || !p.bank || !p.bank[k]) return;
+  p.bank[k].ok++;
+  if (p.bank[k].ok >= 3){ delete p.bank[k]; p.mastered = (p.mastered||0) + 1; floatText('Mastered: ' + k + '!'); }
+  save();
+}
+function bankWords(p){ const b = p.bank || {}; return Object.keys(b).sort((x,y) => b[y].n - b[x].n); }
+
+// ---------- Today's Quest ----------
+function questToday(p){ p.quest = p.quest || {}; return p.quest[today()] || {}; }
+function questItems(p){
+  const q = questToday(p), f = p.focus || {}, ch = nextChapter(p);
+  const items = [
+    {k:'gym', icon:'🏋️', label:'Fluency Gym: read one passage 3 times', run:()=>go({name:'gym'})},
+    {k:'story', icon:'📖', label: ch && !ch.locked ? `Read today's chapter of ${ch.se.title}` : 'Read a story', run:()=> ch && !ch.locked ? go({name:'intro', id:ch.story.id}) : go({name:'library', tab:'rec'})}];
+  if (vaultDue().length || q.vault) items.push({k:'vault', icon:'🔐', label:'Open the Memory Vault', run:()=>go({name:'vault', items:shuffle(vaultDue()).slice(0,6), i:0})});
+  if (f.phonics) items.push({k:'smash', icon:'🔨', label:'Syllable Smash with your tricky words (free play)', run:()=>startGame('smash', true)});
+  if (f.vocab) items.push({k:'parts', icon:'🧩', label:'Word Parts (free play)', run:()=>startGame('parts', true)});
+  return items.map(i => Object.assign(i, {done: !!q[i.k]}));
+}
+function questMark(k){
+  const p = me(); if (!p) return; p.quest = p.quest || {}; const t = today();
+  for (const d of Object.keys(p.quest)) if (d < addDays(-14)) delete p.quest[d];
+  const q = p.quest[t] || (p.quest[t] = {});
+  if (q[k]) return; q[k] = true; save();
+  const items = questItems(p);
+  if (items.some(i => i.k === k) && items.every(i => i.done) && !q.paid){ q.paid = true; save(); giveTickets(1); addCoins(20, 'quest complete!'); confetti(90); }
+}
+
+// ---------- Chapter books (one chapter a day) ----------
+let _chapters = null;
+function chapterStories(){
+  if (_chapters) return _chapters;
+  _chapters = SERIES.flatMap(se => se.chapters.map((c, n) => ({
+    id: se.id + '-c' + (n+1), title: `${se.title}, Chapter ${n+1}: ${c.title}`, icon: se.icon, cat:'series', lvl: se.lvl,
+    tricky: c.tricky, pages: c.pages, seq: c.seq, sum: c.sum, recall: c.recall, series: se.id, chap: n, chapters: se.chapters.length,
+    prevSum: n ? se.chapters[n-1].sum[0] : null})));
+  return _chapters;
+}
+function seriesState(p, sid){ p.series = p.series || {}; return p.series[sid] || {ch:0, d:''}; }
+function chapterInfo(p, se){
+  const st = seriesState(p, se.id), n = st.ch;
+  if (n >= se.chapters.length) return {se, done:true, n};
+  return {se, n, locked: n > 0 && st.d >= today(), story: chapterStories().find(c => c.id === se.id + '-c' + (n+1))};
+}
+function seriesFor(p){ return SERIES.filter(se => p.grade >= 5 ? se.lvl >= 4 : se.lvl <= 4); }
+function nextChapter(p){ const list = seriesFor(p).map(se => chapterInfo(p, se)).filter(c => !c.done); return list.find(c => !c.locked) || list[0] || null; }
+function vSeries(){
+  const p = me(), se = SERIES.find(x => x.id === view.id); if (!se){ go({name:'library'}); return; }
+  const st = seriesState(p, se.id), info = chapterInfo(p, se);
+  app.innerHTML = `${topbar(()=>go({name:'library', tab:'series'}))}
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+    <div class="row"><span class="big-emoji">${se.icon}</span><div><h1>${esc(se.title)}</h1><p class="mut">${esc(se.blurb||'')}</p></div></div>
+    <p class="notice">A new chapter unlocks each day. Every chapter starts with a question about the one before, so remember what happens!</p></div>
+  <div class="opts">${se.chapters.map((c, n) => {
+    const s = chapterStories().find(x => x.id === se.id + '-c' + (n+1));
+    const done = n < st.ch, now = n === st.ch && !info.done, open = done || (now && !info.locked);
+    return `<button class="opt chap ${done?'right':''}" ${open?'':'disabled'} data-a="${A(()=>go({name:'intro', id:s.id}))}">
+      <b>Chapter ${n+1}: ${esc(c.title)}</b><span class="mut">${done ? '✓ Read' : now ? (info.locked ? '🔒 Unlocks tomorrow' : '⭐ Ready to read') : '🔒 Locked'}</span></button>`; }).join('')}</div>
+  ${info.done ? `<p class="result">🏆 You finished the whole book!</p>` : ''}`;
+}
+
+// ---------- Fluency Gym: repeated reading ----------
+const gymT = {timer:null};
+function gymStopTimer(){ clearInterval(gymT.timer); gymT.timer = null; }
+function gymPassage(p, avoid){
+  const lv = s => p.grade >= 5 ? s.lvl >= 4 : s.lvl <= 4;
+  const all = allStories().concat(chapterStories()).filter(s => lv(s) && !s.custom);
+  const read = all.filter(s => p.done[s.id]);
+  const pool = (read.length ? read : all).flatMap(s => s.pages.map((pg, i) => ({s:s.id, i, t:pg.t, title:s.title}))).filter(x => !avoid || x.t !== avoid);
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function vGym(){
+  const p = me(), v = view;
+  if (!v.psg){ v.psg = gymPassage(p); v.reads = []; v.mode = v.mode || ((SR && !micBlocked) ? 'mic' : 'grown'); v.errs = new Set(); v.run = false; }
+  const words = v.words = wordsOf(v.psg.t);
+  const n = v.reads.length, finished = n >= 3, max = Math.max(1, ...v.reads);
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="row spread"><h1>🏋️ Fluency Gym</h1><span class="chip">Read ${Math.min(n+1,3)} of 3</span></div>
+    <p>Read this passage <b>out loud three times</b>. Each time, try to read a little smoother and faster, like you're talking.</p>
+    ${n === 0 && !v.run ? `<div class="modes"><button class="${v.mode==='mic'?'on':''}" ${SR && !micBlocked ? '' : 'disabled'} data-a="${A(()=>{v.mode='mic'; render();})}">🎤 The microphone listens</button>
+      <button class="${v.mode==='grown'?'on':''}" data-a="${A(()=>{v.mode='grown'; render();})}">🧑 A grown-up listens</button></div>
+      ${v.mode==='grown' ? `<p class="mut" style="font-size:.9rem">Grown-up: tap Start, then tap any word read wrong (it turns red). Tap Done at the end.</p>` : ''}` : ''}
+  </div>
+  <div class="card"><p class="mut" style="margin-bottom:8px">From: ${esc(v.psg.title)}</p>
+    <p class="passage" id="passage">${words.map((w,i) => (i ? (v.psg.t.slice(words[i-1].end, w.at).includes('\n') ? '<br>' : ' ') : '') + `<span class="w${v.errs.has(i)?' err':''}" data-i="${i}">${esc(w.raw)}</span>`).join('')}</p></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="gchart">${[0,1,2].map(i => `<div class="gbar"><i style="height:${v.reads[i] ? Math.round(v.reads[i]/max*100) : 0}%"></i><b>${v.reads[i] ? v.reads[i] : '–'}</b><span>Read ${i+1}</span></div>`).join('')}</div>
+    <p class="mut" style="text-align:center;font-size:.9rem">Words read correctly per minute</p>
+    <div id="micOut"></div>
+    ${finished ? `<div class="result">${v.reads[2] > v.reads[0] ? `You got <b>${v.reads[2]-v.reads[0]} words a minute faster</b> from your first read to your last! 💪` : 'Great practice! Reading the same words again makes them easier every time.'}</div>
+      <div class="row"><button class="btn" data-a="${A(()=>go({name:'gym'}))}">New passage</button><button class="btn ghost" data-a="${A(()=>go({name:'hub'}))}">Done</button></div>`
+    : `<div class="ctrl">${v.run ? `<span id="micState" class="mut">${v.mode==='mic' ? '' : '⏱ Reading… grown-up taps any word read wrong'}</span><button class="btn" data-a="${A(()=>gymDone())}">✓ Done reading</button>`
+        : `<button class="btn sun" data-a="${A(gymStart)}">▶ Start read ${n+1}</button>${n===0?`<button class="btn ghost small" data-a="${A(()=>{v.psg=gymPassage(p, v.psg.t); render();})}">Different passage</button>`:''}`}</div>`}
+  </div>`;
+  document.getElementById('passage').addEventListener('click', e => {
+    const w = e.target.closest('.w'); if (!w) return; const i = +w.dataset.i;
+    if (v.run && v.mode === 'grown'){ if (v.errs.has(i)) v.errs.delete(i); else v.errs.add(i); w.classList.toggle('err'); }
+    else if (!v.run) wordHelp(i, w);
+  });
+}
+function gymStart(){
+  const v = view; v.run = true; v.errs = new Set(); v.t0 = Date.now(); render();
+  if (v.mode === 'mic'){ view.onMicDone = secs => gymDone(secs); startMic(); }
+}
+function gymDone(secsIn){
+  const v = view, p = me(); if (!v.run) return;
+  const secs = Math.max(5, secsIn || (Date.now() - (v.mode==='mic' && mic.t0 ? mic.t0 : v.t0))/1000);
+  const n = v.mode === 'mic' ? (mic.ptr || v.words.length) : v.words.length;
+  stopMic(); v.run = false; view.onMicDone = null;
+  v.errs.forEach(i => bankAdd(v.words[i].raw));
+  const w = Math.max(0, Math.round((n - v.errs.size) / (secs/60)));
+  v.reads.push(w); addMinutes(secs/60);
+  addCoins(5, 'read ' + v.reads.length);
+  if (v.reads.length === 3){
+    p.gym = p.gym || []; p.gym.push({d:today(), w:v.reads.slice(), m:v.mode, s:v.psg.s}); if (p.gym.length > 60) p.gym.shift();
+    p.wpm.push({d:today(), w:v.reads[0], how:'gym'}); if (p.wpm.length > 60) p.wpm.shift();
+    save(); if (v.reads[2] > v.reads[0]){ addCoins(10, 'faster!'); confetti(60); }
+    questMark('gym');
+  }
+  render();
+}
+
+// ---------- Monthly check-in: a one-minute cold read ----------
+const BENCH = {2:[50,84,100], 3:[83,97,112], 4:[94,120,133], 5:[121,133,146], 6:[132,145,146]}; // Hasbrouck & Tindal (2017), 50th percentile words correct per minute: fall, winter, spring
+function season(d){ const m = +d.slice(5,7); return (m >= 8 && m <= 11) ? 0 : (m === 12 || m <= 2) ? 1 : 2; }
+function benchFor(grade, d){ const b = BENCH[Math.max(2, Math.min(6, grade))]; return b[season(d)]; }
+function checkDue(p){ const m = today().slice(0,7); return !(p.checks||[]).some(c => c.d.slice(0,7) === m); }
+function vCheckin(){
+  const p = me(), v = view;
+  if (!v.psg){ const list = EXTRA.checkin[p.grade >= 5 ? 5 : 3] || []; v.psg = list[(p.checks||[]).length % Math.max(1, list.length)]; v.mode = v.mode || 'grown'; v.errs = new Set(); v.stage = 'ready'; v.left = 60; }
+  if (!v.psg){ app.innerHTML = `<p>No check-in passage is available.</p>`; return; }
+  const words = v.words = wordsOf(v.psg.t);
+  app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'grownups'}))}">← Grown-ups</button></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+    <div class="row spread"><h1>Monthly check-in: ${esc(p.name)}</h1><span class="chip" style="font-size:1.2rem">⏱ <b id="ckT">${v.left}</b>s</span></div>
+    ${v.stage==='ready' ? `<p>${esc(p.name)} reads this new passage out loud for <b>one minute</b>. Don't help with words; if they get stuck for 3 seconds, say the word and tap it as an error.</p>
+      <div class="modes"><button class="${v.mode==='grown'?'on':''}" data-a="${A(()=>{v.mode='grown'; render();})}">🧑 I'll listen and mark errors (most accurate)</button>
+      <button class="${v.mode==='mic'?'on':''}" ${SR && !micBlocked ? '' : 'disabled'} data-a="${A(()=>{v.mode='mic'; render();})}">🎤 The microphone listens</button></div>` : ''}
+    ${v.stage==='run' && v.mode==='grown' ? `<p class="notice">Tap any word read wrong. It turns red.</p>` : ''}
+    ${v.stage==='last' ? `<p class="notice">Time! Now tap the <b>last word</b> ${esc(p.name)} read.</p>` : ''}
+    ${v.stage==='done' ? `<div class="result">${esc(p.name)} read <b>${v.w} words correct per minute</b>. The typical reader in grade ${p.grade} reads about ${benchFor(p.grade, today())} at this time of year.</div>` : ''}
+  </div>
+  <div class="card"><p class="passage" id="passage">${words.map((w,i) => `<span class="w${v.errs.has(i)?' err':''}${v.last===i?' now':''}${v.mode==='mic' && v.stage!=='ready' && i < (v.ptr||0) ? ' read':''}" data-i="${i}">${esc(w.raw)}</span>`).join(' ')}</p></div>
+  <div id="micOut"></div><span id="micState"></span>
+  <div class="row">${v.stage==='ready' ? `<button class="btn sun" data-a="${A(checkStart)}">▶ Start the minute</button>` : ''}
+    ${v.stage==='done' ? `<button class="btn" data-a="${A(()=>go({name:'grownups'}))}">Back to Grown-ups</button>` : ''}</div>`;
+  document.getElementById('passage').addEventListener('click', e => {
+    const el = e.target.closest('.w'); if (!el) return; const i = +el.dataset.i;
+    if (v.stage === 'run' && v.mode === 'grown'){ if (v.errs.has(i)) v.errs.delete(i); else v.errs.add(i); el.classList.toggle('err'); }
+    else if (v.stage === 'last'){ v.last = i; checkFinish(i + 1 - [...v.errs].filter(x => x <= i).length); }
+  });
+}
+function checkStart(){
+  const v = view; v.stage = 'run'; v.left = 60; v.t0 = Date.now(); render();
+  if (v.mode === 'mic'){ view.onMicDone = () => checkFinish(mic.ptr, true); startMic(); }
+  gymT.timer = setInterval(() => {
+    v.left--; const el = document.getElementById('ckT'); if (el) el.textContent = v.left;
+    if (v.left <= 0){ gymStopTimer();
+      if (v.mode === 'mic'){ const n = mic.ptr; stopMic(); v.ptr = n; checkFinish(n); }
+      else { v.stage = 'last'; render(); } }
+  }, 1000);
+}
+function checkFinish(wcpmOrWords, early){
+  const v = view, p = me(); gymStopTimer(); stopMic(); view.onMicDone = null;
+  let w = wcpmOrWords;
+  if (early){ const secs = Math.max(5, (Date.now() - v.t0)/1000); w = Math.round(wcpmOrWords / (secs/60)); }
+  v.w = Math.max(0, w); v.stage = 'done';
+  p.checks = p.checks || []; p.checks.push({d:today(), w:v.w, m:v.mode, title:v.psg.title});
+  [...v.errs].forEach(i => bankAdd(v.words[i].raw));
+  addCoins(15, 'check-in'); save(); render();
+}
+
+// ---------- Summary & retell (after the order check) ----------
+const KEY_SKIP = new Set('with that this from they then when were have into about after back down over their there what your will just very more came made took said them each every went could would which while where before because again still also only first last next other some than these those once upon long time story chapter little great really people found began asked'.split(' '));
+let retellRec = null;
+function stopRetell(){ if (retellRec){ try{ retellRec.onend = null; retellRec.abort(); }catch(e){} retellRec = null; } }
+function keyIdeas(s){
+  const out = [];
+  for (const line of s.seq.concat([s.title])) for (const raw of line.split(/[\s,.:;!?"]+/)){
+    const k = bankKey(raw); if (k.length >= 4 && !KEY_SKIP.has(k) && !out.includes(k)) out.push(k);
+  }
+  return out.slice(0, 10);
+}
+function sumOf(s){ return s.sum || (EXTRA.sum||{})[s.id] || null; }
+function afterSeq(){ if (sumOf(R.s)) go({name:'sum', stage:'pick'}); else finishStory(); }
+function vSum(){
+  const s = R.s, sum = sumOf(s), v = view;
+  if (v.stage === 'pick'){
+    const q = v.q || (v.q = {order: shuffle([0,1,2]), wrong:[], tries:0, done:false});
+    const why = q.last === 1 ? 'That one only tells one small part. A summary tells the most important things.' : q.last === 2 ? 'That did not happen in the story.' : '';
+    app.innerHTML = `${topbar(null)}
+    <div class="card" style="display:flex;flex-direction:column;gap:14px">
+      <span class="skill">Summary</span><h2>Which sentence tells the whole story best?</h2>
+      <div class="opts">${q.order.map(i => `<button class="opt ${q.done && i===0 ? 'right' : q.wrong.includes(i) ? 'wrong' : ''}" ${q.done || q.wrong.includes(i) ? 'disabled' : ''} data-a="${A((e,el)=>{
+        if (i === 0){ q.done = true; skillMark('main idea', q.tries === 0); const c = q.tries ? 5 : 10; R.coins += c; addCoins(c); confetti(25); render(); }
+        else { q.tries++; q.wrong.push(i); q.last = i; if (q.tries >= 2){ q.done = true; skillMark('main idea', false); } render(); }
+      })}">${esc(sum[i])}</button>`).join('')}</div>
+      ${why && !q.done ? `<p class="notice">${why} Try again!</p>` : ''}
+      ${q.done ? `<div><button class="btn" data-a="${A(()=>{ v.stage = 'retell'; render(); })}">Next</button></div>` : ''}
+    </div>`;
+    return;
+  }
+  const keys = v.keys || (v.keys = keyIdeas(s)), said = v.said || (v.said = new Set());
+  const canMic = SR && !micBlocked;
+  app.innerHTML = `${topbar(null)}
+  <div class="card" style="display:flex;flex-direction:column;gap:14px">
+    <span class="skill">Retell</span><h2>Tell the story in your own words</h2>
+    <p>${canMic ? 'Tap the microphone and tell what happened, from the beginning to the end. Each important word you say lights up!' : 'Tell a grown-up what happened, from the beginning to the end.'}</p>
+    ${canMic ? `<div class="keys">${keys.map(k => `<span class="kchip ${said.has(k)?'on':''}">${said.has(k) ? esc(k) : '•••'}</span>`).join('')}</div>
+      <p class="mut" id="retellTxt" style="font-style:italic">${esc(v.txt||'')}</p>` : ''}
+    <div class="row">
+      ${canMic ? (v.on ? `<span class="listen"><i></i>Listening…</span><button class="btn" data-a="${A(retellDone)}">I'm done</button>`
+                       : `<button class="btn sun" data-a="${A(retellStart)}">🎤 Start telling</button>`) : `<button class="btn" data-a="${A(retellDone)}">I told the story</button>`}
+      <button class="btn ghost small" data-a="${A(()=>{ stopRetell(); finishStory(); })}">Skip</button></div>
+  </div>`;
+}
+function retellStart(){
+  const v = view; stopRetell(); v.on = true; render();
+  let rec; try{ rec = new SR(); }catch(e){ v.on = false; micBlocked = true; render(); return; }
+  retellRec = rec; rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; v.base = v.txt || '';
+  rec.onresult = e => { let t = ''; for (let i=0;i<e.results.length;i++) t += e.results[i][0].transcript + ' ';
+    v.txt = (v.base + ' ' + t).trim(); const heard = v.txt.toLowerCase().split(/\s+/).map(bankKey);
+    let changed = false;
+    for (const k of v.keys) if (!v.said.has(k) && heard.some(h => h === k || (h.length >= 4 && (k.startsWith(h.slice(0, Math.max(4, h.length-2))) || h.startsWith(k.slice(0, Math.max(4, k.length-2))))))){ v.said.add(k); changed = true; }
+    const el = document.getElementById('retellTxt'); if (el) el.textContent = v.txt;
+    if (changed && view === v) render(); };
+  rec.onerror = e => { if (['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){ micBlocked = true; v.on = false; stopRetell(); render(); } };
+  rec.onend = () => { if (retellRec === rec && v.on){ v.base = v.txt || ''; try{ rec.start(); }catch(_){} } };
+  try{ rec.start(); }catch(e){}
+}
+function retellDone(){
+  const v = view; stopRetell(); v.on = false;
+  const n = v.said ? v.said.size : 0, c = SR && !micBlocked ? Math.min(12, 2 + n*2) : 5;
+  R.coins += c; addCoins(c, n ? `${n} key ideas!` : 'retell');
+  finishStory();
+}
+
+// ---------- Word meanings ----------
+function defOf(word, s){
+  const t = s && s.tricky ? s.tricky.find(x => x[0] === word) : null;
+  return (t && t[2]) || (EXTRA.defs||{})[String(word).toLowerCase()] || '';
+}
+
+// ---------- Word Parts game (prefixes & suffixes) ----------
+function vParts(){
+  const p = me();
+  if (!G || G.k !== 'parts'){
+    const a = EXTRA.parts[3] || [], b = EXTRA.parts[5] || [];
+    const list = p.grade >= 5 ? shuffle(b).slice(0, 7).concat(shuffle(a).slice(0, 3)) : shuffle(a).slice(0, 10);
+    G = {k:'parts', items: shuffle(list), i:0, score:0, streak:0, ans:null, order:shuffle([0,1,2])};
+  }
+  const g = G, it = g.items[g.i], opts = [it.meaning].concat(it.wrong);
+  app.innerHTML = `${topbar(()=>go({name:'arcade'}))}
+  <div class="card" style="display:flex;flex-direction:column;gap:16px">
+    <div class="row spread"><h2>🧩 Word Parts</h2><span class="chip" style="font-size:1rem">Word ${g.i+1} of ${g.items.length} · Score <b>${g.score}</b>${g.streak>1?` · 🔥${g.streak}`:''}</span></div>
+    <div class="wparts">${it.parts.map(x => `<span class="syl">${esc(x)}</span>`).join('<span class="plus">+</span>')}<span class="plus">=</span><span class="syl lit">${esc(it.word)}</span></div>
+    <p class="q" style="text-align:center">What does <b>${esc(it.word)}</b> mean?</p>
+    <div class="opts">${g.order.map(i => `<button class="opt ${g.ans!=null ? (i===0 ? 'right' : i===g.ans ? 'wrong' : '') : ''}" ${g.ans!=null?'disabled':''} data-a="${A(()=>partsAnswer(i))}">${esc(opts[i])}</button>`).join('')}</div>
+    ${g.ans!=null ? `<p class="result">💡 ${esc(it.tip)}</p><div><button class="btn" data-a="${A(()=>{
+      if (g.i + 1 >= g.items.length){ endGame('parts', g.score, {right:g.right||0, total:g.items.length}); return; }
+      g.i++; g.ans = null; g.order = shuffle([0,1,2]); render(); })}">${g.i+1 >= g.items.length ? 'Finish' : 'Next word'}</button></div>` : ''}
+  </div>`;
+}
+function partsAnswer(i){
+  const g = G; if (!g || g.ans != null) return; g.ans = i;
+  if (i === 0){ g.streak++; g.right = (g.right||0) + 1; g.score += 10 + Math.min(10, (g.streak-1)*2); skillMark('vocabulary', true); confetti(12); }
+  else { g.streak = 0; skillMark('vocabulary', false); }
+  render();
 }
 
 // ---------- Start ----------

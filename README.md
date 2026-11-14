@@ -20,6 +20,16 @@ Play: https://bradludington-ui.github.io/page-quest/
 
 Progress is saved on each iPad, in the home-screen app. Nothing is sent anywhere.
 
+## Reading growth tools
+- **Today's Quest**: a daily checklist (Fluency Gym, a story or chapter, Memory Vault, plus practice for each focus area a grown-up ticks).
+- **Fluency Gym**: one passage read aloud three times, scored by the microphone or a grown-up, with a words-per-minute chart.
+- **Word bank**: words a reader taps for help, skips, or gets stuck on come back in warm-ups and games until read correctly three times.
+- **Chapter books**: one chapter a day; each chapter opens with a question about the one before.
+- **Summary and retell** after every story; **word meanings** in warm-ups and the Memory Vault; **Word Parts** (prefixes and suffixes) in the arcade.
+- **Reading minutes** toward a daily goal (15 or 20 minutes, like the class reading logs) and a **monthly one-minute check-in** compared with grade-level norms (Hasbrouck & Tindal, 2017).
+
+No scores, names or school records are stored in this repository; each child's focus areas are set on their own iPad.
+
 ## Lined up with school (November 2026)
 - 3rd grade: folktales, myths and poems ("Ways Characters Shape Stories", figurative language), a water-cycle story, and this month's spelling patterns (long e, long i, compound words) in Syllable Smash and Word Catcher.
 - 5th grade: realistic fiction about character relationships, and true stories tied to landforms and fossils (Mary Anning), Ancient China (Cai Lun) and Ancient India (Aryabhata).
