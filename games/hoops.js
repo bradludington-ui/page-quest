@@ -35,7 +35,7 @@
       let hoopX = BASE_X, slidePhase = 0, netWiggle = 0, held = null, nextBallIn = 0;
       const balls = [], pops = [];
       const hoop = () => ({fx: hoopX - RIM_HALF, bx: hoopX + RIM_HALF, board: hoopX + RIM_HALF + 14});
-      const newBall = () => ({x: START.x, y: START.y, vx: 0, vy: 0, rot: 0, live: false, t: 0, scored: false, touched: false, done: false, above: false});
+      const newBall = () => ({x: START.x, y: START.y, vx: 0, vy: 0, rot: 0, live: false, t: 0, scored: false, touched: false, done: false, above: false, res: false});
       let ready = newBall();
 
       // ---- overlay screens ----
@@ -92,7 +92,7 @@
         const sp = Math.hypot(vx, vy), want = Math.max(650, Math.min(2000, 480 + sp*0.4));
         vx = vx/sp*want; vy = vy/sp*want;
         Object.assign(ready, {vx, vy, live: true});
-        balls.push(ready); shots++; ready = null; nextBallIn = 0.35;
+        balls.push(ready); shots++; ready = null; nextBallIn = 0.25;
       };
       cv.addEventListener('pointerdown', down);
       cv.addEventListener('pointermove', move);
@@ -125,11 +125,16 @@
           // ball drops through the net: keep it between the net sides
           if (b.y < RIM_Y + 90) { b.vx *= 0.9; b.x += (hoopX - b.x)*0.15; }
         }
+        // a miss is known as soon as the ball drops back below the rim (or lands) without going in
+        if (!b.res && !b.scored) {
+          if (b.y < RIM_Y - BR) b.above = true;
+          if ((b.above && b.y > RIM_Y + 40 && b.vy > 0) || b.y >= FLOOR - BR - 1) { b.res = true; settle(b); }
+        }
         if (b.y > FLOOR - BR) { b.y = FLOOR - BR; if (b.vy > 0) b.vy = -b.vy*0.55; b.vx *= 0.85; }
         if (b.x < -80 || b.x > LW + 80 || b.t > 3.2) b.done = true;
       };
       const basket = b => {
-        b.scored = true; made++; streak++; netWiggle = 1;
+        b.scored = true; b.res = true; made++; streak++; netWiggle = 1;
         const fire = streak > 3, pts = fire ? 3 : 2;
         score += pts; el.dataset.score = score;
         const sw = !b.touched;
@@ -146,7 +151,7 @@
           if (timeLeft <= 0) { timeLeft = 0; mode = 'ending'; held = null; ready = null; pop('Time!', LW/2, 220, '#ffd84d', 1.6); later(() => { balls.length = 0; finish(); }, 1600); }
         }
         for (let s = 0; s < 4; s++) for (const b of balls) if (!b.done) stepBall(b, dt/4);
-        for (let i = balls.length - 1; i >= 0; i--) if (balls[i].done) { settle(balls[i]); balls.splice(i, 1); }
+        for (let i = balls.length - 1; i >= 0; i--) if (balls[i].done) { if (!balls[i].res) settle(balls[i]); balls.splice(i, 1); }
         netWiggle = Math.max(0, netWiggle - dt*2.2);
         for (let i = pops.length - 1; i >= 0; i--) { pops[i].t += dt; if (pops[i].t > pops[i].life) pops.splice(i, 1); }
       };

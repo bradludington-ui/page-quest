@@ -441,18 +441,18 @@ STORIES.push(
   q:'How did Hare\'s actions change the end of the story?',o:['His bragging and napping made him lose','His speed helped him win','His kindness made him new friends'],e:'But when he reached the finish line, Tortoise was already there.',k:'main idea'}],
  seq:['Hare bragged about being fast.','Hare took a nap under a tree.','Tortoise passed the sleeping Hare.','Tortoise won the race.']},
 
-{id:'anansi',title:'Anansi and the Pot of Wisdom',icon:'🕷️',cat:'tales',lvl:3,school:'Class unit: Ways Characters Shape Stories',
- tricky:[['wisdom','wis-dom'],['Anansi','A-nan-si'],['creature','crea-ture'],['easily','eas-i-ly','without any trouble']],
+{id:'anansi',title:'Jill the Spider and the Pot of Wisdom',icon:'🕷️',cat:'tales',lvl:3,school:'Class unit: Ways Characters Shape Stories',
+ tricky:[['wisdom','wis-dom'],['gathered','gath-ered','collected things into one place'],['creature','crea-ture'],['easily','eas-i-ly','without any trouble']],
  pages:[
- {t:'This story comes from Ghana, in West Africa. Long ago, Anansi the spider wanted to be the smartest creature in the world. One day he gathered all the wisdom in the world and put it in a big clay pot. "Now I will be the only wise one," Anansi said. "I will not share any of it!"',
-  q:'What did Anansi want?',o:['To be the smartest creature in the world','To build the biggest web','To make new friends'],e:'Anansi the spider wanted to be the smartest creature in the world.',k:'detail'},
- {t:'Anansi decided to hide the pot at the top of a tall tree. He tied the pot to his belly and began to climb. But the pot was big and round. It bumped against the tree trunk. Anansi slipped and slid. He tried again and again, but he could not climb higher than a few feet.',
-  q:'Why couldn\'t Anansi climb the tree?',o:['The pot on his belly got in the way','The tree was wet from rain','He was afraid of heights'],e:'It bumped against the tree trunk.',k:'inference'},
- {t:'Anansi\'s young son was watching. "Father," he said, "why don\'t you tie the pot to your back? Then you can hold onto the tree." Anansi blinked. It was such a simple idea. He moved the pot to his back and climbed easily to the top. But he did not feel wise. He felt very silly.',
-  q:'Why did Anansi feel silly?',o:['His son thought of an idea he had missed','He fell out of the tree','He forgot where the tree was'],e:'It was such a simple idea.',k:'inference'},
- {t:'Anansi was so upset that he let the pot slip. It fell and broke on the ground below. The wind picked up all the wisdom and blew it around the world. Now everyone has a little bit of wisdom. And that is why, the storytellers of Ghana say, no one person can ever know everything.',
+ {t:'This story comes from Ghana, in West Africa. Long ago, a spider named Jill wanted to be the smartest creature in the world. One day she gathered all the wisdom in the world and put it in a big clay pot. "Now I will be the only wise one," Jill said. "I will not share any of it!"',
+  q:'What did Jill want?',o:['To be the smartest creature in the world','To build the biggest web','To make new friends'],e:'a spider named Jill wanted to be the smartest creature in the world.',k:'detail'},
+ {t:'Jill decided to hide the pot at the top of a tall tree. She tied the pot to her belly and began to climb. But the pot was big and round. It bumped against the tree trunk. Jill slipped and slid. She tried again and again, but she could not climb higher than a few feet.',
+  q:'Why couldn\'t Jill climb the tree?',o:['The pot on her belly got in the way','The tree was wet from rain','She was afraid of heights'],e:'It bumped against the tree trunk.',k:'inference'},
+ {t:'Jill\'s young son was watching. "Mother," he said, "why don\'t you tie the pot to your back? Then you can hold onto the tree." Jill blinked. It was such a simple idea. She moved the pot to her back and climbed easily to the top. But she did not feel wise. She felt very silly.',
+  q:'Why did Jill feel silly?',o:['Her son thought of an idea she had missed','She fell out of the tree','She forgot where the tree was'],e:'It was such a simple idea.',k:'inference'},
+ {t:'Jill was so upset that she let the pot slip. It fell and broke on the ground below. The wind picked up all the wisdom and blew it around the world. Now everyone has a little bit of wisdom. And that is why, the storytellers of Ghana say, no one person can ever know everything.',
   q:'What lesson does this folktale teach?',o:['No one person can know everything','Spiders are the best climbers','Clay pots break easily'],e:'no one person can ever know everything.',k:'main idea'}],
- seq:['Anansi put all the wisdom in a pot.','He could not climb with the pot on his belly.','His son told him to tie it to his back.','The pot broke and wisdom blew everywhere.']},
+ seq:['Jill put all the wisdom in a pot.','She could not climb with the pot on her belly.','Her son told her to tie it to her back.','The pot broke and wisdom blew everywhere.']},
 
 {id:'midas',title:'King Midas and the Golden Touch',icon:'👑',cat:'tales',lvl:3,school:'Class unit: Ways Characters Shape Stories',
  tricky:[['statue','stat-ue','a figure of a person made of stone or metal'],['shining','shin-ing'],['horror','hor-ror'],['daughter','daugh-ter']],
@@ -561,7 +561,7 @@ STORIES.push(
 
 // How to say the few real names that have to stay in the stories (shown in the warm-up and when the name is tapped)
 const SAY = {
-  anansi:[['Anansi','uh-NAHN-see']], midas:[['Midas','MY-dus']], earhart:[['Earhart','AIR-hart']],
+  midas:[['Midas','MY-dus']], earhart:[['Earhart','AIR-hart']],
   aryabhata:[['Aryabhata','AR-yah-BAH-tah']], cailun:[['Cai Lun','tsy LOON'],['Han','hahn']],
   anning:[['ichthyosaur','IK-thee-oh-sor'],['plesiosaur','PLEE-zee-oh-sor'],['pterosaur','TAIR-oh-sor']]};
 function sayOf(s){ return s && (SAY[s.id] || s.say) || null; }
@@ -1892,7 +1892,7 @@ const EXTRA = {
   tubman: ['Harriet Tubman escaped slavery and then risked her life again and again to lead others to freedom and fight for equal rights.', 'Harriet\'s family called her Minty when she was a child.', 'Harriet Tubman stayed in Pennsylvania and never went back to help anyone.'],
   armstrong: ['Neil Armstrong loved flying, became a test pilot and astronaut, and was the first person to walk on the Moon.', 'Neil worked at a drugstore to pay for flying lessons.', 'Neil Armstrong flew to Mars alone in a rocket plane.'],
   tortoise: ['Hare brags and naps during a race, while slow and steady Tortoise keeps going and wins.', 'Fox draws a starting line in the dirt.', 'Hare wins the race easily, and Tortoise learns to run faster.'],
-  anansi: ['Anansi tries to keep all the wisdom for himself, but his son\'s simple idea shows him no one knows everything, and the wisdom spreads around the world.', 'Anansi\'s clay pot is big and round.', 'Anansi hides the pot of wisdom forever, and no one else ever becomes wise.'],
+  anansi: ['Jill the spider tries to keep all the wisdom for herself, but her son shows her no one knows everything, and the wisdom spreads around the world.', 'Jill\'s clay pot is big and round.', 'Jill hides the pot of wisdom forever, and no one else ever learns anything.'],
   midas: ['King Midas wishes that everything he touches turns to gold, but after his food and daughter turn to gold he learns that people matter more.', 'Midas touches a rose in his garden.', 'King Midas becomes happy forever because he can turn anything into gold.'],
   weather: ['The poems describe wind, rain, snow, and the sun after a storm by comparing them to playful, everyday things.', 'One poem says the snow gives a fence post a hat.', 'The poems are all about a hot, dry summer with no weather at all.'],
   drip: ['Drip the water drop travels through the water cycle, from the lake to a cloud, back down as rain, and home again.', 'The fish swim over to say hello to Drip.', 'Drip gets stuck in a cloud and never comes back to the lake.'],
@@ -1952,7 +1952,6 @@ const EXTRA = {
   'snoring': 'making loud breathing sounds while asleep',
   'steady': 'not stopping and not changing',
   'wisdom': 'good sense and knowing a lot',
-  'anansi': 'a clever spider from West African stories',
   'creature': 'any living animal',
   'ashanti': 'a group of people from Ghana in Africa',
   'dionysus_unused': 'a god in old Greek stories',
