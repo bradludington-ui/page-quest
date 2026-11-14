@@ -2,6 +2,7 @@
   "name": "Page Quest",
   "short_name": "Page Quest",
   "description": "Read out loud, answer questions, and earn treasure.",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

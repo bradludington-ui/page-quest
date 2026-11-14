@@ -221,6 +221,9 @@ a{color:var(--accent)}
 .wday i{display:block;width:70%;min-height:3px;background:var(--path);border-radius:6px 6px 2px 2px}
 .wday i.met{background:var(--good)}
 .wday span{color:var(--mut)}
+.install{border-color:var(--sun);background:var(--sun-soft)}
+.isteps{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px;line-height:1.45}
+.pcode{width:100%;min-height:90px;font:inherit;font-size:.85rem;padding:10px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -587,15 +590,89 @@ function topbar(back){
     <span class="chip" style="font-size:1rem" title="Game tickets">🎟️ ${tix(p)}</span><span class="coins"><span class="coin"></span>${p.coins}</span></div>`;
 }
 
+// ---------- Running as a full-screen app or in a browser tab ----------
+// Page Quest is full screen only when it is opened from a Home Screen icon that Safari added.
+// In a browser tab the kids can hit Safari's own buttons, so the start screens say so and show how to fix it.
+function isAppMode(){
+  try{ return navigator.standalone === true || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches; }catch(e){ return false; }
+}
+function isAppleTouch(){ return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+let installOpen = false;
+function installHidden(){ try{ return sessionStorage.getItem('pq-install-later') === '1'; }catch(e){ return false; } }
+function installBanner(full){
+  if (isAppMode() || installHidden() || window.self !== window.top) return '';
+  const ua = navigator.userAgent, otherBrowser = /CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  const steps = !isAppleTouch()
+    ? `<ol class="isteps"><li>In your browser's menu, choose <b>Install Page Quest</b> or <b>Add to Home Screen</b>.</li><li>Open Page Quest from the new icon.</li></ol>`
+    : otherBrowser
+    ? `<ol class="isteps"><li>This is open in a different browser. Open <b>Safari</b> instead and go to <b>${esc(location.href.split('#')[0])}</b></li><li>Then tap <b>Share</b> (the square with an arrow) and <b>Add to Home Screen</b>.</li></ol>`
+    : `<ol class="isteps">
+        <li>Tap <b>Share</b> at the top of Safari (the square with an arrow pointing up).</li>
+        <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+        <li>If you see a switch called <b>Open as Web App</b>, make sure it is <b>on</b>. Then tap <b>Add</b>.</li>
+        <li>Close this Safari tab, and from now on open Page Quest from the blue book icon.</li></ol>
+      <p class="mut" style="font-size:.9rem">Already have an icon that still opens in Safari? Press and hold it, choose <b>Remove App</b> (or <b>Delete Bookmark</b>), then add it again with the steps above.</p>`;
+  if (!full && !installOpen) return `<div class="card install row spread"><p><b>Page Quest is open in a web browser.</b> Ask a grown-up to make it a full-screen app.</p>
+    <button class="btn small" data-a="${A(()=>{ installOpen = true; render(); })}">Show me how</button></div>`;
+  return `<div class="card install" style="display:flex;flex-direction:column;gap:10px">
+    <h3>Make Page Quest a full-screen app</h3>
+    <p>Right now it is open in a web browser, so its buttons are easy to tap by mistake. On this iPad, a grown-up can do this once:</p>
+    ${S.profiles.length ? `<div class="notice" style="display:flex;flex-direction:column;gap:8px"><p><b>First, save the progress.</b> The Home Screen app starts empty, so copy ${S.profiles.map(p => esc(p.name)).join(' and ')}'s progress now and paste it in the app afterwards (Grown-ups → Move progress).</p>
+      <div><button class="btn small" data-a="${A(()=>copyProgress('bannerMsg'))}">Copy progress</button></div><div id="bannerMsg"></div></div>` : ''}
+    ${steps}
+    <div><button class="btn ghost small" data-a="${A(()=>{ try{ sessionStorage.setItem('pq-install-later','1'); }catch(e){} installOpen = false; render(); })}">Not now</button></div></div>`;
+}
+
+// ---------- Moving progress between Safari and the Home Screen app ----------
+// An iPad keeps a Home Screen app's saved data apart from Safari's, so progress is carried across as a code.
+function progressCode(){ return 'PQ1:' + btoa(unescape(encodeURIComponent(JSON.stringify({profiles:S.profiles})))); }
+function copyProgress(msgId){
+  const code = progressCode(), say = t => { const el = document.getElementById(msgId); if (el) el.innerHTML = t; };
+  const show = () => say(`<p>Copy all of this text (press and hold, then Select All and Copy):</p><textarea class="pcode" readonly onfocus="this.select()">${esc(code)}</textarea>`);
+  try{ navigator.clipboard.writeText(code).then(() => say('<p class="result">✓ Progress copied. Now open Page Quest from the Home Screen icon, tap <b>Grown-ups</b>, and paste it under <b>Move progress</b>.</p>'), show); }catch(e){ show(); }
+}
+function loadProgress(text){
+  text = String(text||'').trim();
+  try{
+    if (!text.startsWith('PQ1:')) throw 0;
+    const data = JSON.parse(decodeURIComponent(escape(atob(text.slice(4)))));
+    if (!Array.isArray(data.profiles)) throw 0;
+    let added = 0, updated = 0;
+    for (const inc of data.profiles){
+      if (!inc || !inc.id || !inc.name) continue;
+      const i = S.profiles.findIndex(x => x.id === inc.id);
+      if (i < 0){ S.profiles.push(inc); added++; }
+      else if ((inc.xp||0) >= (S.profiles[i].xp||0)){ S.profiles[i] = inc; updated++; }
+    }
+    save();
+    return `✓ Moved ${added + updated} reader${added + updated === 1 ? '' : 's'}: ${data.profiles.map(x => esc(x.name)).join(', ')}.`;
+  }catch(e){ return 'That text is not a Page Quest progress code. Copy it again from the Safari tab and paste all of it.'; }
+}
+function alertBox(t){ const el = document.getElementById('moveMsg'); if (el) el.innerHTML = `<p class="notice">${t}</p>`; }
+function moveCard(){
+  return `<div class="card" style="display:flex;flex-direction:column;gap:10px"><h3>Move progress</h3>
+    <p class="mut">Use this when switching from the Safari tab to the Home Screen app (or to another iPad). Copy on the old one, paste on the new one.</p>
+    <div class="row"><button class="btn small" data-a="${A(()=>copyProgress('moveMsg'))}">Copy progress from here</button></div>
+    <div id="moveMsg"></div>
+    <label class="lab" for="pasteCode">Paste progress here</label>
+    <textarea id="pasteCode" class="pcode" placeholder="Press and hold, then Paste"></textarea>
+    <div><button class="btn small sun" data-a="${A(()=>{ const r = loadProgress(document.getElementById('pasteCode').value); document.getElementById('moveMsg').innerHTML = `<p class="result">${r}</p>`; })}">Load progress</button></div></div>`;
+}
+
 // ---------- Screens: profiles ----------
 function vProfiles(){
   app.innerHTML = `
   <div class="row spread"><div class="brand">Page Quest<small>Read, remember, and earn treasure</small></div></div>
+  ${installBanner(true)}
   <div class="card"><h2 style="margin-bottom:14px">Who's reading today?</h2>
     <div class="who">
       ${S.profiles.map(p => `<button data-a="${A(()=>{S.cur=p.id; save(); go({name:'hub'});})}"><span class="big">${p.av}</span><b>${esc(p.name)}</b><span class="mut">Grade ${p.grade} · ${p.coins} coins</span></button>`).join('')}
       <button data-a="${A(()=>go({name:'newProfile'}))}" style="border-style:dashed"><span class="big">＋</span><b>New reader</b><span class="mut">Make a profile</span></button>
     </div></div>
+  ${isAppMode() && !S.profiles.length ? `<div class="card" style="display:flex;flex-direction:column;gap:10px"><h3>Moving over from Safari?</h3>
+    <p class="mut">Paste the progress you copied from the Safari tab to bring back every reader's coins and stories.</p>
+    <textarea id="pasteCode" class="pcode" placeholder="Press and hold, then Paste"></textarea>
+    <div><button class="btn small sun" data-a="${A(()=>{ const r = loadProgress(document.getElementById('pasteCode').value); if (r.startsWith('✓')) render(); else alertBox(r); })}">Load progress</button></div><div id="moveMsg"></div></div>` : ''}
   ${!storageOk ? `<p class="notice">This browser is not saving progress, so coins and stories will reset when the page closes.</p>` : ''}
   <div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'grownups'}))}">Grown-ups</button></div>`;
 }
@@ -622,6 +699,7 @@ function vaultDue(){ const p = me(), t = today(); return p.vault.filter(v => { i
 function vHub(){
   const p = me(), qi = questItems(p), ch = nextChapter(p), qdone = qi.filter(i => i.done).length;
   app.innerHTML = `${topbar(null)}
+  ${installBanner(false)}
   <div class="card quest">
     <div class="row spread"><div style="min-width:0"><h2>Today's quest</h2><p class="mut">${qdone === qi.length ? '🎉 All done today! Bonus ticket and 20 coins earned.' : `Finish all ${qi.length} for a bonus ticket and 20 coins.`}</p></div>
       <div class="ring" title="Minutes read today">${ringSvg(p)}<span class="mut">of ${goalOf(p)} min<br>today</span></div></div>
@@ -1238,6 +1316,7 @@ function vGrown(){
         ? `<span>Delete ${esc(p.name)} and all progress?</span><button class="btn small" style="background:var(--oops)" data-a="${A(()=>{ S.profiles = S.profiles.filter(x => x.id !== p.id); if (S.cur === p.id) S.cur = null; save(); g.del=null; render(); })}">Yes, delete</button><button class="btn ghost small" data-a="${A(()=>{g.del=null; render();})}">Cancel</button>`
         : `<button class="btn ghost small" data-a="${A(()=>{g.del=p.id; render();})}">Delete this reader</button>`}</div>
     </div>`; }).join('')}
+  ${moveCard()}
   <div class="card"><h3>How the game works</h3>
     <p class="mut" style="margin-top:6px">Each day's quest includes a Fluency Gym session (one passage read aloud three times), a story or a chapter, the Memory Vault when it has questions due, and extra practice for each focus area you tick. Stories start with a tricky-word warm-up with meanings and end with a summary choice and a spoken retell. Chapter books unlock one chapter a day, and each chapter starts with a question about the one before. Words a reader stumbles on go into a personal word bank that feeds the warm-ups and games. Progress is saved on this device only.</p></div>`;
 }
