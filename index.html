@@ -4470,7 +4470,8 @@ const BREAK_LIST = [
 window.BreakGames = window.BreakGames || {};
 let breakCleanup = null;
 function breakStop(){ if (breakCleanup){ try{ breakCleanup(); }catch(e){} breakCleanup = null; } }
-function breakOpen(p){ return aloudToday(p) >= BREAK_ALOUD || p.breakDay === today(); } // breakDay: a grown-up opened it for today
+const BREAK_OPEN_DAYS = ['2026-11-14']; // days a grown-up opened the Break Zone for every child, on every iPad
+function breakOpen(p){ return aloudToday(p) >= BREAK_ALOUD || p.breakDay === today() || BREAK_OPEN_DAYS.includes(today()); } // breakDay: a grown-up opened it for today
 function breakApi(p, g){
   p.breakScores = p.breakScores || {}; p.breakStore = p.breakStore || {};
   const css = getComputedStyle(document.documentElement), c = n => css.getPropertyValue(n).trim();
