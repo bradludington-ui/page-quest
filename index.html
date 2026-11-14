@@ -228,6 +228,18 @@ a{color:var(--accent)}
 .rlist{display:flex;flex-direction:column;gap:10px;margin-top:8px}
 .ritem{display:flex;gap:12px;align-items:flex-start;padding:12px;border:2px solid var(--line);border-radius:14px}
 .plist{margin:6px 0 0;padding-left:1.3em;display:flex;flex-direction:column;gap:4px}
+.hballoons{font-size:2.2rem;text-align:center;letter-spacing:2px;min-height:2.8rem}
+.hballoons .popped{opacity:.45;font-size:1.5rem}
+.havatar{font-size:3rem;text-align:center;line-height:1}
+.hclue{text-align:center;font-size:1.2rem}
+.hslots{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.hslot{width:2.2rem;height:2.8rem;border-bottom:4px solid var(--ink);font-family:var(--read);font-size:1.8rem;font-weight:600;display:grid;place-items:center;text-transform:lowercase}
+.hslot.miss{color:var(--oops)}
+.hkeys{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}
+.hkey{min-height:48px;border-radius:12px;background:var(--panel);border:2px solid var(--line);font-family:var(--read);font-size:1.3rem;font-weight:600;box-shadow:0 3px 0 var(--line)}
+.hkey.hit{background:var(--good-soft);border-color:var(--good);color:var(--good);box-shadow:none}
+.hkey.miss{background:var(--soft);color:var(--mut);opacity:.5;box-shadow:none}
+@media (max-width:520px){.hkeys{grid-template-columns:repeat(7,1fr)}.hslot{width:1.7rem;font-size:1.4rem}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -580,7 +592,7 @@ function render(){
   if (!p && !['profiles','newProfile','grownups'].includes(view.name)) view = {name:'profiles'};
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
-    arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_chunks:vMatch, g_prefix:vMatch,
+    arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
     gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts})[view.name]();
 }
 function topbar(back){
@@ -971,8 +983,10 @@ function nextPage(){
 function syllables(word){
   const w = word.replace(/[^A-Za-z]/g,''); if (w.length <= 3) return [w];
   const l = w.toLowerCase(), isV = (i) => 'aeiou'.includes(l[i]) || (l[i]==='y' && i>0 && !'aeiou'.includes(l[i-1]));
-  const silentE = l.endsWith('e') && !l.endsWith('le') && !'aeiou'.includes(l[l.length-2]);
-  const silentEd = l.endsWith('ed') && !/[td]ed$/.test(l) && !/[^aeiou]led$/.test(l);
+  const leEnd = /[^aeiou]le$/.test(l); // ta-ble, can-dle (but rep-tile has a silent e)
+  const silentE = l.endsWith('e') && !leEnd && !'aeiou'.includes(l[l.length-2]);
+  const ce = l.slice(-4,-2), blendEd = /^[^aeiou][rl]$/.test(ce) && ce[0] !== ce[1]; // hun-dred, sa-cred say their -ed; jumped, rolled do not
+  const silentEd = l.endsWith('ed') && !/[td]ed$/.test(l) && !blendEd;
   const groups = []; // [start,end) of vowel groups
   for (let i=0;i<l.length;i++){
     if (!isV(i)) continue;
@@ -986,9 +1000,9 @@ function syllables(word){
     const a = groups[g][1], b = groups[g+1][0], n = b - a;
     let cut;
     if (n === 0) cut = a; else if (n === 1) cut = l[a]==='x' ? a+1 : a;
-    else if (n === 2) cut = keep.slice(0,8).includes(l.slice(a,b)) ? a : a+1;
+    else if (n === 2) cut = (keep.slice(0,8).includes(l.slice(a,b)) || /^[bcdfgpt][rl]$/.test(l.slice(a,b))) ? a : a+1; // digraphs and r/l blends stay together (mi-grate), others split (bas-ket)
     else cut = keep.includes(l.slice(b-2,b)) ? b-2 : a+1;
-    if (l.endsWith('le') && g === groups.length-2) cut = l.length-3;
+    if (leEnd && g === groups.length-2) cut = l.length-3;
     cuts.push(cut);
   }
   const parts = []; let prev = 0;
@@ -1333,7 +1347,8 @@ const GAMES = {
   match:{name:'Picture Match', icon:'🃏', blurb:'Flip cards to match each word with its picture.', learn:'Reading words and remembering them', medals:[40,70,90]},
   meaning:{name:'Meaning Match', icon:'💡', blurb:'Match words from your stories with what they mean.', learn:'Vocabulary: word meanings', medals:[40,70,90]},
   chunks:{name:'Chunk Match', icon:'🧱', blurb:'Find the two halves that snap together into a word.', learn:'Reading words in chunks', medals:[40,70,90]},
-  prefix:{name:'Prefix Match', icon:'🔑', blurb:'Match word parts like un- and -ful with what they mean.', learn:'Word parts that change meaning', medals:[40,70,90]},
+  prefix:{name:'Prefix Match', icon:'🔑', blurb:'Match words like careful and careless with what they mean.', learn:'Word parts that change meaning', medals:[40,70,90]},
+  hang:{name:'Hangman', icon:'🎈', blurb:'Guess the word one letter at a time before the balloons pop. The clue tells you what it means.', learn:'Spelling and word meanings', medals:[40,75,105]},
   catch:{name:'Word Catcher', icon:'🧺', blurb:'Catch the real words. Dodge the made-up ones!', learn:'Reading real words quickly', medals:[100,250,450]},
   smash:{name:'Syllable Smash', icon:'🔨', blurb:'Snap chunks together to build words before the clock runs out.', learn:'Reading long words in chunks', medals:[60,150,280]},
   parts:{name:'Word Parts', icon:'🧩', blurb:'Snap prefixes and suffixes onto words and figure out what they mean.', learn:'Working out word meanings', medals:[60,110,160]}};
@@ -1392,6 +1407,7 @@ function vGameOver(){
     <span class="coins"><span class="coin"></span>+${v.coins} coins</span>
     ${v.extra.words != null ? `<p>You built <b>${v.extra.words}</b> word${v.extra.words===1?'':'s'}.</p>` : ''}
     ${v.extra.right != null ? `<p>You knew <b>${v.extra.right} of ${v.extra.total}</b> word meanings.</p>` : ''}
+    ${v.extra.solved != null ? `<p>You solved <b>${v.extra.solved} of ${v.extra.total}</b> words.</p>` : ''}
     ${v.extra.moves != null ? `<p>You matched every pair in <b>${v.extra.moves}</b> tries.</p>` : ''}
     ${fakes.length ? `<p class="result">These are not real words: <b>${fakes.map(esc).join(', ')}</b>. Watch out for them next time!</p>` : ''}
     <div class="row" style="justify-content:center">
@@ -1517,7 +1533,7 @@ const MATCH_HOW = {
   match:'Match each word with its picture. Read the word out loud when you flip it!',
   meaning:'Match each word with what it means. Read both cards out loud!',
   chunks:'Match the two halves that make a word. Say the whole word when you find it!',
-  prefix:'Match each word part with what it means. A matched card shows a word that uses it.'};
+  prefix:'Match each word with what it means. Some words share a root, like careful and careless, so look closely at the beginning and the end!'};
 // [part, meaning, example word, group]; parts in the same group mean nearly the same thing and never share a board
 const AFFIX = {
   3:[['un-','not','unlock','not'],['re-','again','redo','again'],['pre-','before','preview','before'],['dis-','the opposite of','disagree','opp'],
@@ -1525,41 +1541,65 @@ const AFFIX = {
   5:[['mis-','wrongly','misspell','wrong'],['non-','no or none','nonstop','not'],['sub-','under or below','submarine','under'],['inter-','between','interstate','between'],
      ['-able','can be done','readable','can'],['-ment','the act or result of','movement','act'],['-ness','the state of being','kindness','state'],['-ous','having a lot of','joyous','full'],
      ['-ist','a person who studies or does','artist','person'],['-ward','in the direction of','homeward','dir'],['multi-','many','multicolor','many']]};
+// Each reader remembers the last words each matching game showed, and new boards use words not seen recently first.
+const SEEN_KEEP = 80;
+function seenList(p, kind){ p.seen = p.seen || {}; return p.seen[kind] || (p.seen[kind] = []); }
+function markSeen(p, kind, keys){ const l = seenList(p, kind).filter(k => !keys.includes(k)); l.push(...keys); p.seen[kind] = l.slice(-SEEN_KEEP); save(); }
+// fresh-first order: never-seen words shuffled, then seen words oldest first
+function freshOrder(p, kind, list, key){
+  const seen = seenList(p, kind), pos = new Map(seen.map((k,i) => [k,i]));
+  const fresh = shuffle(list.filter(x => !pos.has(key(x)))), old = list.filter(x => pos.has(key(x))).sort((a,b) => pos.get(key(a)) - pos.get(key(b)));
+  return fresh.concat(old);
+}
+function uniqBy(list, key){ const s = new Set(); return list.filter(x => { const k = key(x); if (s.has(k)) return false; s.add(k); return true; }); }
 function matchPairs(kind, p){
-  const hi = p.grade >= 5, bank = bankWords(p);
-  if (kind === 'match') return shuffle(hi ? PICS5 : PICS3).slice(0, 6).map(([w,e]) => ({a:w, b:e, aw:true, bw:false}));
+  const hi = p.grade >= 5, bank = bankWords(p), MW = MATCHWORDS;
+  if (kind === 'match'){
+    const pool = uniqBy((hi ? PICS5.concat(MW.pics5) : PICS3.concat(MW.pics3)), x => x[0]);
+    const out = [], emo = new Set();
+    for (const [w,e] of freshOrder(p, kind, pool, x => x[0])){ if (emo.has(e)) continue; emo.add(e); out.push({a:w, b:e, aw:true, bw:false, key:w}); if (out.length === 6) break; }
+    return out;
+  }
   if (kind === 'meaning'){
-    const lv = s => hi ? s.lvl >= 4 : s.lvl <= 4;
+    // up to 2 review words (the reader's word bank, then words from stories read in the last few days), the rest new vocabulary
+    const lv = s => hi ? s.lvl >= 4 : s.lvl <= 4, recent = addDays(-4);
     const stories = allStories().concat(chapterStories()).filter(lv);
-    const seen = new Set(), pool = [];
-    const add = (w, def, pri) => { const k = bankKey(w); if (!def || seen.has(k)) return; seen.add(k); pool.push({w, def, pri:pri + Math.random()}); };
-    bank.forEach(k => add(k, (EXTRA.defs||{})[k], 3));
-    stories.forEach(s => s.tricky.forEach(t => add(t[0], defOf(t[0], s), p.done[s.id] ? 2 : 0)));
-    const defs = new Set();
-    return pool.sort((x,y) => y.pri - x.pri).filter(x => !defs.has(x.def) && defs.add(x.def)).slice(0, 5)
-      .map(x => ({a:x.w, b:x.def, aw:true, bw:false, bank: bank.includes(bankKey(x.w)) ? bankKey(x.w) : ''}));
+    const review = [];
+    bank.forEach(k => { const d = (EXTRA.defs||{})[k]; if (d) review.push({w:k, def:d, bank:k}); });
+    stories.filter(s => p.done[s.id] && p.done[s.id].d >= recent).forEach(s => s.tricky.forEach(t => { const d = defOf(t[0], s); if (d) review.push({w:t[0], def:d}); }));
+    const vocab = (hi ? MW.vocab5 : MW.vocab3).map(([w, def]) => ({w, def}));
+    const out = [], words = new Set(), defs = new Set();
+    const take = x => { const k = bankKey(x.w); if (words.has(k) || defs.has(x.def)) return false; words.add(k); defs.add(x.def); out.push({a:x.w, b:x.def, aw:true, bw:false, bank:x.bank||'', key:k}); return true; };
+    for (const x of freshOrder(p, kind, uniqBy(review, x => bankKey(x.w)), x => bankKey(x.w))){ if (out.length >= 2) break; take(x); }
+    for (const x of freshOrder(p, kind, vocab, x => bankKey(x.w))){ if (out.length >= 5) break; take(x); }
+    return shuffle(out);
   }
   if (kind === 'chunks'){
-    const words = (hi ? SMASH5 : SPELL3.flatMap(x => x.w).concat(SMASH3)).map(w => ({parts:w.split('-'), bank:''}))
-      .concat(bank.map(k => ({parts:syllables(k), bank:k})).filter(x => x.parts.length >= 2));
+    const base = hi ? MW.chunks5.concat(SMASH5) : MW.chunks3.concat(SPELL3.flatMap(x => x.w), SMASH3);
+    const words = uniqBy(base.map(w => ({parts:w.split('-'), bank:''})), x => x.parts.join('').toLowerCase());
+    const banked = bank.map(k => ({parts:syllables(k), bank:k})).filter(x => x.parts.length >= 2);
     const firsts = new Set(), seconds = new Set(), out = [];
-    for (const x of shuffle(words.filter(x => x.bank)).concat(shuffle(words.filter(x => !x.bank)))){
+    const order = shuffle(banked).slice(0, 2).concat(freshOrder(p, kind, words, x => x.parts.join('').toLowerCase()));
+    for (const x of order){
       if (x.parts.length < 2) continue;
       const h = Math.ceil(x.parts.length/2), a = x.parts.slice(0,h).join('').toLowerCase(), b = x.parts.slice(h).join('').toLowerCase();
       if (firsts.has(a) || seconds.has(b)) continue;
-      firsts.add(a); seconds.add(b); out.push({a:a+'-', b:'-'+b, aw:true, bw:true, done:a+b, bank:x.bank});
+      firsts.add(a); seconds.add(b); out.push({a:a+'-', b:'-'+b, aw:true, bw:true, done:a+b, bank:x.bank, key:a+b});
       if (out.length === 6) break;
     }
     return out;
   }
-  const groups = new Set(), out = [];
-  for (const [part, mean, ex, grp] of shuffle(hi ? AFFIX[5].concat(AFFIX[3]) : AFFIX[3])){
-    if (groups.has(grp)) continue; groups.add(grp);
-    out.push({a:part, b:mean, aw:true, bw:false, doneA:`${part} ${ex}`});
-    if (out.length === 6) break;
-  }
-  return out;
+  // prefix: words that share a root sit on the same board (careful, careless), so the word part is what tells them apart
+  const items = uniqBy((hi ? MW.affix5.concat(MW.affix3.slice(0)) : MW.affix3), x => x.word);
+  const fam = new Map(); items.forEach(x => { if (!fam.has(x.root)) fam.set(x.root, []); fam.get(x.root).push(x); });
+  const roots = freshOrder(p, kind, [...fam.keys()], r => r);
+  const out = [], meanings = new Set();
+  const take = x => { if (meanings.has(x.meaning) || out.some(o => o.a === x.word)) return; meanings.add(x.meaning); out.push({a:x.word, b:x.meaning, aw:true, bw:false, key:x.root}); };
+  for (const r of roots){ const f = fam.get(r); if (f.length < 2 || out.length > 4) continue; shuffle(f).slice(0, 2).forEach(take); }
+  for (const r of roots){ if (out.length >= 6) break; if (!out.some(o => o.key === r)) take(shuffle(fam.get(r))[0]); }
+  return shuffle(out.slice(0, 6));
 }
+
 function vMatch(){
   const p = me(), kind = view.name.slice(2);
   if (!G || G.k !== kind){
@@ -1568,6 +1608,7 @@ function vMatch(){
       {pair:i, txt:x.a, word:x.aw, got:x.done || x.doneA || x.a},
       {pair:i, txt:x.b, word:x.bw, got:x.done || x.b, long: kind === 'meaning' || kind === 'prefix'}]));
     G = {k:kind, pairs, cards, open:[], got:new Set(), moves:0, lock:false};
+    markSeen(p, kind, pairs.map(x => x.key));
   }
   const g = G, n = g.pairs.length, gm = GAMES[kind];
   app.innerHTML = `${topbar(()=>go({name:'arcade'}))}
@@ -1594,6 +1635,67 @@ function matchTap(i){
     } else { g.lock = true; setTimeout(() => { if (G === g){ g.open = []; g.lock = false; render(); } }, 1100); }
   }
   render();
+}
+
+// Hangman (balloon style): guess the word a letter at a time; the clue is its meaning. Each wrong letter pops a balloon.
+const HANG_BALLOONS = 7, HANG_WORDS = 5;
+// a word's syllables: the hand-made split from the word lists when there is one, else the automatic one
+let _splits = null;
+function splitOf(w){
+  if (!_splits){ _splits = new Map(); MATCHWORDS.chunks3.concat(MATCHWORDS.chunks5, SMASH3, SMASH5, SPELL3.flatMap(x => x.w)).forEach(x => _splits.set(x.replace(/-/g,'').toLowerCase(), x.split('-')));
+    allStories().concat(chapterStories()).forEach(s => s.tricky.forEach(t => _splits.set(t[0].toLowerCase(), t[1].split('-')))); }
+  return _splits.get(String(w).toLowerCase()) || syllables(w);
+}
+function hangPick(p){
+  const hi = p.grade >= 5, ok = w => /^[a-z]+$/.test(w) && w.length >= (hi ? 5 : 4) && w.length <= (hi ? 12 : 9);
+  const vocab = (hi ? MATCHWORDS.vocab5 : MATCHWORDS.vocab3).map(([w, def]) => ({w:w.toLowerCase(), def})).filter(x => ok(x.w));
+  const banked = bankWords(p).filter(k => ok(k) && (EXTRA.defs||{})[k]).map(k => ({w:k, def:EXTRA.defs[k], bank:k}));
+  const list = shuffle(banked).slice(0, 1).concat(freshOrder(p, 'hang', vocab, x => x.w));
+  return uniqBy(list, x => x.w).slice(0, HANG_WORDS);
+}
+function vHang(){
+  const p = me();
+  if (!G || G.k !== 'hang'){
+    G = {k:'hang', words: hangPick(p), i:0, guessed:new Set(), wrong:0, score:0, solved:0, hint:false, state:'play'};
+    markSeen(p, 'hang', G.words.map(x => x.w));
+    const key = e => { if (!G || G.k !== 'hang' || view.name !== 'g_hang') return; const c = (e.key||'').toLowerCase(); if (/^[a-z]$/.test(c)) hangGuess(c); else if (e.key === 'Enter' && G.state !== 'play') hangNext(); };
+    addEventListener('keydown', key); G.cleanup = () => removeEventListener('keydown', key);
+  }
+  const g = G, x = g.words[g.i], left = HANG_BALLOONS - g.wrong;
+  const slots = [...x.w].map(c => g.guessed.has(c) || g.state !== 'play' ? c : '');
+  app.innerHTML = `${topbar(()=>go({name:'arcade'}))}
+  <div class="card" style="display:flex;flex-direction:column;gap:14px">
+    <div class="row spread"><h2>🎈 Hangman</h2><span class="chip" style="font-size:1rem">Word ${g.i+1} of ${g.words.length} · Score <b>${g.score}</b></span></div>
+    <div class="hballoons" aria-label="${left} balloons left">${'🎈'.repeat(left)}${'<span class="popped">💥</span>'.repeat(g.wrong)}</div>
+    <div class="havatar">${p.av}</div>
+    <p class="hclue"><span class="skill">Clue</span><br>${esc(x.def)}</p>
+    <div class="hslots">${slots.map(c => `<span class="hslot ${g.state==='lost' && !g.guessed.has(c) ? 'miss' : ''}">${esc(c)}</span>`).join('')}</div>
+    ${g.state === 'play' ? `<div class="hkeys">${'abcdefghijklmnopqrstuvwxyz'.split('').map(c => { const used = g.guessed.has(c), hit = used && x.w.includes(c);
+        return `<button class="hkey ${used ? (hit ? 'hit' : 'miss') : ''}" ${used ? 'disabled' : ''} data-a="${A(()=>hangGuess(c))}">${c}</button>`; }).join('')}</div>
+      <div class="row">${g.hint ? '' : `<button class="btn ghost small" data-a="${A(hangHint)}">💡 Show me one letter</button>`}<span class="mut">${x.w.length} letters</span></div>`
+    : `<div class="result">${g.state === 'won' ? '🎉 You got it!' : 'The balloons are gone. The word was:'} <b>${esc(splitOf(x.w).join('-'))}</b>. Say it out loud!<br>It means: ${esc(x.def)}</div>
+      <div><button class="btn" data-a="${A(hangNext)}">${g.i + 1 >= g.words.length ? 'Finish' : 'Next word'}</button></div>`}
+  </div>`;
+}
+function hangGuess(c){
+  const g = G; if (!g || g.k !== 'hang' || g.state !== 'play' || g.guessed.has(c)) return;
+  const x = g.words[g.i]; g.guessed.add(c);
+  if (!x.w.includes(c)) g.wrong++;
+  if ([...x.w].every(ch => g.guessed.has(ch))){
+    g.state = 'won'; g.solved++; g.score += 10 + 2*(HANG_BALLOONS - g.wrong) - (g.hint ? 3 : 0);
+    skillMark('vocabulary', true); if (x.bank) bankOk(x.bank); confetti(30);
+  } else if (g.wrong >= HANG_BALLOONS){ g.state = 'lost'; skillMark('vocabulary', false); }
+  render();
+}
+function hangHint(){
+  const g = G; if (!g || g.hint || g.state !== 'play') return;
+  const x = g.words[g.i], missing = [...new Set(x.w)].filter(c => !g.guessed.has(c));
+  if (!missing.length) return; g.hint = true; hangGuess(missing[Math.floor(Math.random()*missing.length)]);
+}
+function hangNext(){
+  const g = G; if (!g || g.k !== 'hang' || g.state === 'play') return;
+  if (g.i + 1 >= g.words.length){ endGame('hang', g.score, {solved:g.solved, total:g.words.length}); return; }
+  g.i++; g.guessed = new Set(); g.wrong = 0; g.hint = false; g.state = 'play'; render();
 }
 
 // ---------- Celebration ----------
@@ -1946,6 +2048,686 @@ const SERIES = [
    sum:['Jonah\'s friendships are repaired as Felix and Priya help rebuild a bigger tree house, and Pop finally reaches out to Walt.','Priya wired a string of lights along the roof.','Jonah decides to tear down the tree house forever.']}
  ]}
 ];
+
+
+// Bigger word lists for the matching games and Hangman.
+const MATCHWORDS = {
+  pics3: [
+    ['cat','🐱'],['dog','🐶'],['fish','🐟'],['frog','🐸'],['pig','🐷'],['cow','🐮'],
+    ['duck','🦆'],['hen','🐔'],['rooster','🐓'],['owl','🦉'],['bat','🦇'],['bee','🐝'],
+    ['ladybug','🐞'],['ant','🐜'],['crab','🦀'],['snail','🐌'],['snake','🐍'],['whale','🐳'],
+    ['shark','🦈'],['horse','🐴'],['sheep','🐑'],['goat','🐐'],['rabbit','🐰'],['mouse','🐭'],
+    ['tiger','🐯'],['lion','🦁'],['bear','🐻'],['monkey','🐵'],['zebra','🦓'],['camel','🐫'],
+    ['turtle','🐢'],['penguin','🐧'],['panda','🐼'],['hamster','🐹'],['poodle','🐩'],['chipmunk','🐿️'],
+    ['badger','🦡'],['swan','🦢'],['eagle','🦅'],['parrot','🦜'],['llama','🦙'],['hedgehog','🦔'],
+    ['bison','🦬'],['seal','🦭'],['worm','🪱'],['beetle','🪲'],['feather','🪶'],['skunk','🦨'],
+    ['otter','🦦'],['sloth','🦥'],['beaver','🦫'],['dragon','🐉'],['unicorn','🦄'],['sun','☀️'],
+    ['moon','🌙'],['star','⭐'],['rainbow','🌈'],['snowman','⛄'],['tree','🌳'],['leaf','🍃'],
+    ['rose','🌹'],['tulip','🌷'],['cactus','🌵'],['mushroom','🍄'],['apple','🍎'],['pear','🍐'],
+    ['lemon','🍋'],['grapes','🍇'],['melon','🍈'],['cherry','🍒'],['peach','🍑'],['carrot','🥕'],
+    ['corn','🌽'],['pumpkin','🎃'],['egg','🥚'],['bread','🍞'],['cake','🍰'],['cookie','🍪'],
+    ['candy','🍬'],['pizza','🍕'],['milk','🥛'],['cheese','🧀'],['bacon','🥓'],['taco','🌮'],
+    ['popcorn','🍿'],['donut','🍩'],['pancakes','🥞'],['cupcake','🧁'],['sandwich','🥪'],['banana','🍌'],
+    ['peanut','🥜'],['butter','🧈'],['hat','🎩'],['sock','🧦'],['shoe','👟'],['dress','👗'],
+    ['shirt','👕'],['crown','👑'],['ring','💍'],['jacket','🧥'],['glove','🧤'],['scarf','🧣'],
+    ['bell','🔔'],['drum','🥁'],['kite','🪁'],['bus','🚌'],['car','🚗'],['truck','🚚'],
+    ['train','🚆'],['ship','🚢'],['sailboat','⛵'],['bike','🚲'],['rocket','🚀'],['house','🏠'],
+    ['tent','⛺'],['castle','🏰'],['bed','🛏️'],['key','🔑'],['lock','🔒'],['clock','⏰'],
+    ['book','📖'],['pencil','✏️'],['robot','🤖'],['ghost','👻'],['gift','🎁'],['magnet','🧲'],
+    ['candle','🕯️'],['balloon','🎈'],['basket','🧺'],['trophy','🏆'],['medal','🏅'],['ladder','🪜'],
+    ['bucket','🪣'],['hammer','🔨'],['wrench','🔧'],['ticket','🎫'],['puzzle','🧩'],['sponge','🧽'],
+    ['soap','🧼'],['broom','🧹'],['spider','🕷️'],['rock','🪨'],['log','🪵']
+  ],
+  pics5: [
+    ['microscope','🔬'],['telescope','🔭'],['tornado','🌪️'],['saxophone','🎷'],['trumpet','🎺'],['violin','🎻'],
+    ['guitar','🎸'],['piano','🎹'],['banjo','🪕'],['accordion','🪗'],['kangaroo','🦘'],['elephant','🐘'],
+    ['giraffe','🦒'],['gorilla','🦍'],['octopus','🐙'],['butterfly','🦋'],['dinosaur','🦕'],['crocodile','🐊'],
+    ['hippo','🦛'],['rhino','🦏'],['raccoon','🦝'],['peacock','🦚'],['mosquito','🦟'],['scorpion','🦂'],
+    ['caterpillar','🐛'],['leopard','🐆'],['lobster','🦞'],['mammoth','🦣'],['dodo','🦤'],['flamingo','🦩'],
+    ['orangutan','🦧'],['koala','🐨'],['turkey','🦃'],['buffalo','🐃'],['dolphin','🐬'],['lizard','🦎'],
+    ['tyrannosaurus','🦖'],['pineapple','🍍'],['avocado','🥑'],['watermelon','🍉'],['strawberry','🍓'],['coconut','🥥'],
+    ['eggplant','🍆'],['potato','🥔'],['cucumber','🥒'],['tomato','🍅'],['spaghetti','🍝'],['hamburger','🍔'],
+    ['burrito','🌯'],['broccoli','🥦'],['kiwi','🥝'],['pretzel','🥨'],['dumpling','🥟'],['waffle','🧇'],
+    ['olive','🫒'],['blueberries','🫐'],['lollipop','🍭'],['croissant','🥐'],['bagel','🥯'],['honey','🍯'],
+    ['salad','🥗'],['teapot','🫖'],['helicopter','🚁'],['ambulance','🚑'],['airplane','✈️'],['motorcycle','🏍️'],
+    ['tractor','🚜'],['satellite','🛰️'],['parachute','🪂'],['skateboard','🛹'],['scooter','🛴'],['canoe','🛶'],
+    ['firetruck','🚒'],['taxi','🚕'],['carousel','🎠'],['umbrella','☂️'],['thermometer','🌡️'],['abacus','🧮'],
+    ['battery','🔋'],['computer','💻'],['telephone','☎️'],['television','📺'],['camera','📷'],['envelope','✉️'],
+    ['calendar','📅'],['paperclip','📎'],['stethoscope','🩺'],['bandage','🩹'],['microphone','🎤'],['headphones','🎧'],
+    ['joystick','🕹️'],['volcano','🌋'],['snowflake','❄️'],['lightning','⚡'],['statue','🗽'],['sunflower','🌻'],
+    ['hourglass','⌛'],['alien','👽'],['firecracker','🧨'],['fireworks','🎆'],['lantern','🏮'],['toothbrush','🪥'],
+    ['backpack','🎒'],['briefcase','💼'],['suitcase','🧳'],['lipstick','💄'],['sunglasses','🕶️'],['compass','🧭'],
+    ['island','🏝️'],['diamond','💎'],['anchor','⚓'],['scissors','✂️'],['basketball','🏀'],['football','🏈'],
+    ['baseball','⚾'],['volleyball','🏐'],['bowling','🎳']
+  ],
+  vocab3: [
+    ['brave','not afraid to do hard things'],
+    ['gather','to bring things together in one place'],
+    ['enormous','very, very big'],
+    ['fragile','easy to break'],
+    ['whisper','to talk very quietly'],
+    ['curious','wanting to know or learn more'],
+    ['tiny','very small'],
+    ['shiver','to shake because you are cold'],
+    ['giggle','a small, silly laugh'],
+    ['grumpy','in a bad, cranky mood'],
+    ['cozy','warm, soft, and comfy'],
+    ['gentle','soft and careful, not rough'],
+    ['sturdy','strong and hard to knock over'],
+    ['eager','excited and ready to do something'],
+    ['nervous','worried and a little scared'],
+    ['furious','very, very angry'],
+    ['delighted','very happy and pleased'],
+    ['exhausted','so tired you can barely move'],
+    ['peculiar','strange or unusual'],
+    ['cautious','careful to stay safe'],
+    ['clumsy','often tripping or dropping things'],
+    ['swift','moving very fast'],
+    ['sly','tricky and sneaky'],
+    ['timid','shy and easily scared'],
+    ['proud','happy about something you did well'],
+    ['stubborn','not willing to change your mind'],
+    ['generous','happy to share and give'],
+    ['selfish','caring only about yourself'],
+    ['loyal','always sticking by your friends'],
+    ['polite','using good manners'],
+    ['rude','not kind or well-mannered'],
+    ['honest','always telling the truth'],
+    ['patient','able to wait calmly'],
+    ['gloomy','dark and sad'],
+    ['damp','a little bit wet'],
+    ['soggy','soaked and mushy with water'],
+    ['crisp','firm, dry, and crunchy'],
+    ['glare','to look at someone angrily'],
+    ['gaze','to look at something for a long time'],
+    ['stare','to look hard without blinking'],
+    ['glance','a quick look'],
+    ['peek','to look quickly and secretly'],
+    ['mumble','to talk in a low, unclear way'],
+    ['shout','to call out loudly'],
+    ['wander','to walk around with no plan'],
+    ['stroll','a slow, relaxed walk'],
+    ['dash','to run somewhere quickly'],
+    ['scurry','to move fast with small steps'],
+    ['tumble','to fall and roll over'],
+    ['stumble','to trip and almost fall'],
+    ['crawl','to move on hands and knees'],
+    ['creep','to move slowly and quietly'],
+    ['clutch','to hold on tightly'],
+    ['grab','to take hold of quickly'],
+    ['toss','to throw lightly'],
+    ['fetch','to go and bring something back'],
+    ['scatter','to throw or spread all over'],
+    ['sort','to put things into groups'],
+    ['repair','to fix something broken'],
+    ['borrow','to use something and give it back'],
+    ['lend','to let someone use your things for a while'],
+    ['share','to let others have some too'],
+    ['discover','to find something for the first time'],
+    ['explore','to travel around to learn about a place'],
+    ['journey','a long trip'],
+    ['cottage','a small house in the country'],
+    ['meadow','a field of grass and flowers'],
+    ['forest','a large area full of trees'],
+    ['valley','low land between hills'],
+    ['cliff','a steep, rocky edge'],
+    ['shore','land along the edge of the sea'],
+    ['pond','a small body of still water'],
+    ['puddle','a little pool of water on the ground'],
+    ['burrow','a hole an animal digs to live in'],
+    ['nest','a home a bird builds'],
+    ['den','a wild animal\'s cave or home'],
+    ['crumb','a tiny bit of bread'],
+    ['feast','a big, special meal'],
+    ['nibble','to take small bites'],
+    ['gobble','to eat very fast'],
+    ['sip','to drink a little at a time'],
+    ['thirsty','needing a drink'],
+    ['starving','very, very hungry'],
+    ['delicious','tasting very good'],
+    ['sour','tasting sharp like a lemon'],
+    ['bitter','tasting harsh and not sweet'],
+    ['fierce','wild and scary'],
+    ['mighty','very strong and powerful'],
+    ['weak','without much strength'],
+    ['terrified','very, very scared'],
+    ['startled','surprised and a little jumpy'],
+    ['amazed','filled with wonder'],
+    ['puzzled','confused and unsure'],
+    ['jealous','wanting what someone else has'],
+    ['lonely','sad from being alone'],
+    ['cheerful','happy and bright'],
+    ['calm','quiet and peaceful, not upset'],
+    ['anxious','worried about what might happen'],
+    ['ashamed','feeling bad about something you did'],
+    ['grateful','thankful for what you have'],
+    ['brilliant','very bright or very smart'],
+    ['modern','new and up to date'],
+    ['rare','not found very often'],
+    ['common','found often, not special'],
+    ['plenty','more than enough'],
+    ['empty','having nothing inside'],
+    ['crowded','packed with too many people'],
+    ['narrow','thin, not wide'],
+    ['steep','going up or down sharply'],
+    ['smooth','flat and even, with no bumps'],
+    ['rough','bumpy and uneven'],
+    ['shallow','not deep'],
+    ['gigantic','huge, like a giant'],
+    ['dim','not very bright'],
+    ['dazzling','so bright it is hard to look at'],
+    ['sparkle','to shine with little flashes of light'],
+    ['glow','to give off a soft, steady light'],
+    ['vanish','to disappear suddenly'],
+    ['appear','to come into sight'],
+    ['hide','to get out of sight'],
+    ['seek','to look for'],
+    ['search','to look carefully all over for something'],
+    ['chore','a small job you do at home'],
+    ['task','a job that needs to be done'],
+    ['habit','something you do again and again'],
+    ['rule','something you must follow'],
+    ['promise','to say you will surely do something'],
+    ['argue','to disagree in an angry way'],
+    ['complain','to say you are not happy about something'],
+    ['admit','to say something is true, even if hard'],
+    ['apologize','to say you are sorry'],
+    ['decide','to make up your mind'],
+    ['choose','to pick one thing'],
+    ['imagine','to make a picture in your mind'],
+    ['pretend','to act as if something is real'],
+    ['remember','to keep something in your mind'],
+    ['forget','to lose something from your memory'],
+    ['notice','to see or become aware of'],
+    ['observe','to watch carefully'],
+    ['predict','to guess what will happen next'],
+    ['protect','to keep safe from harm'],
+    ['rescue','to save from danger'],
+    ['warn','to tell someone about danger ahead'],
+    ['escape','to get away and break free'],
+    ['attach','to join one thing onto another'],
+    ['include','to make part of a group'],
+    ['invite','to ask someone to come'],
+    ['celebrate','to have fun for a special day'],
+    ['announce','to tell everyone something new'],
+    ['describe','to tell what something is like'],
+    ['explain','to make something clear and easy to understand'],
+    ['compare','to see how things are alike or different'],
+    ['improve','to make something better'],
+    ['practice','to do something again and again to get better'],
+    ['attempt','to try to do something'],
+    ['continue','to keep going'],
+    ['pause','to stop for a short time'],
+    ['hurry','to move quickly because time is short'],
+    ['delay','to make something late'],
+    ['quarrel','a noisy fight with words'],
+    ['mess','things all over the place'],
+    ['tidy','neat and in order'],
+    ['damage','harm that breaks or hurts something'],
+    ['flock','a group of birds or sheep'],
+    ['herd','a large group of cows or animals'],
+    ['swarm','a big moving group of bees or bugs'],
+    ['hatch','to break out of an egg'],
+    ['sprout','to start to grow from a seed'],
+    ['bloom','to open up into a flower'],
+    ['wilt','to droop from no water'],
+    ['harvest','to pick crops when they are ready'],
+    ['shelter','a place that keeps you safe from weather'],
+    ['blizzard','a big snowstorm with strong wind'],
+    ['breeze','a light, gentle wind'],
+    ['drizzle','light rain'],
+    ['thunder','the loud boom in a storm'],
+    ['howl','a long, loud cry like a wolf'],
+    ['squeal','a high, sharp cry'],
+    ['chatter','to talk fast about little things'],
+    ['snore','to breathe noisily while asleep'],
+    ['yawn','to open your mouth wide when sleepy'],
+    ['blush','to turn red in the face'],
+    ['sniff','to smell with short breaths'],
+    ['trudge','to walk slowly with heavy steps'],
+    ['soar','to fly high in the sky'],
+    ['float','to rest on top of water'],
+    ['sink','to go down under water'],
+    ['sway','to move gently side to side'],
+    ['wobble','to rock unsteadily back and forth'],
+    ['tremble','to shake from fear']
+  ],
+  vocab5: [
+    ['reluctant','not wanting to do something'],
+    ['ancient','very, very old'],
+    ['evidence','facts that show something is true'],
+    ['abundant','more than enough, in large amounts'],
+    ['summarize','to tell the main points briefly'],
+    ['precise','exact and correct in every detail'],
+    ['hesitate','to pause before acting because unsure'],
+    ['analyze','to study something closely in parts'],
+    ['conclude','to decide after thinking it through'],
+    ['infer','to figure out from clues'],
+    ['determine','to find out or settle for sure'],
+    ['significant','important and meaningful'],
+    ['essential','absolutely needed'],
+    ['adequate','just good enough'],
+    ['sufficient','as much as is needed'],
+    ['scarce','hard to find, not enough to go around'],
+    ['vast','huge and spreading far'],
+    ['immense','extremely large'],
+    ['miniature','a very small copy of something'],
+    ['fragment','a small broken piece'],
+    ['consequence','a result of an action'],
+    ['benefit','something good you get'],
+    ['obstacle','something that blocks your way'],
+    ['strategy','a careful plan to reach a goal'],
+    ['objective','a goal you aim for'],
+    ['achieve','to reach a goal by working hard'],
+    ['persuade','to get someone to agree with you'],
+    ['convince','to make someone believe something'],
+    ['contradict','to say the opposite of'],
+    ['emphasize','to give extra attention to'],
+    ['illustrate','to explain with pictures or examples'],
+    ['interpret','to explain what something means'],
+    ['clarify','to make easier to understand'],
+    ['elaborate','to add more detail'],
+    ['investigate','to look into carefully to learn facts'],
+    ['examine','to look at very closely'],
+    ['assume','to believe without proof'],
+    ['verify','to check that something is true'],
+    ['justify','to give good reasons for'],
+    ['evaluate','to judge how good something is'],
+    ['anticipate','to expect something before it happens'],
+    ['transform','to change completely'],
+    ['adapt','to change to fit a new situation'],
+    ['modify','to change a little'],
+    ['expand','to grow larger'],
+    ['diminish','to become smaller or weaker'],
+    ['decline','to go down or get worse'],
+    ['accumulate','to collect or pile up over time'],
+    ['distribute','to hand out to many people'],
+    ['contribute','to give to help a cause'],
+    ['cooperate','to work together'],
+    ['collaborate','to team up on a project'],
+    ['compete','to try to win against others'],
+    ['negotiate','to talk things over to reach a deal'],
+    ['resolve','to settle a problem'],
+    ['conflict','a serious fight or disagreement'],
+    ['dispute','an argument over something'],
+    ['tension','a strained, uneasy feeling'],
+    ['apprehensive','uneasy about the future'],
+    ['indifferent','not caring either way'],
+    ['enthusiastic','full of excitement and interest'],
+    ['persistent','keeps trying and does not quit'],
+    ['resilient','able to bounce back after trouble'],
+    ['humble','not bragging about yourself'],
+    ['arrogant','acting better than others'],
+    ['compassion','caring about the suffering of others'],
+    ['empathy','understanding how others feel'],
+    ['integrity','being honest and doing what is right'],
+    ['dignity','a sense of self-respect and worth'],
+    ['courageous','brave in the face of danger'],
+    ['cunning','clever in a tricky way'],
+    ['naive','too trusting, lacking experience'],
+    ['vivid','bright, clear, and full of life'],
+    ['dreary','dull, gray, and gloomy'],
+    ['serene','calm and untroubled'],
+    ['tranquil','quiet and still, without disturbance'],
+    ['chaotic','wild and totally disorganized'],
+    ['ominous','showing that something bad is coming'],
+    ['mysterious','hard to explain or understand'],
+    ['obscure','not well known, or hard to see'],
+    ['prominent','important and easy to notice'],
+    ['distinct','clearly different or easy to tell apart'],
+    ['subtle','so slight it is hard to notice'],
+    ['gradual','happening slowly, step by step'],
+    ['abrupt','sudden and unexpected'],
+    ['frequent','happening often'],
+    ['occasional','happening once in a while'],
+    ['permanent','lasting forever'],
+    ['temporary','lasting only a short time'],
+    ['durable','lasting a long time without wearing out'],
+    ['flexible','able to bend easily'],
+    ['rigid','stiff and not able to bend'],
+    ['transparent','clear enough to see through'],
+    ['dense','packed tightly together'],
+    ['fertile','rich enough to grow many plants'],
+    ['barren','bare, with little growing'],
+    ['arid','very dry with little rain'],
+    ['humid','warm and damp in the air'],
+    ['climate','the usual weather of a place over time'],
+    ['habitat','the natural home of a plant or animal'],
+    ['species','a group of living things of the same kind'],
+    ['migrate','to move to another region with the seasons'],
+    ['extinct','no longer living anywhere'],
+    ['predator','an animal that hunts others'],
+    ['prey','an animal hunted for food'],
+    ['organism','any living thing'],
+    ['erosion','wearing away of land by wind or water'],
+    ['landscape','the view of an area of land'],
+    ['terrain','the shape and type of the ground'],
+    ['peninsula','land almost surrounded by water'],
+    ['continent','one of the seven large landmasses of Earth'],
+    ['civilization','an advanced society with cities and laws'],
+    ['colony','a settlement ruled by a far-off country'],
+    ['ancestor','a relative from long ago'],
+    ['heritage','what is passed down from the past'],
+    ['tradition','a custom handed down over many years'],
+    ['custom','a usual way of doing things'],
+    ['monument','a structure built to honor something'],
+    ['artifact','an object made by people long ago'],
+    ['era','a long period of history'],
+    ['century','a period of one hundred years'],
+    ['democracy','government where people vote for leaders'],
+    ['citizen','a member of a country'],
+    ['debate','a formal discussion of opposing views'],
+    ['opinion','what someone thinks or believes'],
+    ['fact','something that can be proven true'],
+    ['bias','unfair leaning toward one side'],
+    ['perspective','a point of view'],
+    ['narrator','the person telling a story'],
+    ['protagonist','the main character in a story'],
+    ['climax','the most exciting point in a story'],
+    ['resolution','how the problem in a story is solved'],
+    ['theme','the message or lesson of a story'],
+    ['setting','when and where a story happens'],
+    ['dialogue','words spoken between characters'],
+    ['metaphor','comparing things without using like or as'],
+    ['simile','comparing two things using like or as'],
+    ['foreshadow','to hint at what will happen later'],
+    ['excerpt','a short piece taken from a longer text'],
+    ['genre','a type or category of writing'],
+    ['biography','a true life story written by someone else'],
+    ['autobiography','a true life story written by that same person'],
+    ['hypothesis','an educated guess to test'],
+    ['experiment','a test to find something out'],
+    ['conclusion','the final decision after study'],
+    ['data','facts and numbers collected'],
+    ['observation','something noticed by watching carefully'],
+    ['estimate','a close guess of an amount'],
+    ['approximate','close to exact but not quite'],
+    ['volume','the amount of space something fills'],
+    ['mass','how much matter is in an object'],
+    ['dissolve','to mix into a liquid and seem to disappear'],
+    ['evaporate','to turn from liquid into gas'],
+    ['condense','to turn from gas into liquid'],
+    ['vibrate','to move back and forth very fast'],
+    ['friction','rubbing that slows things down'],
+    ['gravity','the force that pulls things toward Earth'],
+    ['orbit','the curved path around a planet or star'],
+    ['atmosphere','the layer of gases around Earth'],
+    ['source','where something comes from'],
+    ['resource','something useful that people need'],
+    ['consume','to eat, drink, or use up'],
+    ['produce','to make or create'],
+    ['efficient','working well without waste'],
+    ['convenient','easy and handy to use'],
+    ['feasible','possible to do'],
+    ['inevitable','sure to happen'],
+    ['crucial','extremely important'],
+    ['optional','something you can choose to do or not'],
+    ['mandatory','required by a rule'],
+    ['prohibit','to forbid by rule or law'],
+    ['permit','to allow'],
+    ['acquire','to get or gain'],
+    ['retain','to keep or hold onto'],
+    ['abandon','to leave behind for good'],
+    ['neglect','to fail to take care of'],
+    ['nurture','to care for and help grow'],
+    ['cherish','to love and treasure dearly'],
+    ['admire','to look up to with respect'],
+    ['envy','a feeling of wanting the luck of another'],
+    ['despise','to strongly dislike'],
+    ['reflect','to look back and think carefully'],
+    ['ponder','to think about deeply'],
+    ['recall','to bring back to mind'],
+    ['perceive','to become aware through the senses'],
+    ['reveal','to show something hidden'],
+    ['conceal','to hide from view'],
+    ['disguise','to change your looks to hide who you are'],
+    ['deceive','to trick someone into believing something false'],
+    ['sincere','truly meaning what you say'],
+    ['skeptical','doubting that something is true'],
+    ['gullible','easily fooled'],
+    ['meticulous','extremely careful about details'],
+    ['diligent','hardworking and steady'],
+    ['tedious','long, slow, and boring'],
+    ['intense','very strong or extreme'],
+    ['massive','very large and heavy'],
+    ['compact','small and tightly packed'],
+    ['elegant','graceful and stylish'],
+    ['awkward','clumsy or uncomfortable'],
+    ['hostile','unfriendly and ready to fight'],
+    ['cordial','warm and friendly'],
+    ['vacant','empty, with no one in it'],
+    ['dwindle','to slowly grow fewer'],
+    ['surge','a sudden rush forward'],
+    ['plummet','to drop very fast'],
+    ['ascend','to go up'],
+    ['descend','to go down'],
+    ['linger','to stay longer than needed'],
+    ['venture','a risky trip or project'],
+    ['emerge','to come out into view'],
+    ['endure','to put up with something hard'],
+    ['thrive','to grow strong and healthy'],
+    ['flourish','to grow well and succeed']
+  ],
+  chunks3: [
+    'pan-cake','sun-set','cup-cake','rain-bow','foot-ball','base-ball','bath-tub','back-pack',
+    'pop-corn','some-thing','in-side','out-side','up-stairs','sail-boat','star-fish','gold-fish',
+    'snow-man','snow-flake','cow-boy','mail-box','fire-fly','bed-time','sun-shine','rain-coat',
+    'play-ground','sand-box','tooth-brush','hair-cut','bird-house','tree-house','lunch-box','note-book',
+    'sea-shell','door-bell','drum-stick','light-house','moon-light','head-band','but-ter-fly','sun-flow-er',
+    'rab-bit','kit-ten','mit-ten','but-ter','hap-pen','nap-kin','bas-ket','mag-net',
+    'ham-ster','pic-nic','muf-fin','gob-lin','cac-tus','den-tist','prob-lem','plas-tic',
+    'in-sect','at-tic','jack-et','pock-et','tick-et','buck-et','rock-et','pen-cil',
+    'hel-met','lem-on','wag-on','rob-in','cab-in','sev-en','vis-it','pump-kin',
+    'tab-let','ti-ger','spi-der','pi-lot','si-lent','ti-dy','fi-nal','ze-bra',
+    'se-cret','teach-er','see-saw','tea-pot','pea-nut','bee-hive','high-way','light-ning',
+    'side-walk','ice-berg','pine-cone','nine-ty','free-dom','sleep-y','ap-ple','ta-ble',
+    'can-dle','bub-ble','pud-dle','lit-tle','puz-zle','bot-tle','tur-tle','pur-ple',
+    'sim-ple','jun-gle','tick-le','gig-gle','wig-gle','nee-dle','bee-tle','ea-gle',
+    'cra-dle','ti-tle','han-dle','gen-tle','mar-ble','ma-ple','hap-py','fun-ny',
+    'sil-ly','pup-py','hob-by','bun-ny','jel-ly','din-ner','sum-mer','win-ter',
+    'flow-er','mon-ster','doc-tor','gar-den','hun-gry','thun-der','ba-na-na','to-ma-to',
+    'bas-ket-ball','di-no-saur'
+  ],
+  chunks5: [
+    'ad-ven-ture','cel-e-brate','el-e-phant','af-ter-noon','an-i-mal','beau-ti-ful','com-put-er','de-li-cious',
+    'en-er-gy','fan-tas-tic','gal-ax-y','hel-i-cop-ter','hos-pi-tal','im-por-tant','in-ven-tion','li-brar-y',
+    'mag-nif-i-cent','mys-ter-y','nec-es-sar-y','oc-to-pus','or-ches-tra','pa-ja-mas','pep-per-o-ni','pho-to-graph',
+    'pine-ap-ple','pop-u-lar','pres-i-dent','re-mem-ber','skel-e-ton','straw-ber-ry','sud-den-ly','tel-e-phone',
+    'tel-e-vi-sion','to-geth-er','um-brel-la','un-der-stand','ve-hi-cle','vol-ca-no','won-der-ful','yes-ter-day',
+    'ab-so-lute-ly','ac-ci-dent','al-pha-bet','a-quar-i-um','as-tro-naut','av-o-ca-do','bi-cy-cle','cal-cu-la-tor',
+    'cal-en-dar','cam-er-a','car-ni-val','cat-er-pil-lar','cer-e-al','choc-o-late','cin-na-mon','com-mu-ni-ty',
+    'cu-cum-ber','de-ci-sion','dif-fer-ent','di-rec-tion','dis-cov-er-y','ed-u-ca-tion','en-vi-ron-ment','ex-pe-ri-ence',
+    'ex-plo-ra-tion','fam-i-ly','fes-ti-val','fur-ni-ture','gen-er-ous','gym-nas-tics','ham-burg-er','his-to-ry',
+    'ho-ri-zon','hur-ri-cane','i-mag-i-na-tion','in-for-ma-tion','in-ter-est-ing','in-vis-i-ble','jel-ly-fish','kan-ga-roo',
+    'lem-on-ade','lul-la-by','med-i-cine','mi-cro-scope','mo-tor-cy-cle','mu-se-um','mu-si-cian','neigh-bor-hood',
+    'op-po-site','or-ga-nize','par-a-chute','per-son-al-i-ty','pi-an-o','po-ta-to','pre-dic-tion','re-frig-er-a-tor',
+    're-spon-si-ble','res-tau-rant','sat-el-lite','sax-o-phone','sci-en-tist','spa-ghet-ti','tem-per-a-ture','the-a-ter',
+    'tor-na-do','trop-i-cal','va-ca-tion','veg-e-ta-ble','vi-o-lin','wa-ter-mel-on','wil-der-ness','xy-lo-phone',
+    'a-part-ment','ar-chi-tect','hip-po-pot-a-mus','di-a-mond','fla-min-go','go-ril-la','croc-o-dile','chim-pan-zee',
+    'cel-e-bra-tion','con-ver-sa-tion','trans-por-ta-tion','mul-ti-pli-ca-tion','sub-trac-tion','ge-og-ra-phy','bi-ol-o-gy','dic-tion-ar-y',
+    'el-e-va-tor','es-ca-la-tor','ex-er-cise','mys-te-ri-ous','in-cred-i-ble','re-mark-a-ble','com-fort-a-ble','un-for-tu-nate-ly',
+    'par-tic-u-lar','char-ac-ter','mol-e-cule','en-er-get-ic','vol-un-teer','ad-di-tion','pop-u-la-tion','cel-er-y'
+  ],
+  affix3: [
+    {word:'careful', meaning:'full of care, paying close attention', root:'care'},
+    {word:'careless', meaning:'without care, not paying attention', root:'care'},
+    {word:'carefully', meaning:'done in a way that takes great care', root:'care'},
+    {word:'helpful', meaning:'full of help, giving a hand', root:'help'},
+    {word:'helpless', meaning:'without help, not able to help yourself', root:'help'},
+    {word:'helper', meaning:'a person who helps', root:'help'},
+    {word:'painful', meaning:'full of pain, it hurts', root:'pain'},
+    {word:'painless', meaning:'without any pain', root:'pain'},
+    {word:'kindly', meaning:'in a kind way', root:'kind'},
+    {word:'kindness', meaning:'the quality of being kind', root:'kind'},
+    {word:'unkind', meaning:'not kind, a little mean', root:'kind'},
+    {word:'reheat', meaning:'to warm up again', root:'heat'},
+    {word:'preheat', meaning:'to warm up before using', root:'heat'},
+    {word:'unpack', meaning:'to take things out of a bag or box', root:'pack'},
+    {word:'repack', meaning:'to put things into a bag again', root:'pack'},
+    {word:'unlock', meaning:'to open with a key', root:'lock'},
+    {word:'relock', meaning:'to close with a key once more', root:'lock'},
+    {word:'untie', meaning:'to undo a knot or bow', root:'tie'},
+    {word:'retie', meaning:'to make a knot or bow again', root:'tie'},
+    {word:'reread', meaning:'to read again', root:'read'},
+    {word:'reader', meaning:'a person who reads', root:'read'},
+    {word:'misread', meaning:'to read the wrong way', root:'read'},
+    {word:'replay', meaning:'to play again', root:'play'},
+    {word:'player', meaning:'a person who plays a game', root:'play'},
+    {word:'playful', meaning:'full of fun and games', root:'play'},
+    {word:'unfair', meaning:'not fair', root:'fair'},
+    {word:'fairly', meaning:'in a fair and even way', root:'fair'},
+    {word:'fairness', meaning:'the quality of treating everyone the same', root:'fair'},
+    {word:'dislike', meaning:'to not like', root:'like'},
+    {word:'unlike', meaning:'not the same as', root:'like'},
+    {word:'misspell', meaning:'to spell wrong', root:'spell'},
+    {word:'speller', meaning:'a person who spells words', root:'spell'},
+    {word:'rebuild', meaning:'to build again', root:'build'},
+    {word:'builder', meaning:'a person who builds things', root:'build'},
+    {word:'prepay', meaning:'to pay before you get it', root:'pay'},
+    {word:'repay', meaning:'to pay back', root:'pay'},
+    {word:'preview', meaning:'to see something ahead of time', root:'view'},
+    {word:'review', meaning:'to look over again', root:'view'},
+    {word:'hopeful', meaning:'full of hope', root:'hope'},
+    {word:'hopeless', meaning:'without any hope', root:'hope'},
+    {word:'useful', meaning:'full of use, good for a job', root:'use'},
+    {word:'useless', meaning:'without use, good for nothing', root:'use'},
+    {word:'reuse', meaning:'to use again', root:'use'},
+    {word:'fearful', meaning:'full of fear', root:'fear'},
+    {word:'fearless', meaning:'without fear', root:'fear'},
+    {word:'thankful', meaning:'full of thanks', root:'thank'},
+    {word:'thankless', meaning:'getting no thanks', root:'thank'},
+    {word:'colorful', meaning:'full of many colors', root:'color'},
+    {word:'colorless', meaning:'with no color at all', root:'color'},
+    {word:'teacher', meaning:'a person who teaches', root:'teach'},
+    {word:'reteach', meaning:'to teach a lesson again', root:'teach'},
+    {word:'painter', meaning:'a person who paints', root:'paint'},
+    {word:'repaint', meaning:'to paint again', root:'paint'},
+    {word:'softly', meaning:'in a quiet, gentle way', root:'soft'},
+    {word:'softness', meaning:'the state of being soft', root:'soft'},
+    {word:'sadly', meaning:'in an unhappy way', root:'sad'},
+    {word:'sadness', meaning:'the feeling of being sad', root:'sad'},
+    {word:'unhappy', meaning:'not happy', root:'happy'},
+    {word:'happily', meaning:'in a happy, glad way', root:'happy'},
+    {word:'happiness', meaning:'the feeling of being glad', root:'happy'},
+    {word:'washable', meaning:'able to be washed', root:'wash'},
+    {word:'rewash', meaning:'to wash again', root:'wash'},
+    {word:'breakable', meaning:'able to be broken', root:'break'},
+    {word:'unbreakable', meaning:'not able to be broken', root:'break'},
+    {word:'unlucky', meaning:'not lucky', root:'lucky'},
+    {word:'luckily', meaning:'in a lucky way, by good luck', root:'lucky'},
+    {word:'dishonest', meaning:'not honest, not truthful', root:'honest'},
+    {word:'honestly', meaning:'in a truthful way', root:'honest'},
+    {word:'misplace', meaning:'to put in the wrong place and lose', root:'place'},
+    {word:'replace', meaning:'to put back or swap for a new one', root:'place'},
+    {word:'recount', meaning:'to count again', root:'count'},
+    {word:'miscount', meaning:'to count wrong', root:'count'},
+    {word:'unsafe', meaning:'not safe', root:'safe'},
+    {word:'safely', meaning:'in a way that avoids harm', root:'safe'},
+    {word:'unwrap', meaning:'to take the wrapping off', root:'wrap'},
+    {word:'rewrap', meaning:'to wrap up again', root:'wrap'},
+    {word:'loudly', meaning:'in a noisy way', root:'loud'},
+    {word:'loudness', meaning:'how noisy something is', root:'loud'}
+  ],
+  affix5: [
+    {word:'agreement', meaning:'the state of thinking the same way', root:'agree'},
+    {word:'disagreement', meaning:'the state of not thinking the same way', root:'agree'},
+    {word:'agreeable', meaning:'easy to get along with', root:'agree'},
+    {word:'disagree', meaning:'to have a different opinion', root:'agree'},
+    {word:'invisible', meaning:'not able to be seen', root:'visible'},
+    {word:'visibility', meaning:'how well something can be seen', root:'visible'},
+    {word:'comfortable', meaning:'able to give ease and relaxation', root:'comfort'},
+    {word:'uncomfortable', meaning:'not at ease, feeling awkward', root:'comfort'},
+    {word:'comfortably', meaning:'in a relaxed and easy way', root:'comfort'},
+    {word:'employment', meaning:'the state of having a job', root:'employ'},
+    {word:'unemployment', meaning:'the state of not having a job', root:'employ'},
+    {word:'employer', meaning:'a person or company that hires workers', root:'employ'},
+    {word:'action', meaning:'something that is done', root:'act'},
+    {word:'active', meaning:'always moving and busy', root:'act'},
+    {word:'interact', meaning:'to act with each other', root:'act'},
+    {word:'react', meaning:'to act in response to something', root:'act'},
+    {word:'information', meaning:'facts that are told or learned', root:'inform'},
+    {word:'informative', meaning:'giving useful facts', root:'inform'},
+    {word:'creation', meaning:'something that has been made', root:'create'},
+    {word:'creative', meaning:'good at making up new ideas', root:'create'},
+    {word:'dangerous', meaning:'full of danger, likely to cause harm', root:'danger'},
+    {word:'dangerously', meaning:'in a risky, harmful way', root:'danger'},
+    {word:'courageous', meaning:'full of courage', root:'courage'},
+    {word:'discourage', meaning:'to take away hope or confidence', root:'courage'},
+    {word:'joyous', meaning:'full of joy', root:'joy'},
+    {word:'joyful', meaning:'feeling or showing great gladness', root:'joy'},
+    {word:'international', meaning:'between two or more nations', root:'nation'},
+    {word:'multinational', meaning:'working in many nations', root:'nation'},
+    {word:'transport', meaning:'to carry from one place to another', root:'port'},
+    {word:'portable', meaning:'easy to carry', root:'port'},
+    {word:'transportation', meaning:'ways of moving people and goods', root:'port'},
+    {word:'transform', meaning:'to change into a different shape', root:'form'},
+    {word:'transformation', meaning:'a complete change in form', root:'form'},
+    {word:'subtitle', meaning:'a second title under the main one', root:'title'},
+    {word:'subheading', meaning:'a smaller heading below a main one', root:'heading'},
+    {word:'overcook', meaning:'to cook too long', root:'cook'},
+    {word:'undercook', meaning:'to not cook long enough', root:'cook'},
+    {word:'overestimate', meaning:'to guess too high', root:'estimate'},
+    {word:'underestimate', meaning:'to guess too low', root:'estimate'},
+    {word:'overweight', meaning:'weighing more than is healthy', root:'weight'},
+    {word:'underweight', meaning:'weighing less than is healthy', root:'weight'},
+    {word:'overpay', meaning:'to pay too much', root:'pay'},
+    {word:'underpay', meaning:'to pay too little', root:'pay'},
+    {word:'payment', meaning:'an amount of money given for something', root:'pay'},
+    {word:'nonsense', meaning:'words or ideas that mean nothing', root:'sense'},
+    {word:'sensible', meaning:'showing good judgment', root:'sense'},
+    {word:'artist', meaning:'a person who makes art', root:'art'},
+    {word:'artistic', meaning:'skilled at making beautiful things', root:'art'},
+    {word:'recycle', meaning:'to make old things usable again', root:'cycle'},
+    {word:'cyclist', meaning:'a person who rides a bike', root:'cycle'},
+    {word:'tourist', meaning:'a person who travels for fun', root:'tour'},
+    {word:'tourism', meaning:'the business of trips for fun', root:'tour'},
+    {word:'organize', meaning:'to put in order', root:'organ'},
+    {word:'organization', meaning:'a group set up for a purpose', root:'organ'},
+    {word:'enjoyment', meaning:'the feeling of having fun', root:'enjoy'},
+    {word:'enjoyable', meaning:'able to be fun', root:'enjoy'},
+    {word:'movement', meaning:'the act of changing position', root:'move'},
+    {word:'movable', meaning:'able to be moved', root:'move'},
+    {word:'remove', meaning:'to take away', root:'move'},
+    {word:'mistreat', meaning:'to treat badly', root:'treat'},
+    {word:'treatment', meaning:'care given to make someone well', root:'treat'},
+    {word:'protection', meaning:'something that keeps you from harm', root:'protect'},
+    {word:'protective', meaning:'wanting to keep others safe', root:'protect'},
+    {word:'decoration', meaning:'something added to make a place pretty', root:'decorate'},
+    {word:'decorative', meaning:'used to make things look nice', root:'decorate'},
+    {word:'invention', meaning:'a new thing someone made up', root:'invent'},
+    {word:'inventive', meaning:'good at thinking up new things', root:'invent'},
+    {word:'collection', meaning:'a group of things gathered together', root:'collect'},
+    {word:'collector', meaning:'a person who gathers things as a hobby', root:'collect'},
+    {word:'connection', meaning:'a link between things', root:'connect'},
+    {word:'disconnect', meaning:'to break a link', root:'connect'},
+    {word:'interconnect', meaning:'to link with one another', root:'connect'},
+    {word:'interview', meaning:'a meeting to ask someone questions', root:'view'},
+    {word:'overview', meaning:'a short look at the whole thing', root:'view'},
+    {word:'disappear', meaning:'to go out of sight', root:'appear'},
+    {word:'reappear', meaning:'to come back into sight', root:'appear'},
+    {word:'respectful', meaning:'showing respect', root:'respect'},
+    {word:'disrespect', meaning:'a lack of respect', root:'respect'},
+    {word:'attraction', meaning:'something that draws people in', root:'attract'},
+    {word:'attractive', meaning:'pleasing to look at', root:'attract'},
+    {word:'unattractive', meaning:'not pleasing to look at', root:'attract'},
+    {word:'expression', meaning:'a look on the face that shows feeling', root:'express'},
+    {word:'expressive', meaning:'showing feelings clearly', root:'express'},
+    {word:'construction', meaning:'the act of building', root:'construct'},
+    {word:'reconstruct', meaning:'to build again after damage', root:'construct'},
+    {word:'modernize', meaning:'to make up to date', root:'modern'},
+    {word:'memorize', meaning:'to learn by heart', root:'memory'},
+    {word:'nonfiction', meaning:'writing about real facts', root:'fiction'},
+    {word:'nonstop', meaning:'without stopping', root:'stop'},
+    {word:'nontoxic', meaning:'not poisonous', root:'toxic'},
+    {word:'poisonous', meaning:'full of poison, harmful to eat', root:'poison'},
+    {word:'submarine', meaning:'a ship that travels underwater', root:'marine'},
+    {word:'underground', meaning:'below the surface of the earth', root:'ground'},
+    {word:'oversleep', meaning:'to sleep later than planned', root:'sleep'},
+    {word:'multicolored', meaning:'having many colors', root:'color'},
+    {word:'westward', meaning:'toward the west', root:'west'},
+    {word:'homeward', meaning:'toward home', root:'home'}
+  ]
+};
 
 
 // ---------- Daily reading minutes (matches the class reading logs) ----------
