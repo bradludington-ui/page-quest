@@ -183,8 +183,13 @@ a{color:var(--accent)}
 .mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .mcard{aspect-ratio:4/5;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-size:2.4rem;display:grid;place-items:center;box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 60%,#000);padding:4px;min-width:0}
 .mcard.open{background:var(--panel);color:var(--ink);border:2px solid var(--line);box-shadow:none}
-.mcard.word.open{font-family:var(--read);font-size:clamp(.85rem,2.6vw,1.25rem);font-weight:600;word-break:break-word}
+.mcard.word.open{font-family:var(--read);font-size:1.15rem;font-weight:600;overflow-wrap:normal;word-break:normal;white-space:nowrap;overflow:hidden}
+@media (max-width:520px){.mcard.word.open{zoom:.85}}
 .mcard.got{background:var(--good-soft);border-color:var(--good)}
+.mcard.long.open{font-family:var(--read);font-size:clamp(.78rem,2.1vw,1rem);font-weight:500;line-height:1.3;padding:8px}
+.mgrid.five{grid-template-columns:repeat(5,1fr)}
+@media (max-width:700px){.mgrid.five{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:520px){.mgrid.five{grid-template-columns:repeat(3,1fr)}}
 @media (max-width:520px){.mgrid{grid-template-columns:repeat(3,1fr)}}
 .chip.school{background:var(--sun-soft)}
 .w.ptitle{font-weight:600}
@@ -568,7 +573,7 @@ function render(){
   if (!p && !['profiles','newProfile','grownups'].includes(view.name)) view = {name:'profiles'};
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
-    arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch,
+    arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_chunks:vMatch, g_prefix:vMatch,
     gym:vGym, checkin:vCheckin, sum:vSum, series:vSeries, g_parts:vParts})[view.name]();
 }
 function topbar(back){
@@ -1241,9 +1246,12 @@ function vGrown(){
 // Games are earned by reading: each play costs one ticket, and tickets come from finished
 // stories (2) and Memory Vault visits (1). Every game practises a reading skill.
 const GAMES = {
+  match:{name:'Picture Match', icon:'🃏', blurb:'Flip cards to match each word with its picture.', learn:'Reading words and remembering them', medals:[40,70,90]},
+  meaning:{name:'Meaning Match', icon:'💡', blurb:'Match words from your stories with what they mean.', learn:'Vocabulary: word meanings', medals:[40,70,90]},
+  chunks:{name:'Chunk Match', icon:'🧱', blurb:'Find the two halves that snap together into a word.', learn:'Reading words in chunks', medals:[40,70,90]},
+  prefix:{name:'Prefix Match', icon:'🔑', blurb:'Match word parts like un- and -ful with what they mean.', learn:'Word parts that change meaning', medals:[40,70,90]},
   catch:{name:'Word Catcher', icon:'🧺', blurb:'Catch the real words. Dodge the made-up ones!', learn:'Reading real words quickly', medals:[100,250,450]},
   smash:{name:'Syllable Smash', icon:'🔨', blurb:'Snap chunks together to build words before the clock runs out.', learn:'Reading long words in chunks', medals:[60,150,280]},
-  match:{name:'Memory Match', icon:'🃏', blurb:'Flip cards to match each word with its picture.', learn:'Reading words and remembering them', medals:[40,70,90]},
   parts:{name:'Word Parts', icon:'🧩', blurb:'Snap prefixes and suffixes onto words and figure out what they mean.', learn:'Working out word meanings', medals:[60,110,160]}};
 const REAL3 = ['jump','frog','ship','cake','train','green','smile','chest','bring','cloud','sleep','plant','shark','storm','bread','light','sunny','puppy','rocket','garden','window','basket','monkey','rabbit','picnic','kitten','snack','brave','grass','splash','thumb','queen','whale','candy','music','drum','goat','moon','dragon','muffin'];
 const FAKE3 = ['blim','frap','zunk','clabe','drem','plost','snib','chorp','trell','fleem','spof','wunch','brabe','glimp','skad','thrup','nolt','quisp','dreb','molp','sprin','clunt','vog','plaim','gorch','smeb','twib','jasket','rabbon','pelk'];
@@ -1258,7 +1266,7 @@ REAL3.push(...SPELL3.flatMap(x => x.w.map(w => w.replace(/-/g,''))));
 const SMASH3 = ['pan-cake','but-ter-fly','rain-bow','pop-corn','ba-na-na','di-no-saur','el-e-phant','ham-bur-ger','sun-flow-er','cup-cake','kit-ten','rab-bit','pup-py','gar-den','win-dow','rock-et','pic-nic','mon-key','bas-ket','ro-bot','spi-der','pen-cil','tur-tle','hel-i-cop-ter','um-brel-la','pump-kin','snow-man','cat-er-pil-lar','oc-to-pus','sand-wich'];
 const SMASH5 = ['ad-ven-ture','as-tro-naut','tel-e-scope','en-gi-neer','mys-te-ri-ous','im-por-tant','ex-per-i-ment','de-ter-mined','cel-e-brate','in-ven-tion','mag-nif-i-cent','ge-og-ra-phy','re-mark-a-ble','in-de-pen-dent','en-thu-si-as-tic','his-tor-i-cal','en-vi-ron-ment','ca-pa-ble','nav-i-ga-tor','ex-pe-di-tion','vol-ca-no','par-tic-u-lar','sat-el-lite','com-mu-ni-ty','ar-chi-tect'];
 const PICS3 = [['rocket','🚀'],['dragon','🐉'],['pancake','🥞'],['robot','🤖'],['rainbow','🌈'],['castle','🏰'],['octopus','🐙'],['pizza','🍕'],['guitar','🎸'],['penguin','🐧'],['turtle','🐢'],['crown','👑'],['balloon','🎈'],['umbrella','☂️'],['snowman','⛄'],['cupcake','🧁'],['rabbit','🐰'],['tiger','🐯']];
-const PICS5 = [['telescope','🔭'],['compass','🧭'],['volcano','🌋'],['anchor','⚓'],['microscope','🔬'],['satellite','🛰️'],['magnet','🧲'],['lantern','🏮'],['parachute','🪂'],['trophy','🏆'],['globe','🌎'],['helicopter','🚁'],['lighthouse','🗼'],['saxophone','🎷'],['kangaroo','🦘'],['flamingo','🦩'],['hourglass','⌛'],['astronaut','🧑‍🚀']];
+const PICS5 = [['telescope','🔭'],['compass','🧭'],['volcano','🌋'],['anchor','⚓'],['microscope','🔬'],['satellite','🛰️'],['magnet','🧲'],['lantern','🏮'],['parachute','🪂'],['trophy','🏆'],['globe','🌎'],['helicopter','🚁'],['microphone','🎤'],['saxophone','🎷'],['kangaroo','🦘'],['flamingo','🦩'],['hourglass','⌛'],['astronaut','🧑‍🚀']];
 
 function tix(p){ if (p.tickets == null) p.tickets = 2; return p.tickets; }
 function giveTickets(n){ const p = me(); tix(p); p.tickets += n; save(); }
@@ -1417,33 +1425,89 @@ function smashTap(j, el){
   } else { g.combo = 1; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
 }
 
-// Memory Match: pairs of a word and its picture.
-function vMatch(){
-  const p = me();
-  if (!G || G.k !== 'match'){
-    const pairs = shuffle(p.grade >= 5 ? PICS5 : PICS3).slice(0, 6);
-    const cards = shuffle(pairs.flatMap(([w,e],i) => [{pair:i, txt:w, word:true}, {pair:i, txt:e, word:false}]));
-    G = {k:'match', cards, open:[], got:new Set(), moves:0, lock:false};
+// Memory Match family: the same flip-and-match game, each version practising a reading skill.
+//   match   = word and picture        meaning = word and what it means (story words + word bank)
+//   chunks  = two halves of a word     prefix  = a word part and what it means
+const MATCH_KINDS = ['match','meaning','chunks','prefix'];
+const MATCH_HOW = {
+  match:'Match each word with its picture. Read the word out loud when you flip it!',
+  meaning:'Match each word with what it means. Read both cards out loud!',
+  chunks:'Match the two halves that make a word. Say the whole word when you find it!',
+  prefix:'Match each word part with what it means. A matched card shows a word that uses it.'};
+// [part, meaning, example word, group]; parts in the same group mean nearly the same thing and never share a board
+const AFFIX = {
+  3:[['un-','not','unlock','not'],['re-','again','redo','again'],['pre-','before','preview','before'],['dis-','the opposite of','disagree','opp'],
+     ['-ful','full of','hopeful','full'],['-less','without','fearless','without'],['-er','a person who does it','teacher','person'],['-ly','in a way that is','quickly','way']],
+  5:[['mis-','wrongly','misspell','wrong'],['non-','no or none','nonstop','not'],['sub-','under or below','submarine','under'],['inter-','between','interstate','between'],
+     ['-able','can be done','readable','can'],['-ment','the act or result of','movement','act'],['-ness','the state of being','kindness','state'],['-ous','having a lot of','joyous','full'],
+     ['-ist','a person who studies or does','artist','person'],['-ward','in the direction of','homeward','dir'],['multi-','many','multicolor','many']]};
+function matchPairs(kind, p){
+  const hi = p.grade >= 5, bank = bankWords(p);
+  if (kind === 'match') return shuffle(hi ? PICS5 : PICS3).slice(0, 6).map(([w,e]) => ({a:w, b:e, aw:true, bw:false}));
+  if (kind === 'meaning'){
+    const lv = s => hi ? s.lvl >= 4 : s.lvl <= 4;
+    const stories = allStories().concat(chapterStories()).filter(lv);
+    const seen = new Set(), pool = [];
+    const add = (w, def, pri) => { const k = bankKey(w); if (!def || seen.has(k)) return; seen.add(k); pool.push({w, def, pri:pri + Math.random()}); };
+    bank.forEach(k => add(k, (EXTRA.defs||{})[k], 3));
+    stories.forEach(s => s.tricky.forEach(t => add(t[0], defOf(t[0], s), p.done[s.id] ? 2 : 0)));
+    const defs = new Set();
+    return pool.sort((x,y) => y.pri - x.pri).filter(x => !defs.has(x.def) && defs.add(x.def)).slice(0, 5)
+      .map(x => ({a:x.w, b:x.def, aw:true, bw:false, bank: bank.includes(bankKey(x.w)) ? bankKey(x.w) : ''}));
   }
-  const g = G;
+  if (kind === 'chunks'){
+    const words = (hi ? SMASH5 : SPELL3.flatMap(x => x.w).concat(SMASH3)).map(w => ({parts:w.split('-'), bank:''}))
+      .concat(bank.map(k => ({parts:syllables(k), bank:k})).filter(x => x.parts.length >= 2));
+    const firsts = new Set(), seconds = new Set(), out = [];
+    for (const x of shuffle(words.filter(x => x.bank)).concat(shuffle(words.filter(x => !x.bank)))){
+      if (x.parts.length < 2) continue;
+      const h = Math.ceil(x.parts.length/2), a = x.parts.slice(0,h).join('').toLowerCase(), b = x.parts.slice(h).join('').toLowerCase();
+      if (firsts.has(a) || seconds.has(b)) continue;
+      firsts.add(a); seconds.add(b); out.push({a:a+'-', b:'-'+b, aw:true, bw:true, done:a+b, bank:x.bank});
+      if (out.length === 6) break;
+    }
+    return out;
+  }
+  const groups = new Set(), out = [];
+  for (const [part, mean, ex, grp] of shuffle(hi ? AFFIX[5].concat(AFFIX[3]) : AFFIX[3])){
+    if (groups.has(grp)) continue; groups.add(grp);
+    out.push({a:part, b:mean, aw:true, bw:false, doneA:`${part} ${ex}`});
+    if (out.length === 6) break;
+  }
+  return out;
+}
+function vMatch(){
+  const p = me(), kind = view.name.slice(2);
+  if (!G || G.k !== kind){
+    const pairs = matchPairs(kind, p);
+    const cards = shuffle(pairs.flatMap((x,i) => [
+      {pair:i, txt:x.a, word:x.aw, got:x.done || x.doneA || x.a},
+      {pair:i, txt:x.b, word:x.bw, got:x.done || x.b, long: kind === 'meaning' || kind === 'prefix'}]));
+    G = {k:kind, pairs, cards, open:[], got:new Set(), moves:0, lock:false};
+  }
+  const g = G, n = g.pairs.length, gm = GAMES[kind];
   app.innerHTML = `${topbar(()=>go({name:'arcade'}))}
   <div class="card" style="display:flex;flex-direction:column;gap:14px">
-    <div class="row spread"><h2>🃏 Memory Match</h2><span class="chip" style="font-size:1rem">Tries <b>${g.moves}</b> · Pairs ${g.got.size/2} of 6</span></div>
-    <p class="mut">Match each word with its picture. Read the word out loud when you flip it!</p>
-    <div class="mgrid">${g.cards.map((c,i) => { const shown = g.open.includes(i) || g.got.has(i);
-      return `<button class="mcard ${shown?'open':''} ${g.got.has(i)?'got':''} ${c.word?'word':''}" aria-label="${shown ? esc(c.txt) : 'Hidden card'}" data-a="${A(()=>matchTap(i))}">${shown ? esc(c.txt) : '★'}</button>`; }).join('')}</div>
+    <div class="row spread"><h2>${gm.icon} ${gm.name}</h2><span class="chip" style="font-size:1rem">Tries <b>${g.moves}</b> · Pairs ${g.got.size/2} of ${n}</span></div>
+    <p class="mut">${MATCH_HOW[kind]}</p>
+    <div class="mgrid ${n === 5 ? 'five' : ''}">${g.cards.map((c,i) => { const shown = g.open.includes(i) || g.got.has(i);
+      return `<button class="mcard ${shown?'open':''} ${g.got.has(i)?'got':''} ${c.word?'word':''} ${c.long?'long':''}" aria-label="${shown ? esc(c.txt) : 'Hidden card'}" ${shown && c.word ? `style="font-size:${wordFs(g.got.has(i) ? c.got : c.txt, n)}rem"` : ''} data-a="${A(()=>matchTap(i))}">${shown ? esc(g.got.has(i) ? c.got : c.txt) : '★'}</button>`; }).join('')}</div>
   </div>`;
 }
+// long words shrink to fit their card instead of being cut or split mid-word
+function wordFs(t, n){ const len = String(t).length, base = n === 5 ? 1.15 : 1.25, fit = n === 5 ? 6.5 : 7.5; return Math.max(0.74, Math.min(base, base*fit/len)).toFixed(2); }
 function matchTap(i){
-  const g = G; if (!g || g.k !== 'match' || g.lock || g.open.includes(i) || g.got.has(i)) return;
+  const g = G; if (!g || !MATCH_KINDS.includes(g.k) || g.lock || g.open.includes(i) || g.got.has(i)) return;
   g.open.push(i);
   if (g.open.length === 2){
     g.moves++;
     const [a,b] = g.open;
     if (g.cards[a].pair === g.cards[b].pair){
       g.got.add(a); g.got.add(b); g.open = []; confetti(10);
-      if (g.got.size === g.cards.length){ const m = g.moves; render(); setTimeout(() => endGame('match', Math.max(20, 100 - (m-6)*6), {moves:m}), 700); return; }
-    } else { g.lock = true; setTimeout(() => { if (G === g){ g.open = []; g.lock = false; render(); } }, 1000); }
+      const pr = g.pairs[g.cards[a].pair]; if (pr.bank) bankOk(pr.bank);
+      if (g.k === 'meaning' || g.k === 'prefix') skillMark('vocabulary', true);
+      if (g.got.size === g.cards.length){ const m = g.moves, n = g.pairs.length; render(); setTimeout(() => endGame(g.k, Math.max(20, 100 - (m-n)*6), {moves:m}), 700); return; }
+    } else { g.lock = true; setTimeout(() => { if (G === g){ g.open = []; g.lock = false; render(); } }, 1100); }
   }
   render();
 }
@@ -1842,8 +1906,12 @@ function questItems(p){
     {k:'gym', icon:'🏋️', label:'Fluency Gym: read one passage 3 times', run:()=>go({name:'gym'})},
     {k:'story', icon:'📖', label: ch && !ch.locked ? `Read today's chapter of ${ch.se.title}` : 'Read a story', run:()=> ch && !ch.locked ? go({name:'intro', id:ch.story.id}) : go({name:'library', tab:'rec'})}];
   if (vaultDue().length || q.vault) items.push({k:'vault', icon:'🔐', label:'Open the Memory Vault', run:()=>go({name:'vault', items:shuffle(vaultDue()).slice(0,6), i:0})});
-  if (f.phonics) items.push({k:'smash', icon:'🔨', label:'Syllable Smash with your tricky words (free play)', run:()=>startGame('smash', true)});
-  if (f.vocab) items.push({k:'parts', icon:'🧩', label:'Word Parts (free play)', run:()=>startGame('parts', true)});
+  // matching games are the favourite, so they alternate day by day with the other practice games
+  const odd = Math.floor(Date.now() / 86400000) % 2 === 1;
+  const fp = (k, label) => ({k, icon:GAMES[k].icon, label: `${GAMES[k].name}: ${label} (free play)`, run:()=>startGame(k, true)});
+  if (f.phonics) items.push(odd ? fp('smash', 'your tricky words') : fp('chunks', 'snap word halves together'));
+  if (f.vocab) items.push(odd ? fp('parts', 'prefixes and suffixes') : fp('meaning', 'words from your stories'));
+  if (!f.phonics && !f.vocab) items.push(odd ? fp('prefix', 'word parts') : fp('meaning', 'words from your stories'));
   return items.map(i => Object.assign(i, {done: !!q[i.k]}));
 }
 function questMark(k){
