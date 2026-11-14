@@ -261,6 +261,11 @@ a{color:var(--accent)}
 .plist2 .btn{white-space:nowrap}
 .chip.got{background:var(--good-soft);color:var(--good)}
 @media (max-width:520px){.builds{grid-template-columns:1fr}.bcard{flex-direction:column;align-items:center}}
+.abar{height:12px;border-radius:99px;background:var(--soft);overflow:hidden;flex-basis:100%}
+.abar>i{display:block;height:100%;background:var(--sun);border-radius:99px}
+.aloudline{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;margin-top:12px;padding:10px 12px;border-radius:14px;background:var(--sun-soft);font-size:.95rem}
+.aloudline.open{background:var(--good-soft)}
+.aloudline.open .abar>i{background:var(--good)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -864,8 +869,9 @@ function vHub(){
   app.innerHTML = `${topbar(null)}
   ${installBanner(false)}
   <div class="card quest">
-    <div class="row spread"><div style="min-width:0"><h2>Today's quest</h2><p class="mut">${qdone === qi.length ? '🎉 All done today! The Break Zone is open.' : `Finish all ${qi.length} for a bonus ticket, 20 coins and the Break Zone.`}</p></div>
+    <div class="row spread"><div style="min-width:0"><h2>Today's quest</h2><p class="mut">${qdone === qi.length ? '🎉 All done today! Bonus ticket and 20 coins earned.' : `Finish all ${qi.length} for a bonus ticket and 20 coins.`}</p></div>
       <div class="ring" title="Minutes read today">${ringSvg(p)}<span class="mut">of ${goalOf(p)} min<br>today</span></div></div>
+    <div class="aloudline ${breakOpen(p) ? 'open' : ''}"><span>🎤 Out loud today: <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min</b></span>${breakOpen(p) ? '<span>🎉 Break Zone open!</span>' : '<span class="mut">opens the Break Zone</span>'}<div class="abar"><i style="width:${Math.min(100, aloudToday(p)/BREAK_ALOUD*100)}%"></i></div></div>
     <div class="qlist">${qi.map(i => `<button class="qitem ${i.done?'done':''}" ${i.done?'disabled':''} data-a="${A(i.run)}"><span class="qcheck">${i.done?'✓':''}</span><span>${i.icon} ${esc(i.label)}</span></button>`).join('')}</div>
   </div>
   ${ch ? `<div class="card row spread"><div class="row" style="min-width:0"><span class="big-emoji">${ch.se.icon}</span><div style="min-width:0"><h3>${esc(ch.se.title)}</h3><p class="mut">${ch.locked ? `Chapter ${ch.n+1} unlocks tomorrow. What do you think will happen?` : `Chapter ${ch.n+1} of ${ch.se.chapters.length} is ready!`}</p></div></div>
@@ -876,7 +882,7 @@ function vHub(){
   <div class="tiles">
     <button class="tile" data-a="${A(()=>go({name:'library', tab:'rec'}))}"><span class="ic">📚</span><span><b>Pick a story</b><span class="mut">Read, answer, earn coins</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'gym'}))}"><span class="ic">🏋️</span><span><b>Fluency Gym</b><span class="mut">Read it 3 times, get faster</span></span></button>
-    <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Break Zone</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : 'Opens when today\'s quest is done'}</span></span></button>
+    <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Break Zone</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : `🎤 ${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min out loud`}</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'arcade'}))}"><span class="ic">🎮</span><span><b>Game arcade</b><span class="mut">${tix(p)} ticket${tix(p)===1?'':'s'} to play</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">Build trophies, buy sports gear</span></span></button>
     <button class="tile" data-a="${A(()=>{S.cur=null; save(); go({name:'profiles'});})}"><span class="ic">👋</span><span><b>Switch reader</b><span class="mut">Back to the start</span></span></button>
@@ -1036,7 +1042,7 @@ function modePicker(p){
   if (!p.mode) p.mode = SR ? 'mic' : 'pace';
   return `<div class="modes">${Object.entries(MODES).filter(([k]) => k !== 'mic' || SR).map(([k,m]) =>
     `<button class="${p.mode===k?'on':''}" data-a="${A(()=>{p.mode=k; save(); render();})}" title="${m.sub}">${m.label}</button>`).join('')}</div>
-    <p class="mut" style="font-size:.9rem">${MODES[p.mode].sub}${micBlocked && p.mode==='mic' ? ' (the microphone is not available on this page, so the highlighter will be used)' : ''}</p>`;
+    <p class="mut" style="font-size:.9rem">${p.mode === 'mic' ? '🎤 Counts toward the Break Zone. ' : (SR && !micBlocked ? 'Only 🎤 Read out loud counts toward the Break Zone. ' : '')}${MODES[p.mode].sub}${micBlocked && p.mode==='mic' ? ' (the microphone is not available on this page, so the highlighter will be used)' : ''}</p>`;
 }
 
 // ---------- Reading ----------
@@ -3138,7 +3144,7 @@ function gymPassage(p, avoid){
 }
 function vGym(){
   const p = me(), v = view;
-  if (!v.psg){ v.psg = gymPassage(p); v.reads = []; v.mode = v.mode || ((SR && !micBlocked) ? 'mic' : 'grown'); v.errs = new Set(); v.run = false; }
+  if (!v.psg){ v.psg = gymPassage(p); v.reads = []; v.mode = (v.mode === 'mic' && !(SR && !micBlocked)) ? 'grown' : (v.mode || ((SR && !micBlocked) ? 'mic' : 'grown')); v.errs = new Set(); v.run = false; }
   const words = v.words = wordsOf(v.psg.t);
   const n = v.reads.length, finished = n >= 3, max = Math.max(1, ...v.reads);
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}
@@ -3367,7 +3373,7 @@ function dayData(p, d){
   const words = [];
   for (const r of reads){ const s = storyById(r.id); if (s) for (const t of s.tricky){ const def = defOf(t[0], s); if (!words.some(w => w[0] === t[0])) words.push([t[0], def]); } }
   const practise = Object.entries(p.bank||{}).filter(([,b]) => b.d === d).sort((a,b) => b[1].n - a[1].n).map(([k,b]) => ({k, focus: b.n >= FOCUS_N}));
-  return {d, practise, mins: Math.floor(((p.daily||{})[d]) || 0), reads, gym: log.filter(e => e.type === 'gym'), vault: log.filter(e => e.type === 'vault'),
+  return {d, practise, aloud: Math.floor(((p.aloud||{})[d]) || 0), mins: Math.floor(((p.daily||{})[d]) || 0), reads, gym: log.filter(e => e.type === 'gym'), vault: log.filter(e => e.type === 'vault'),
     games: log.filter(e => e.type === 'game'), breaks: log.filter(e => e.type === 'break'), checks: log.filter(e => e.type === 'checkin'), words};
 }
 function readLine(r){
@@ -3375,7 +3381,7 @@ function readLine(r){
   return `${r.title} (${kindOf(s)}${s ? `, ${s.pages.length} pages` : ''})`;
 }
 function journalText(p, d){
-  const x = dayData(p, d), lines = [`${p.name}: ${niceDate(d, true)}`, `Minutes read: ${x.mins}`];
+  const x = dayData(p, d), lines = [`${p.name}: ${niceDate(d, true)}`, `Minutes read: ${x.mins}` + (x.aloud ? ` (${x.aloud} out loud)` : '')];
   if (x.reads.length){
     lines.push('Read: ' + x.reads.map(readLine).join('; '));
     x.reads.forEach(r => { const s = storyById(r.id), sum = s && sumOf(s); if (sum) lines.push(`About ${s.series ? 'chapter ' + (s.chap+1) : r.title.split(':')[0]}: ${sum[0]}`); });
@@ -3426,7 +3432,7 @@ function vReport(){
         <div class="row"><button class="btn small" data-a="${A(()=>copyText(txt, 'm'+n))}">Copy</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(txt, 'm'+n))}">Share…</button>` : ''}<span id="m${n}"></span></div></div>`; }
     const x = dayData(p, v.d), txt = journalText(p, v.d), goal = goalOf(p);
     return `<div class="card" style="display:flex;flex-direction:column;gap:12px">
-      <div class="row spread"><h2>${p.av} ${esc(p.name)}</h2><span class="chip" style="font-size:1rem">${x.mins >= goal ? '✓ ' : ''}${x.mins} of ${goal} minutes</span></div>
+      <div class="row spread"><h2>${p.av} ${esc(p.name)}</h2><span class="row" style="gap:6px"><span class="chip" style="font-size:1rem">${x.mins >= goal ? '✓ ' : ''}${x.mins} of ${goal} minutes</span><span class="chip" style="font-size:1rem">🎤 ${x.aloud} min out loud</span></span></div>
       ${x.reads.length ? `<div><h3>What ${esc(p.name)} read</h3><div class="rlist">${x.reads.map(r => { const s = storyById(r.id), sum = s && sumOf(s);
           return `<div class="ritem"><span class="big-emoji" style="font-size:2rem">${s ? s.icon : '📖'}</span><div style="min-width:0"><b>${esc(r.title)}</b>
             <p class="mut">${esc(kindOf(s))}${r.t ? ` · ${fmtTime(r.t)}` : ''}${r.mins ? ` · ${Math.max(1, Math.round(r.mins))} min reading` : ''}${r.total ? ` · ${r.right} of ${r.total} questions right first try` : ''}</p>
@@ -3559,7 +3565,7 @@ const BREAK_LIST = [
 window.BreakGames = window.BreakGames || {};
 let breakCleanup = null;
 function breakStop(){ if (breakCleanup){ try{ breakCleanup(); }catch(e){} breakCleanup = null; } }
-function breakOpen(p){ return !!questToday(p).paid; }
+function breakOpen(p){ return aloudToday(p) >= BREAK_ALOUD; }
 function breakApi(p, g){
   p.breakScores = p.breakScores || {}; p.breakStore = p.breakStore || {};
   const css = getComputedStyle(document.documentElement), c = n => css.getPropertyValue(n).trim();
@@ -3591,14 +3597,16 @@ function loadBreakGame(id){
   });
 }
 function vBreak(){
-  const p = me(), open = breakOpen(p), qi = questItems(p), left = qi.filter(i => !i.done);
+  const p = me(), open = breakOpen(p), mins = Math.floor(aloudToday(p)), need = Math.max(1, Math.ceil(BREAK_ALOUD - aloudToday(p)));
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}
   <div class="row spread"><h1>🎉 Break Zone</h1>${open ? '<span class="chip school">Open all day today!</span>' : ''}</div>
-  ${open ? `<p class="mut">Just for fun. You finished today's quest, so play as much as you like.</p>` : `
+  ${open ? `<p class="mut">Just for fun. You read out loud for ${BREAK_ALOUD} minutes today, so play as much as you like.</p>` : `
   <div class="card" style="display:flex;flex-direction:column;gap:12px">
-    <h2>🔒 Finish today's quest to open the Break Zone</h2>
-    <p>${left.length} thing${left.length===1?'':'s'} left. Then every game here is open for the rest of the day!</p>
-    <div class="qlist">${qi.map(i => `<button class="qitem ${i.done?'done':''}" ${i.done?'disabled':''} data-a="${A(i.run)}"><span class="qcheck">${i.done?'✓':''}</span><span>${i.icon} ${esc(i.label)}</span></button>`).join('')}</div>
+    <h2>🔒 Read out loud for ${BREAK_ALOUD} minutes to open the Break Zone</h2>
+    <div class="abar"><i style="width:${Math.min(100, aloudToday(p)/BREAK_ALOUD*100)}%"></i></div>
+    <p><b>${mins} of ${BREAK_ALOUD} minutes</b> read out loud today. About ${need} more minute${need===1?'':'s'} to go!</p>
+    <p class="mut">Only reading the microphone hears counts: choose 🎤 <b>Read out loud</b> on a story, or use the Fluency Gym with the microphone. Then every game here is open for the rest of the day.</p>
+    <div class="row"><button class="btn" data-a="${A(()=>go({name:'library', tab:'rec'}))}">🎤 Read a story out loud</button><button class="btn ghost" data-a="${A(()=>go({name:'gym', mode:'mic'}))}">🏋️ Fluency Gym</button></div>
   </div>`}
   <div class="games breakgrid ${open ? '' : 'locked'}">${BREAK_LIST.map(g => { const best = (p.breakScores||{})[g.id];
     return `<button class="gtile btile" ${open ? '' : 'disabled'} data-a="${A(()=>go({name:'breakgame', id:g.id}))}">
