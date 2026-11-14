@@ -1731,6 +1731,7 @@ function vGrown(){
   const week = [...Array(7)].map((_,i) => addDays(i-6));
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: me() ? 'hub' : 'profiles'}))}">← Back</button></div>
   <div class="row spread"><h1>Reading progress</h1><button class="btn" data-a="${A(()=>go({name:'report'}))}">📋 Daily reading report</button></div>
+  ${S.profiles.length > 1 && S.profiles.some(p => !breakOpen(p)) ? `<div class="card row spread"><span>Did everyone make their reading time some other way?</span><button class="btn small sun" data-a="${A(()=>{ S.profiles.forEach(p => { if (!breakOpen(p)) p.breakDay = today(); }); save(); render(); })}">🎉 Open the Break Zone for everyone today</button></div>` : ''}
   ${S.profiles.length ? '' : '<p class="mut">No readers yet.</p>'}
   ${S.profiles.map(p => {
     const sk = Object.entries(p.skills); const tot = sk.reduce((a,[,v])=>a+v[1],0), ok = sk.reduce((a,[,v])=>a+v[0],0);
@@ -1744,6 +1745,12 @@ function vGrown(){
 
       <div><h3>Focus areas</h3><p class="mut" style="font-size:.9rem">Tick the areas where school reports show ${esc(p.name)} below grade level. Each one adds daily practice to Today's Quest and changes which stories come first.</p>
         <div class="pick words" style="margin-top:8px">${FOCUS.map(([k,l]) => `<button class="${f[k]?'on':''}" aria-pressed="${!!f[k]}" data-a="${A(()=>{ p.focus = Object.assign({}, p.focus, {[k]: !f[k]}); save(); render(); })}">${f[k]?'✓ ':''}${l}</button>`).join('')}</div></div>
+
+      <div><h3>Break Zone today</h3>
+        <p class="mut" style="font-size:.9rem">${esc(p.name)} has read <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} minutes</b> out loud today. ${breakOpen(p) ? (p.breakDay === today() && aloudToday(p) < BREAK_ALOUD ? 'You opened the Break Zone for today.' : 'The Break Zone is open.') : 'The Break Zone is locked.'}</p>
+        <div style="margin-top:8px">${p.breakDay === today()
+          ? `<button class="btn ghost small" data-a="${A(()=>{ p.breakDay = ''; save(); render(); })}">Undo: lock it again</button>`
+          : aloudToday(p) < BREAK_ALOUD ? `<button class="btn small sun" data-a="${A(()=>{ p.breakDay = today(); save(); render(); })}">🎉 Open the Break Zone for today</button>` : ''}</div></div>
 
       <div><h3>Daily reading goal</h3><div class="pick words" style="margin-top:8px">${[10,15,20,30].map(m => `<button class="${goalOf(p)===m?'on':''}" data-a="${A(()=>{ p.goal = m; save(); render(); })}">${m} min</button>`).join('')}</div>
         <div class="week">${week.map(d => { const m = Math.floor((p.daily||{})[d]||0); return `<div class="wday"><i style="height:${Math.round(m/maxDay*100)}%" class="${m>=goalOf(p)?'met':''}"></i><b>${m}</b><span>${new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'short'})}</span></div>`; }).join('')}</div></div>
@@ -3724,7 +3731,7 @@ const BREAK_LIST = [
 window.BreakGames = window.BreakGames || {};
 let breakCleanup = null;
 function breakStop(){ if (breakCleanup){ try{ breakCleanup(); }catch(e){} breakCleanup = null; } }
-function breakOpen(p){ return aloudToday(p) >= BREAK_ALOUD; }
+function breakOpen(p){ return aloudToday(p) >= BREAK_ALOUD || p.breakDay === today(); } // breakDay: a grown-up opened it for today
 function breakApi(p, g){
   p.breakScores = p.breakScores || {}; p.breakStore = p.breakStore || {};
   const css = getComputedStyle(document.documentElement), c = n => css.getPropertyValue(n).trim();
