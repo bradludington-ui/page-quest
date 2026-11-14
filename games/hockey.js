@@ -120,8 +120,8 @@
         if (puck.a > MID - 20 && ai.cool <= 0 && (puck.a > pad.a - 20 ? false : true) && (!toward || puck.a > LEN - 380 || Math.hypot(puck.va, puck.vx) < 350)) {
           // strike: come from behind the puck, aiming at the player's goal
           const ga = 0, gx = WID/2 + ai.off, da = ga - puck.a, dx = gx - puck.x, dl = Math.hypot(da, dx) || 1;
-          ta = puck.a - da/dl*(PR + KR - 14); tx = puck.x - dx/dl*(PR + KR - 14);
-          ta += (da/dl)*-30; // overshoot through the puck
+          // aim a little past the puck's centre so the paddle drives through it
+          ta = puck.a + da/dl*24; tx = puck.x + dx/dl*24;
         } else if (puck.a > pad.a - 10 && puck.a > MID) {
           // puck slipped behind: get back around it
           ta = Math.min(LEN - KR - 4, puck.a + 70); tx = puck.x + (puck.x > WID/2 ? -80 : 80);
