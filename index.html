@@ -3270,7 +3270,12 @@ function chapterInfo(p, se){
   return {se, n, locked: false, story: chapterStories().find(c => c.id === se.id + '-c' + (n+1))};
 }
 function seriesFor(p){ return SERIES.filter(se => p.grade >= 5 ? se.lvl >= 4 : se.lvl <= 4); }
-function nextChapter(p){ const list = seriesFor(p).map(se => chapterInfo(p, se)).filter(c => !c.done); return list.find(c => !c.locked) || list[0] || null; }
+// the book the reader is in the middle of (most recently read), else the first one they have not started
+function nextChapter(p){
+  const list = seriesFor(p).map(se => chapterInfo(p, se)).filter(c => !c.done);
+  const started = list.filter(c => chaptersRead(seriesState(p, c.se.id)).length).sort((a,b) => (seriesState(p, b.se.id).d||'').localeCompare(seriesState(p, a.se.id).d||''));
+  return started[0] || list[0] || null;
+}
 function vSeries(){
   const p = me(), se = SERIES.find(x => x.id === view.id); if (!se){ go({name:'library'}); return; }
   const st = seriesState(p, se.id), info = chapterInfo(p, se);
