@@ -1,6 +1,6 @@
 // Page Quest service worker: always tries the network first so updates arrive,
 // and falls back to the last saved copy when the iPad is offline.
-const CACHE = 'page-quest-v9';
+const CACHE = 'page-quest-v10';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {
