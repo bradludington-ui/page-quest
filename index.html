@@ -1154,7 +1154,6 @@ function cleanStory(j, kind, lvl){
 function vIntro(){
   const s = storyById(view.id), p = me();
   if (!s){ go({name:'library'}); return; }
-  if (s.series){ const c = chapterInfo(p, SERIES.find(x => x.id === s.series)); if (!c.done && s.chap > c.n || (s.chap === c.n && c.locked)){ go({name:'series', id:s.series}); return; } }
   if (!view.tw){
     const tw = s.tricky.map(t => ({w:t[0], parts:t[1].split('-'), lit:0, def:defOf(t[0], s)}));
     const have = new Set(tw.map(x => bankKey(x.w)));
@@ -1197,7 +1196,8 @@ function modePicker(p){
 let R = null; // the story session
 function startStory(s){
   R = {s, page:0, firstTry:[], coins:0, t0:Date.now()};
-  go({name:'read', phase: s.recall ? 'recall' : 'text'});
+  const sst = s.series && (me().series||{})[s.series], back = sst && sst.d < today() && chaptersRead(sst).includes(s.chap - 1);
+  go({name:'read', phase: s.recall && back ? 'recall' : 'text'});
 }
 function wordsOf(text){
   // split into display tokens with character offsets, and a normalised form for matching
@@ -1545,14 +1545,18 @@ function finishStory(){
   let book = '', bookBonus = 0;
   if (s.series){
     p.series = p.series || {}; const st = seriesState(p, s.series);
-    if (s.chap >= st.ch){ st.ch = s.chap + 1; st.d = today(); p.series[s.series] = st; if (st.ch >= s.chapters){ book = 'done'; bookBonus = 50; } else book = 'next'; }
+    const rd = chaptersRead(st), was = rd.length;
+    if (!rd.includes(s.chap)) rd.push(s.chap);
+    st.read = rd; st.ch = rd.length; st.d = today(); p.series[s.series] = st;
+    if (rd.length >= s.chapters && was < s.chapters){ book = 'done'; bookBonus = 50; } else if (rd.length < s.chapters) book = 'next';
+    if (book === 'next'){ const nx = [...Array(s.chapters).keys()].find(i => !rd.includes(i)); view.nextChap = nx; }
   }
   bumpStreak(); giveTickets(2); save();
   R.coins += bonus + chest + bookBonus; addCoins(bonus + chest + bookBonus, book === 'done' ? 'book finished!' : chest ? 'treasure chest!' : 'story done');
   questMark('story');
   logEvent(s.series ? 'chapter' : 'story', s.title, {id:s.id, right, total, mins: R.mins || 0});
   confetti(book === 'done' ? 140 : 80);
-  go({name:'finish', stars, right, total, chest, coins:R.coins, book});
+  go({name:'finish', stars, right, total, chest, coins:R.coins, book, next: view.nextChap});
 }
 function vFinish(){
   const v = view, p = me(), s = R.s;
@@ -1565,7 +1569,8 @@ function vFinish(){
     <span class="coins"><span class="coin"></span>+${v.coins} coins this ${s.series ? 'chapter' : 'story'}</span>
     ${v.chest ? `<p class="notice">🎁 You reached a treasure chest on your path: +${v.chest} coins!</p>` : ''}
     <p class="notice">🎟️ You earned 2 game tickets! You have ${tix(p)} now.</p>
-    ${v.book === 'next' ? `<p class="result">Chapter ${s.chap+2} unlocks tomorrow. It starts with a question about this chapter, so remember what happened!</p>` : ''}
+    ${v.book === 'next' && v.next != null ? `<p class="result">Chapter ${v.next+1} is ready! Keep reading now, or stop here and come back later.</p>
+      <div><button class="btn sun" data-a="${A(()=>go({name:'intro', id: s.series + '-c' + (v.next+1)}))}">📖 Read chapter ${v.next+1}</button></div>` : ''}
     <p class="mut">These questions and words will come back in your Memory Vault.</p>
     <div class="row" style="justify-content:center">
       <button class="btn" data-a="${A(()=>go({name:'hub'}))}">Today's quest</button>
@@ -3258,10 +3263,11 @@ function chapterStories(){
   return _chapters;
 }
 function seriesState(p, sid){ p.series = p.series || {}; return p.series[sid] || {ch:0, d:''}; }
+function chaptersRead(st){ return st.read || [...Array(st.ch || 0).keys()]; }
 function chapterInfo(p, se){
-  const st = seriesState(p, se.id), n = st.ch;
-  if (n >= se.chapters.length) return {se, done:true, n};
-  return {se, n, locked: n > 0 && st.d >= today(), story: chapterStories().find(c => c.id === se.id + '-c' + (n+1))};
+  const st = seriesState(p, se.id), rd = chaptersRead(st), n = se.chapters.findIndex((_, i) => !rd.includes(i));
+  if (n < 0) return {se, done:true, n: se.chapters.length};
+  return {se, n, locked: false, story: chapterStories().find(c => c.id === se.id + '-c' + (n+1))};
 }
 function seriesFor(p){ return SERIES.filter(se => p.grade >= 5 ? se.lvl >= 4 : se.lvl <= 4); }
 function nextChapter(p){ const list = seriesFor(p).map(se => chapterInfo(p, se)).filter(c => !c.done); return list.find(c => !c.locked) || list[0] || null; }
@@ -3271,12 +3277,12 @@ function vSeries(){
   app.innerHTML = `${topbar(()=>go({name:'library', tab:'series'}))}
   <div class="card" style="display:flex;flex-direction:column;gap:10px">
     <div class="row"><span class="big-emoji">${se.icon}</span><div><h1>${esc(se.title)}</h1><p class="mut">${esc(se.blurb||'')}</p></div></div>
-    <p class="notice">A new chapter unlocks each day. Every chapter starts with a question about the one before, so remember what happens!</p></div>
+    <p class="notice">Read the chapters in order, as many as you like. Stop whenever you want and pick up right where you left off. When you come back on a new day, a quick question helps you remember what happened.</p></div>
   <div class="opts">${se.chapters.map((c, n) => {
     const s = chapterStories().find(x => x.id === se.id + '-c' + (n+1));
-    const done = n < st.ch, now = n === st.ch && !info.done, open = done || (now && !info.locked);
+    const done = chaptersRead(st).includes(n), now = n === info.n && !info.done, open = true;
     return `<button class="opt chap ${done?'right':''}" ${open?'':'disabled'} data-a="${A(()=>go({name:'intro', id:s.id}))}">
-      <b>Chapter ${n+1}: ${esc(c.title)}</b><span class="mut">${done ? '✓ Read' : now ? (info.locked ? '🔒 Unlocks tomorrow' : '⭐ Ready to read') : '🔒 Locked'}</span></button>`; }).join('')}</div>
+      <b>Chapter ${n+1}: ${esc(c.title)}</b><span class="mut">${done ? '✓ Read' : now ? '⭐ Up next' : '📖 Open'}</span></button>`; }).join('')}</div>
   ${info.done ? `<p class="result">🏆 You finished the whole book!</p>` : ''}`;
 }
 
