@@ -147,7 +147,7 @@
         if (mode === 'play') {
           timeLeft -= dt;
           if (nextBallIn > 0) { nextBallIn -= dt; if (nextBallIn <= 0 && !ready) ready = newBall(); }
-          if (score >= 10) { slidePhase += dt*(0.8 + Math.min(2.2, (score - 10)*0.06)); hoopX = BASE_X + Math.sin(slidePhase)*130; }
+          if (score >= 10) { slidePhase += dt*(0.9 + Math.min(2.6, (score - 10)*0.05)); hoopX = BASE_X + Math.sin(slidePhase)*165; }
           if (timeLeft <= 0) { timeLeft = 0; mode = 'ending'; held = null; ready = null; pop('Time!', LW/2, 220, '#ffd84d', 1.6); later(() => { balls.length = 0; finish(); }, 1600); }
         }
         for (let s = 0; s < 4; s++) for (const b of balls) if (!b.done) stepBall(b, dt/4);
