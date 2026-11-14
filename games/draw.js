@@ -53,7 +53,7 @@
         if (st.tool === 'stamp'){
           rowA.innerHTML = STAMPS.map((s, i) => tb('stamp:' + i, s, 'Stamp ' + (i+1), st.stamp === s ? sel : '')).join('');
         } else {
-          rowA.innerHTML = COLORS.map((c, i) => tb('color:' + i, '', 'Color ' + (i+1), `background:${c};${!st.rainbow && st.tool === 'brush' && st.color === c ? sel : 'border-color:rgba(0,0,0,.12)'}`)).join('')
+          rowA.innerHTML = COLORS.map((c, i) => tb('color:' + i, '', 'Color ' + (i+1), `flex:1 1 0;width:auto;min-width:40px;max-width:56px;background:${c};${!st.rainbow && st.tool === 'brush' && st.color === c ? sel : 'border-color:rgba(0,0,0,.12)'}`)).join('')
             + tb('rainbow', '', 'Rainbow brush', `background:linear-gradient(135deg,#e63946,#ff8c1a,#ffd60a,#8ac926,#4cc9f0,#7b4bd6);${st.rainbow && st.tool === 'brush' ? sel : ''}`);
         }
         const dot = i => { const d = [8, 14, 22, 32][i]; const col = st.tool === 'eraser' ? '#999' : st.rainbow ? '#e63946' : st.color; return `<span style="display:block;width:${d}px;height:${d}px;border-radius:50%;background:${st.tool === 'stamp' ? C.mut : col}"></span>`; };
