@@ -20,6 +20,10 @@ Play: https://bradludington-ui.github.io/page-quest/
 
 Progress is saved on each iPad, in the home-screen app. Nothing is sent anywhere.
 
+## Lined up with school (November 2026)
+- 3rd grade: folktales, myths and poems ("Ways Characters Shape Stories", figurative language), a water-cycle story, and this month's spelling patterns (long e, long i, compound words) in Syllable Smash and Word Catcher.
+- 5th grade: realistic fiction about character relationships, and true stories tied to landforms and fossils (Mary Anning), Ancient China (Cai Lun) and Ancient India (Aryabhata).
+
 ## Files
 - `index.html` — the whole game (stories, screens and logic in one file)
 - `manifest.webmanifest`, `icons/` — the home-screen icon and full-screen settings

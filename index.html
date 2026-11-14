@@ -186,6 +186,8 @@ a{color:var(--accent)}
 .mcard.word.open{font-family:var(--read);font-size:clamp(.85rem,2.6vw,1.25rem);font-weight:600;word-break:break-word}
 .mcard.got{background:var(--good-soft);border-color:var(--good)}
 @media (max-width:520px){.mgrid{grid-template-columns:repeat(3,1fr)}}
+.chip.school{background:var(--sun-soft)}
+.w.ptitle{font-weight:600}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -349,7 +351,143 @@ const STORIES = [
  seq:['Neil took his first airplane ride.','He flew the X-15 rocket plane.','Apollo 11 blasted off.','Neil walked on the Moon.']}
 ];
 
-const CATS = {fun:'Fun stories', people:'Real people', mine:'My new stories'};
+// ---------- Stories that line up with what the kids are studying at school (Nov 2026) ----------
+// 3rd grade: ELA Unit 2 "Ways Characters Shape Stories" (folktales, myths, poems, figurative language); science: the water cycle.
+// 5th grade: ELA Unit 2 "Characters' Relationships" (realistic fiction); science: landforms and fossils; social studies: Ancient China and India.
+STORIES.push(
+{id:'tortoise',title:'The Tortoise and the Hare',icon:'🐢',cat:'tales',lvl:3,school:'Class unit: Ways Characters Shape Stories',
+ tricky:[['bragged','bragged'],['tortoise','tor-toise'],['snoring','snor-ing'],['steady','stead-y']],
+ pages:[
+ {t:'Long ago, Hare loved to brag. "I am the fastest animal in the whole forest!" he told anyone who would listen. One day he laughed at Tortoise. "You are so slow," Hare said. "It takes you all day to cross the road." Tortoise did not get angry. He just smiled. "Let\'s have a race," he said. All the animals gasped.',
+  q:'What kind of character is Hare at the start of the story?',o:['A bragger who thinks he is the best','A shy animal who hides','A helper who is kind to everyone'],e:'"I am the fastest animal in the whole forest!"',k:'character'},
+ {t:'Fox drew a line in the dirt. "Ready, set, go!" Hare zoomed away in a cloud of dust. Tortoise took one slow step, then another. Soon Hare was so far ahead that he could not even see Tortoise. "This race is too easy," Hare said with a yawn. He lay down under a shady tree. "I will take a little nap."',
+  q:'Why did Hare stop to take a nap?',o:['He was sure he could not lose','He hurt his leg','Fox told him to rest'],e:'"This race is too easy,"',k:'inference'},
+ {t:'While Hare slept, Tortoise kept going. Step, step, step. He did not stop to rest. He did not stop to eat. The sun moved slowly across the sky. Tortoise passed the shady tree where Hare was snoring. He did not wake him up. He just kept going, one slow step at a time.',
+  q:'Which word best describes Tortoise?',o:['Steady','Lazy','Boastful'],e:'He just kept going, one slow step at a time.',k:'character'},
+ {t:'Hare woke up as the sun was setting. He ran as fast as he could. But when he reached the finish line, Tortoise was already there. All the animals were cheering. Hare\'s ears drooped. "How did you beat me?" he asked. Tortoise smiled. "Slow and steady wins the race."',
+  q:'How did Hare\'s actions change the end of the story?',o:['His bragging and napping made him lose','His speed helped him win','His kindness made him new friends'],e:'But when he reached the finish line, Tortoise was already there.',k:'main idea'}],
+ seq:['Hare bragged about being fast.','Hare took a nap under a tree.','Tortoise passed the sleeping Hare.','Tortoise won the race.']},
+
+{id:'anansi',title:'Anansi and the Pot of Wisdom',icon:'🕷️',cat:'tales',lvl:3,school:'Class unit: Ways Characters Shape Stories',
+ tricky:[['wisdom','wis-dom'],['Anansi','A-nan-si'],['creature','crea-ture'],['Ashanti','A-shan-ti']],
+ pages:[
+ {t:'This story comes from the Ashanti people of Ghana, in West Africa. Long ago, Anansi the spider wanted to be the smartest creature in the world. One day he gathered all the wisdom in the world and put it in a big clay pot. "Now I will be the only wise one," Anansi said. "I will not share any of it!"',
+  q:'What did Anansi want?',o:['To be the smartest creature in the world','To build the biggest web','To make new friends'],e:'Anansi the spider wanted to be the smartest creature in the world.',k:'detail'},
+ {t:'Anansi decided to hide the pot at the top of a tall tree. He tied the pot to his belly and began to climb. But the pot was big and round. It bumped against the tree trunk. Anansi slipped and slid. He tried again and again, but he could not climb higher than a few feet.',
+  q:'Why couldn\'t Anansi climb the tree?',o:['The pot on his belly got in the way','The tree was wet from rain','He was afraid of heights'],e:'It bumped against the tree trunk.',k:'inference'},
+ {t:'Anansi\'s young son, Ntikuma, was watching. "Father," he said, "why don\'t you tie the pot to your back? Then you can hold onto the tree." Anansi blinked. It was such a simple idea. He moved the pot to his back and climbed easily to the top. But he did not feel wise. He felt very silly.',
+  q:'Why did Anansi feel silly?',o:['His son thought of an idea he had missed','He fell out of the tree','He forgot where the tree was'],e:'It was such a simple idea.',k:'inference'},
+ {t:'Anansi was so upset that he let the pot slip. It fell and broke on the ground below. The wind picked up all the wisdom and blew it around the world. Now everyone has a little bit of wisdom. And that is why, the Ashanti say, no one person can ever know everything.',
+  q:'What lesson does this folktale teach?',o:['No one person can know everything','Spiders are the best climbers','Clay pots break easily'],e:'no one person can ever know everything.',k:'main idea'}],
+ seq:['Anansi put all the wisdom in a pot.','He could not climb with the pot on his belly.','His son told him to tie it to his back.','The pot broke and wisdom blew everywhere.']},
+
+{id:'midas',title:'King Midas and the Golden Touch',icon:'👑',cat:'tales',lvl:3,school:'Class unit: Ways Characters Shape Stories',
+ tricky:[['Dionysus','Di-o-ny-sus'],['shining','shin-ing'],['horror','hor-ror'],['daughter','daugh-ter']],
+ pages:[
+ {t:'In an old Greek myth, King Midas loved gold more than anything. He had rooms full of gold coins, but he always wanted more. One day, Midas was kind to a lost friend of the god Dionysus. To thank him, Dionysus said, "I will grant you one wish." Midas did not have to think. "I wish that everything I touch turns to gold!"',
+  q:'What did King Midas love most at the start?',o:['Gold','His garden','His horses'],e:'King Midas loved gold more than anything.',k:'detail'},
+ {t:'The next morning, Midas touched his bed. It turned to gold! He touched a chair, a table, and a rose in his garden. Each one turned to shining gold. "I am the richest king in the world!" he shouted. Midas danced through the halls, touching everything he could reach.',
+  q:'How did Midas feel about his wish at first?',o:['Thrilled','Worried','Bored'],e:'"I am the richest king in the world!" he shouted.',k:'inference'},
+ {t:'At lunch, Midas picked up a piece of bread. It turned to hard, cold gold. He tried to drink a cup of water, but it turned to gold too. Midas began to worry. Then his daughter ran to hug him. The moment he touched her, she became a golden statue. Midas cried out in horror.',
+  q:'What happened when Midas touched his daughter?',o:['She became a golden statue','She laughed and ran away','She turned into a rose'],e:'she became a golden statue.',k:'detail'},
+ {t:'Midas begged Dionysus to take the wish away. "Wash your hands in the river," the god told him. Midas ran to the river and washed. His daughter turned back into a girl, and his food became food again. From then on, Midas cared more about the people he loved than about gold.',
+  q:'How did Midas change by the end of the myth?',o:['He cared more about people than gold','He wanted even more gold','He became a river god'],e:'Midas cared more about the people he loved than about gold.',k:'character'}],
+ seq:['Midas wished for the golden touch.','Everything he touched turned to gold.','His daughter became a golden statue.','Midas washed the wish away in the river.']},
+
+{id:'weather',title:'Weather Poems',icon:'🌦️',cat:'tales',lvl:3,school:'Class: figurative language and poetry',
+ tricky:[['playful','play-ful'],['whistles','whis-tles'],['feathers','feath-ers'],['sparkles','spar-kles']],
+ pages:[
+ {t:'The Wind\nThe wind is a playful puppy today.\nIt tugs at my scarf and runs away.\nIt chases the leaves across the street,\nthen rolls in the grass around my feet.\nIt whistles and howls and jumps up high,\nthen curls up to nap in the quiet sky.',
+  q:'The poem says, "The wind is a playful puppy." What does that mean?',o:['The wind moves around in a playful way, like a puppy','A real puppy is outside','The wind is very quiet all day'],e:'The wind is a playful puppy today.',k:'figurative language'},
+ {t:'Rain\nThe rain tap-dances on my roof,\nthe drops as quick as feet.\nIt drums upon the window glass\na soft and steady beat.\nThe puddles fill like little lakes\nall up and down the street.',
+  q:'What does "The rain tap-dances on my roof" help you picture?',o:['Raindrops making quick tapping sounds','A person dancing on the roof','A hole in the roof'],e:'The rain tap-dances on my roof,',k:'figurative language'},
+ {t:'Snow\nSnow falls as soft as feathers,\nas quiet as a sleeping cat.\nIt puts a white coat on the cars\nand gives each fence post a hat.\nIn the morning, the whole world sparkles\nlike a cake with sugar on top.',
+  q:'Why does the poet say snow gives each fence post "a hat"?',o:['Snow piles up on top of each post','Someone puts real hats on the fence','The fence posts are cold'],e:'and gives each fence post a hat.',k:'figurative language'},
+ {t:'After the Storm\nAfter the storm, the sun peeks out\nlike a shy kid at the door.\nIt smiles at the wet and dripping trees.\nThe rain does not fall anymore.\nThe birds begin to sing again,\nand puddles shine like gold.',
+  q:'Which line compares the sun to a person?',o:['like a shy kid at the door.','The birds begin to sing again,','The rain does not fall anymore.'],e:'like a shy kid at the door.',k:'figurative language'}],
+ seq:['The wind plays like a puppy.','The rain tap-dances on the roof.','Snow falls as soft as feathers.','The sun peeks out after the storm.']},
+
+{id:'drip',title:'Drip\'s Big Trip',icon:'💧',cat:'fun',lvl:3,school:'Science: the water cycle',
+ tricky:[['evaporation','e-vap-o-ra-tion'],['condensation','con-den-sa-tion'],['precipitation','pre-cip-i-ta-tion'],['collection','col-lec-tion']],
+ pages:[
+ {t:'Drip was a tiny drop of water who lived in a big blue lake. Every day she floated, splashed, and played with the fish. One hot summer day, the sun shone down on the lake. Drip felt warmer and warmer. Then something strange happened. She felt as light as air, and she began to rise up, up, up into the sky!',
+  q:'What made Drip rise into the sky?',o:['The sun warmed her up','A fish pushed her','A boat splashed her'],e:'Drip felt warmer and warmer.',k:'inference'},
+ {t:'Drip had turned into water vapor, a gas too small to see. This is called evaporation. High in the sky, the air was cold. Drip shivered and squeezed close to millions of other tiny drops. Together they made a big, puffy cloud. This part is called condensation. "What a view!" said Drip.',
+  q:'What happens during evaporation?',o:['Water warms up and turns into a gas','Water freezes into ice','A cloud makes thunder'],e:'Drip had turned into water vapor, a gas too small to see.',k:'vocabulary'},
+ {t:'The cloud grew darker and heavier as more drops joined in. Soon it was too heavy to hold them all. Whoosh! Drip fell out of the cloud as a raindrop. This is called precipitation. Rain, snow, sleet, and hail are all kinds of precipitation. Drip zoomed toward the ground.',
+  q:'Why did Drip fall out of the cloud?',o:['The cloud got too heavy','The wind blew the cloud away','The sun went down'],e:'Soon it was too heavy to hold them all.',k:'detail'},
+ {t:'Drip landed on a hill and slid down into a stream. The stream rushed into a river, and the river flowed back into her big blue lake. This is called collection. "I\'m home!" Drip shouted. The fish swam over to say hello. Drip smiled. She knew that tomorrow, the sun might send her on her trip all over again.',
+  q:'Why might Drip go on her trip "all over again"?',o:['The water cycle keeps repeating','The fish will carry her','She will get lost'],e:'the sun might send her on her trip all over again.',k:'main idea'}],
+ seq:['The sun warmed Drip in the lake.','Drip became part of a cloud.','Drip fell as a raindrop.','Drip flowed back home to the lake.']},
+
+{id:'partner',title:'The Science Fair Partner',icon:'🔬',cat:'fiction',lvl:5,school:'Class unit: Characters\' Relationships (realistic fiction)',
+ tricky:[['erosion','e-ro-sion'],['sketches','sketch-es'],['handwriting','hand-writ-ing'],['annoyed','an-noyed']],
+ pages:[
+ {t:'When Ms. Ortiz read the science fair partners out loud, Jada\'s stomach dropped. Her partner was Marcus, the boy who never raised his hand and always sat alone at lunch. Jada had already planned everything: a volcano with foam lava and a poster with glitter titles. "He probably won\'t even help," she whispered to her best friend, Priya. Priya shrugged. "Maybe give him a chance." Jada rolled her eyes and stuffed her notebook into her backpack.',
+  q:'What does Jada expect from Marcus at the start?',o:['She thinks he will not help','She thinks he is the smartest kid in class','She is excited to work with him'],e:'"He probably won\'t even help,"',k:'character'},
+ {t:'The next day, Jada explained her volcano plan while Marcus listened quietly. When she finished, he slid a worn notebook across the table. Inside were pencil sketches of rock layers, each one labeled in tiny, careful handwriting. "My grandpa and I collect rocks on weekends," Marcus said softly. "What if our project showed how erosion carves canyons? We could use sand and a watering can." Jada stared at the sketches. They were better than anything she had planned.',
+  q:'What do Marcus\'s careful sketches show about him?',o:['He is thoughtful and knows a lot about rocks','He does not care about the project','He copies other people\'s work'],e:'each one labeled in tiny, careful handwriting.',k:'character'},
+ {t:'For two weeks, they worked after school. Jada was good at making things look exciting, and Marcus knew how to make the science correct. They argued once, when Jada wanted to add glitter to the canyon. "Real canyons don\'t sparkle," Marcus said, and for a second Jada felt annoyed. Then she laughed. "Fine. But the title gets glitter." Marcus grinned. It was the first time she had seen him smile.',
+  q:'How is the partners\' relationship changing?',o:['They are learning to work together and respect each other','They are becoming enemies','They have stopped talking'],e:'Jada was good at making things look exciting, and Marcus knew how to make the science correct.',k:'character'},
+ {t:'On the night of the science fair, a judge asked how the model worked. Jada started to answer, then stopped and nodded at Marcus instead. He stepped forward and explained every layer of the canyon, his voice growing stronger with each word. They won second place. At lunch the next Monday, Jada carried her tray past her usual table and sat down next to Marcus. "Save a seat for Priya too," she said.',
+  q:'Why does the author end the story with Jada sitting next to Marcus at lunch?',o:['To show they have become friends','To show the cafeteria was crowded','To show Jada is still upset'],e:'sat down next to Marcus.',k:'character'}],
+ seq:['Jada was unhappy about her partner.','Marcus showed his rock sketches.','They argued about the glitter.','Jada sat with Marcus at lunch.']},
+
+{id:'jumpshot',title:'The Jump Shot',icon:'🏀',cat:'fiction',lvl:5,school:'Class unit: Characters\' Relationships (realistic fiction)',
+ tricky:[['driveway','drive-way'],['sprained','sprained'],['crutches','crutch-es'],['streetlights','street-lights']],
+ pages:[
+ {t:'Every evening, Leo watched his older sister, Camila, shoot baskets in the driveway. She was the best player on her middle school team, and she almost never missed. Leo was in fifth grade, and he missed almost every shot. "Can you teach me?" he asked one night. Camila didn\'t look up. "I\'m busy practicing," she said, and the ball swished through the net again. Leo went inside and slammed the door harder than he meant to.',
+  q:'How does Leo feel at the end of this page?',o:['Hurt and frustrated','Proud and happy','Sleepy and calm'],e:'Leo went inside and slammed the door harder than he meant to.',k:'inference'},
+ {t:'The next week, Camila sprained her ankle in a game. The doctor said no basketball for a month. She sat on the porch steps with her crutches, staring at the empty hoop. Leo picked up the ball and took a shot. It bounced off the rim. "Your elbow is sticking out," Camila called. "Tuck it in, like you\'re holding a pizza tray." Leo tried again. The ball rolled around the rim and dropped in.',
+  q:'Why does Camila start helping Leo?',o:['She cannot play, so she watches him instead','Her coach told her to','Leo paid her'],e:'The doctor said no basketball for a month.',k:'inference'},
+ {t:'Every afternoon that month, Camila coached from the porch. She was strict. She made Leo shoot fifty free throws before dinner and wouldn\'t let him quit when his arms got tired. Some days Leo wanted to give up. But he noticed something: when he made a hard shot, Camila cheered louder than she ever cheered for herself. Little by little, his shots started falling.',
+  q:'Which word best describes Camila as a coach?',o:['Strict','Lazy','Silly'],e:'She was strict.',k:'character'},
+ {t:'When Camila\'s ankle healed, she grabbed the ball and bounced it to Leo. "Game of HORSE?" she asked. Leo won the first game. Camila stared at him, then broke into a huge smile. "I taught you too well," she said. That night they practiced together until the streetlights came on, and neither of them was keeping score.',
+  q:'What does "neither of them was keeping score" show?',o:['They cared more about playing together than winning','They forgot how to count','The game was boring'],e:'neither of them was keeping score.',k:'character'}],
+ seq:['Camila was too busy to teach Leo.','Camila sprained her ankle.','Camila coached Leo from the porch.','Leo beat Camila at HORSE.']},
+
+{id:'anning',title:'Mary Anning: Fossil Hunter',icon:'🦕',cat:'people',lvl:5,school:'Science: landforms, erosion and fossils',
+ tricky:[['fossils','fos-sils'],['erosion','e-ro-sion'],['skeleton','skel-e-ton'],['geology','ge-ol-o-gy']],
+ pages:[
+ {t:'Mary Anning was born in 1799 in Lyme Regis, a seaside town in England. The cliffs near her home were full of fossils, the remains of animals that lived millions of years ago. Mary\'s father was a cabinetmaker who also hunted for fossils and sold them to tourists. He took Mary and her brother, Joseph, along the beaches to search. When Mary was eleven, her father died, and the family was very poor. Selling fossils became one way they could earn money.',
+  q:'Why did selling fossils become so important to Mary\'s family?',o:['They needed money after her father died','Fossils were their favorite toys','The town ordered them to'],e:'Selling fossils became one way they could earn money.',k:'inference'},
+ {t:'The cliffs at Lyme Regis are always changing. Storms and waves wear away the rock, and parts of the cliffs crumble and slide onto the beach. This erosion uncovers fossils that have been buried for millions of years. It also made fossil hunting dangerous. Mary searched most often in winter, right after storms, when new fossils were exposed. In 1833, a landslide nearly killed her, and it killed her dog, Tray.',
+  q:'Why did Mary search right after storms?',o:['Storms uncovered new fossils','The beach was empty and quiet','Fossils float in storm water'],e:'when new fossils were exposed.',k:'inference'},
+ {t:'Around 1811, Joseph found the skull of a strange creature. Over the next months, Mary carefully dug out the rest of its skeleton. It was an ichthyosaur, a sea reptile that looked a bit like a dolphin. In 1823, Mary found the first complete skeleton of a plesiosaur, a sea reptile with a very long neck. Some scientists did not believe it was real until they examined it themselves. In 1828, she found the first pterosaur, a flying reptile, ever discovered in Britain.',
+  q:'What was an ichthyosaur?',o:['A sea reptile that looked like a dolphin','A kind of rock','A bird that could swim'],e:'a sea reptile that looked a bit like a dolphin.',k:'vocabulary'},
+ {t:'Even though her discoveries changed science, Mary was not allowed to join the Geological Society of London, because it did not accept women. Scientists bought her fossils and wrote about them, often without mentioning her name. Mary kept working anyway, and she taught herself geology and anatomy. Today her fossils are displayed at the Natural History Museum in London, and she is remembered as one of the greatest fossil hunters who ever lived.',
+  q:'What is the main idea of this page?',o:['Mary was treated unfairly, but her work is honored today','The Geological Society is in London','Fossils belong in museums'],e:'she is remembered as one of the greatest fossil hunters who ever lived.',k:'main idea'}],
+ seq:['Mary hunted fossils with her father.','Storms and erosion uncovered new fossils.','Mary found a plesiosaur skeleton.','Her fossils went on display in London.']},
+
+{id:'cailun',title:'Cai Lun and the Gift of Paper',icon:'📜',cat:'people',lvl:5,school:'Social studies: Ancient China',
+ tricky:[['dynasty','dy-nas-ty'],['official','of-fi-cial'],['historians','his-to-ri-ans'],['centuries','cen-tu-ries']],
+ pages:[
+ {t:'More than two thousand years ago, during the Han dynasty in China, people often wrote on strips of bamboo tied together with string. A single book could be so heavy that it took a cart to move it. Some people wrote on silk, which was light and smooth but very expensive. China needed something better: a writing material that was light, cheap, and easy to make.',
+  q:'What was the problem with writing on bamboo?',o:['It was very heavy','It was too expensive','It fell apart in water'],e:'A single book could be so heavy that it took a cart to move it.',k:'detail'},
+ {t:'Cai Lun was an official who worked in the emperor\'s palace. Around the year 105, he presented a method for making paper to the emperor. Workers mashed tree bark, hemp, old rags, and even worn-out fishing nets with water to make a pulp. The pulp was spread thin on a screen and left to dry. When it was peeled off, it became a sheet of paper.',
+  q:'What is "pulp" on this page?',o:['A wet, mashed mixture used to make paper','A kind of ink','A tree that grows in China'],e:'Workers mashed tree bark, hemp, old rags, and even worn-out fishing nets with water to make a pulp.',k:'vocabulary'},
+ {t:'Historians have found scraps of paper in China that are older than Cai Lun. So he probably did not invent paper all by himself. What he did was improve it and show how to make good paper from cheap materials. Because of his work, paper became common across China. For centuries, many people honored Cai Lun as the father of papermaking.',
+  q:'According to historians, what did Cai Lun really do?',o:['He improved paper and made it cheaper to produce','He was the first person ever to make paper','He invented bamboo books'],e:'What he did was improve it and show how to make good paper from cheap materials.',k:'main idea'},
+ {t:'For hundreds of years, China kept papermaking mostly to itself. Slowly, the knowledge spread along trade routes like the Silk Road. Papermakers were working in Central Asia and the Middle East by the end of the 700s, and paper eventually reached Europe. Books became cheaper, more people learned to read, and ideas could travel farther than ever. Every page you read today comes from the craft Cai Lun helped spread.',
+  q:'How did paper change the world, according to the passage?',o:['It made books cheaper and helped ideas spread','It replaced the Silk Road','It made bamboo more valuable'],e:'Books became cheaper, more people learned to read, and ideas could travel farther than ever.',k:'main idea'}],
+ seq:['People in China wrote on heavy bamboo.','Cai Lun presented a way to make paper.','Paper became common across China.','Papermaking spread along the Silk Road.']},
+
+{id:'aryabhata',title:'Aryabhata: Reading the Sky',icon:'🔭',cat:'people',lvl:5,school:'Social studies: Ancient India',
+ tricky:[['astronomer','as-tron-o-mer'],['mathematician','math-e-ma-ti-cian'],['eclipses','e-clip-ses'],['satellite','sat-el-lite']],
+ pages:[
+ {t:'Aryabhata was born in India in the year 476. He grew up to be one of the greatest mathematicians and astronomers of the ancient world. At the time, India was an important center of learning, where scholars studied numbers, the stars, and the movements of the planets. Aryabhata worked near a great city called Kusumapura, close to where the city of Patna stands today.',
+  q:'What did Aryabhata become?',o:['A great mathematician and astronomer','A famous king','A traveling merchant'],e:'He grew up to be one of the greatest mathematicians and astronomers of the ancient world.',k:'detail'},
+ {t:'When he was only twenty-three years old, Aryabhata finished a book now called the Aryabhatiya. It was written in short verses, like poems, so students could memorize it. The book explained ways to solve math problems, measure shapes, and track the planets. It also gave a very close value for pi, the number used to measure circles: about 3.1416.',
+  q:'Why was the book written in short verses?',o:['So students could memorize it','Because paper was too expensive','So it could be sung at festivals'],e:'so students could memorize it.',k:'detail'},
+ {t:'Aryabhata also had bold ideas about the sky. Many people believed the stars moved around a still Earth. Aryabhata wrote that Earth spins on its axis, which is why the stars seem to move across the night sky. He also explained that eclipses happen when the shadow of Earth or the Moon falls on the other, not because a monster swallows the Sun, as some old stories said.',
+  q:'What did Aryabhata say causes eclipses?',o:['The shadow of Earth or the Moon','A monster swallowing the Sun','Clouds covering the Sun'],e:'eclipses happen when the shadow of Earth or the Moon falls on the other',k:'detail'},
+ {t:'Scholars in India studied Aryabhata\'s work for hundreds of years, and his ideas later reached scholars in the Arab world. In 1975, India launched its very first satellite into space. Scientists named it Aryabhata, in honor of the astronomer who had studied the sky with careful math and simple tools more than fourteen centuries earlier.',
+  q:'Why did India name its first satellite Aryabhata?',o:['To honor the ancient astronomer','Because he designed it','Because it was launched from Patna'],e:'in honor of the astronomer',k:'inference'}],
+ seq:['Aryabhata was born in India.','He wrote his book in verses.','He explained what causes eclipses.','India named a satellite after him.']}
+);
+
+const CATS = {fun:'Fun stories', tales:'Tales, myths & poems', fiction:'Realistic fiction', people:'Real people', mine:'My new stories'};
+const SKILLS = ['detail','inference','vocabulary','main idea','character','figurative language'];
 const SHOP = [
  ['🦊',30],['🐢',30],['🐙',40],['🦉',40],['🚀',50],['🌈',50],['🦖',60],['🐉',70],
  ['🏰',80],['🛸',90],['🦄',100],['🌋',110],['🏆',130],['👑',150],['💎',200],['🪐',250]];
@@ -487,8 +625,10 @@ function vLibrary(){
   if (tab === 'rec') list = allStories().filter(lvlFor).concat(allStories().filter(s => !lvlFor(s)));
   else if (tab === 'mine') list = p.custom || [];
   else list = STORIES.filter(s => s.cat === tab);
-  if (tab === 'rec') list = list.filter(s => !p.done[s.id]).concat(list.filter(s => p.done[s.id]));
-  const tabs = [['rec','For you'],['fun','Fun stories'],['people','Real people']];
+  if (tab === 'school') list = allStories().filter(s => s.school && lvlFor(s));
+  if (tab === 'rec' || tab === 'school') list = list.filter(s => !p.done[s.id]).concat(list.filter(s => p.done[s.id]));
+  if (tab === 'rec') list = list.filter(s => s.school && lvlFor(s) && !p.done[s.id]).concat(list.filter(s => !(s.school && lvlFor(s) && !p.done[s.id])));
+  const tabs = [['rec','For you'],['school','Like class'],['fun','Fun stories'],['tales','Tales & poems'],['fiction','Realistic fiction'],['people','Real people']];
   if ((p.custom||[]).length) tabs.push(['mine','My new stories']);
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}
   <h1>Pick a story</h1>
@@ -497,7 +637,7 @@ function vLibrary(){
     ${sampleFn ? `<button class="book new" data-a="${A(()=>go({name:'make'}))}"><span class="ic">✨</span><b>Make a brand-new story</b><span class="mut">Tell Claude what you want to read about.</span></button>` : ''}
     ${list.map(s => { const d = p.done[s.id]; return `<button class="book" data-a="${A(()=>go({name:'intro', id:s.id}))}">
       <span class="ic">${s.icon}</span><b>${esc(s.title)}</b>
-      <span class="meta"><span class="chip">${CATS[s.cat]||'Story'}</span><span class="chip">Level ${s.lvl}</span>${d?`<span class="stars" aria-label="${d.stars} stars">${'★'.repeat(d.stars)}${'☆'.repeat(3-d.stars)}</span>`:''}</span></button>`; }).join('')}
+      <span class="meta"><span class="chip">${CATS[s.cat]||'Story'}</span><span class="chip">Level ${s.lvl}</span>${s.school?'<span class="chip school">🏫 Like class</span>':''}${d?`<span class="stars" aria-label="${d.stars} stars">${'★'.repeat(d.stars)}${'☆'.repeat(3-d.stars)}</span>`:''}</span></button>`; }).join('')}
   </div>`;
 }
 
@@ -560,7 +700,7 @@ function cleanStory(j, kind, lvl){
     const t = String(pg.t||'').trim(); const o = (pg.o||[]).map(String).slice(0,3);
     if (!t || o.length < 3 || !pg.q) return null;
     let e = String(pg.e||''); if (!t.includes(e) || !e) e = (t.match(/[^.!?]+[.!?]/)||[t])[0];
-    return {t, q:String(pg.q), o, e, k:['detail','inference','vocabulary','main idea'].includes(pg.k)?pg.k:'detail'};
+    return {t, q:String(pg.q), o, e, k:SKILLS.includes(pg.k)?pg.k:'detail'};
   });
   if (pages.some(x => !x)) return null;
   const seq = Array.isArray(j.seq) && j.seq.length >= 3 ? j.seq.slice(0,4).map(String) : pages.map(pg => (pg.t.match(/[^.!?]+[.!?]/)||[pg.t])[0]);
@@ -576,7 +716,7 @@ function vIntro(){
   const allLit = tw.every(x => x.lit >= x.parts.length);
   app.innerHTML = `${topbar(()=>go({name:'library'}))}
   <div class="card" style="display:flex;flex-direction:column;gap:14px">
-    <div class="row"><span class="big-emoji">${s.icon}</span><div><h1>${esc(s.title)}</h1><p class="mut">${s.pages.length} pages · a question after every page</p></div></div>
+    <div class="row"><span class="big-emoji">${s.icon}</span><div><h1>${esc(s.title)}</h1><p class="mut">${s.pages.length} pages · a question after every page</p>${s.school?`<p class="chip school" style="margin-top:6px">🏫 ${esc(s.school)}</p>`:''}</div></div>
   </div>
   ${tw.length ? `<div class="card tw">
     <h2>Warm up: tricky words</h2>
@@ -635,7 +775,7 @@ function vRead(){
     app.innerHTML = `${head}
     <div class="card lv${s.lvl>=5?5:3}">
       ${phase==='look' ? `<p class="notice" style="margin-bottom:12px">Look back! The highlighted part has the answer. Read it again out loud.</p>` : ''}
-      <p class="passage" id="passage">${words.map((w,i) => `<span class="w${ev.has(i)?' ev':''}" data-i="${i}">${esc(w.raw)}</span>`).join(' ')}</p>
+      <p class="passage" id="passage">${words.map((w,i) => (i ? (pg.t.slice(words[i-1].end, w.at).includes('\n') ? '<br>' : ' ') : '') + `<span class="w${ev.has(i)?' ev':''}${pg.t.includes('\n') && w.end <= pg.t.indexOf('\n') ? ' ptitle' : ''}" data-i="${i}">${esc(w.raw)}</span>`).join('')}</p>
     </div>
     ${phase==='look' ? `<div><button class="btn" data-a="${A(()=>{ view.phase='q'; render(); })}">Try the question again</button></div>`
       : `<div class="card" style="display:flex;flex-direction:column;gap:12px">${modePicker(p)}<div id="ctrl"></div></div>`}`;
@@ -978,7 +1118,7 @@ function vGrown(){
         <span class="chip">${p.vault.length} in memory vault</span>
         <span class="chip">${Object.values(p.games||{}).reduce((a,g)=>a+g.plays,0)} games played</span></div>
       <div class="tablewrap"><table><tr><th>Question type</th><th>Right first try</th><th></th></tr>
-        ${['detail','inference','vocabulary','main idea'].map(k => { const v = p.skills[k] || [0,0]; const pc = v[1] ? Math.round(v[0]/v[1]*100) : 0;
+        ${SKILLS.map(k => { const v = p.skills[k] || [0,0]; const pc = v[1] ? Math.round(v[0]/v[1]*100) : 0;
           return `<tr><td>${k[0].toUpperCase()+k.slice(1)}</td><td>${v[1] ? `${v[0]} of ${v[1]}` : '–'}</td><td><div class="bar"><i style="width:${pc}%"></i></div></td></tr>`; }).join('')}
       </table></div>
       <p><b>Reading speed.</b> Out loud (last 5): ${avg(loud) ? avg(loud)+' words a minute' : 'not measured yet'}. Silent (last 5): ${avg(silent) ? avg(silent)+' words a minute' : 'not measured yet'}.
@@ -1003,6 +1143,12 @@ const REAL3 = ['jump','frog','ship','cake','train','green','smile','chest','brin
 const FAKE3 = ['blim','frap','zunk','clabe','drem','plost','snib','chorp','trell','fleem','spof','wunch','brabe','glimp','skad','thrup','nolt','quisp','dreb','molp','sprin','clunt','vog','plaim','gorch','smeb','twib','jasket','rabbon','pelk'];
 const REAL5 = ['harbor','journey','enormous','distance','gravity','mountain','festival','scientist','history','champion','ancient','curious','telescope','adventure','invent','courage','balance','freedom','victory','explore','harvest','orbit','compass','engine','pilot','canyon','galaxy','famous','island','question','silver','captain','museum','rhythm','language','thunder'];
 const FAKE5 = ['blandor','frestic','plantor','grivel','stombler','crandle','trefful','snorpish','dulvent','prestow','vambric','torvish','flimber','scarnet','hobrent','pleckon','drustle','marvent','quandel','brimmet','sprolic','gentrow','clavish','yorbent','morplet','faltrum','drebble','splonder'];
+// This month's 3rd-grade spelling patterns from class (long e, long i, compound words).
+const SPELL3 = [
+  {p:'Long e', w:['bee-hive','tea-pot','sea-shell','pea-nut','ze-bra','re-cess','bea-ver','be-tween','sea-son','pup-py','hon-ey','ea-gle','chee-tah','free-dom']},
+  {p:'Long i', w:['ti-ger','spi-der','high-way','sun-shine','in-side','de-light','night-time','bi-cy-cle','sky-line','sun-light','ti-ny','pi-lot','sur-prise','be-hind','re-mind']},
+  {p:'Compound words', w:['rain-coat','foot-ball','back-pack','pan-cake','snow-man','bed-room','air-plane','tooth-brush','light-house','cup-cake','fire-fly','star-fish','home-work','sun-flow-er']}];
+REAL3.push(...SPELL3.flatMap(x => x.w.map(w => w.replace(/-/g,''))));
 const SMASH3 = ['pan-cake','but-ter-fly','rain-bow','pop-corn','ba-na-na','di-no-saur','el-e-phant','ham-bur-ger','sun-flow-er','cup-cake','kit-ten','rab-bit','pup-py','gar-den','win-dow','rock-et','pic-nic','mon-key','bas-ket','ro-bot','spi-der','pen-cil','tur-tle','hel-i-cop-ter','um-brel-la','pump-kin','snow-man','cat-er-pil-lar','oc-to-pus','sand-wich'];
 const SMASH5 = ['ad-ven-ture','as-tro-naut','tel-e-scope','en-gi-neer','mys-te-ri-ous','im-por-tant','ex-per-i-ment','de-ter-mined','cel-e-brate','in-ven-tion','mag-nif-i-cent','ge-og-ra-phy','re-mark-a-ble','in-de-pen-dent','en-thu-si-as-tic','his-tor-i-cal','en-vi-ron-ment','ca-pa-ble','nav-i-ga-tor','ex-pe-di-tion','vol-ca-no','par-tic-u-lar','sat-el-lite','com-mu-ni-ty','ar-chi-tect'];
 const PICS3 = [['rocket','🚀'],['dragon','🐉'],['pancake','🥞'],['robot','🤖'],['rainbow','🌈'],['castle','🏰'],['octopus','🐙'],['pizza','🍕'],['guitar','🎸'],['penguin','🐧'],['turtle','🐢'],['crown','👑'],['balloon','🎈'],['umbrella','☂️'],['snowman','⛄'],['cupcake','🧁'],['rabbit','🐰'],['tiger','🐯']];
@@ -1118,16 +1264,21 @@ function vCatch(){
 
 // Syllable Smash: tap chunks in order to build long words; 60 seconds.
 function nextSmash(){
-  const g = G, w = g.pool[g.i % g.pool.length]; g.i++;
+  const g = G, item = g.pool[g.i % g.pool.length], w = typeof item === 'string' ? item : item.w; g.i++;
   const parts = w.split('-'); let order = shuffle(parts.map((_,i)=>i));
   if (parts.length > 1 && order.every((x,i)=>x===i)) order.reverse();
-  g.cur = {w: parts.join(''), parts, order, placed:[], done:false};
+  g.cur = {w: parts.join(''), parts, order, placed:[], done:false, p: typeof item === 'string' ? '' : item.p};
 }
 function vSmash(){
   const p = me();
   if (!G || G.k !== 'smash'){
     const read = Object.keys(p.done).map(storyById).filter(Boolean).flatMap(s => s.tricky.map(t => t[1])).filter(w => w.includes('-'));
-    G = {k:'smash', pool: shuffle([...new Set((p.grade >= 5 ? SMASH5 : SMASH3).concat(read))]), i:0, score:0, combo:1, left:60, words:0};
+    const base = [...new Set((p.grade >= 5 ? SMASH5 : SMASH3).concat(read))];
+    // 3rd grade: about half the words come from this month's class spelling patterns, labelled with the pattern
+    const spell = p.grade <= 4 ? SPELL3.flatMap(x => x.w.map(w => ({w, p:x.p}))) : [];
+    const pool = []; const a = shuffle(spell), b = shuffle(base);
+    while (a.length || b.length){ if (a.length) pool.push(a.pop()); if (b.length) pool.push(b.pop()); }
+    G = {k:'smash', pool, i:0, score:0, combo:1, left:60, words:0};
     G.timer = setInterval(() => {
       if (!G || G.k !== 'smash') return;
       G.left--; const el = document.getElementById('sTime'); if (el) el.textContent = G.left + 's';
@@ -1140,6 +1291,7 @@ function vSmash(){
   <div class="card" style="display:flex;flex-direction:column;gap:16px">
     <div class="row spread"><h2>🔨 Syllable Smash</h2>
       <span class="row"><span class="chip" style="font-size:1rem">⏱ <b id="sTime">${g.left}s</b></span><span class="chip" style="font-size:1rem">Score <b>${g.score}</b>${g.combo>1?` · ×${g.combo}`:''}</span></span></div>
+    ${c.p ? `<p style="text-align:center"><span class="chip school">✏️ Spelling pattern from class: ${esc(c.p)}</span></p>` : ''}
     <div class="sslots">${c.parts.map((pt,i) => `<span class="sslot ${i < c.placed.length ? 'full' : ''}">${i < c.placed.length ? esc(pt) : ''}</span>`).join('')}</div>
     ${c.done ? `<p class="twdone" style="text-align:center">${esc(c.w)}! Say it out loud.</p>` :
     `<div class="chunks">${c.order.map(j => c.placed.includes(j) ? '' : `<button class="syl" data-a="${A((e,el)=>smashTap(j, el))}">${esc(c.parts[j])}</button>`).join('')}</div>
