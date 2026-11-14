@@ -1063,6 +1063,8 @@ function setupMode(){
 }
 function readDone(){
   const mode = view.mode, secs = (Date.now() - view.t0)/1000, p = me();
+  // Done tapped while the microphone was still catching up: count the read if most of the page was heard
+  if (mode === 'mic' && !mic.done && view.words && mic.ptr >= view.words.length * 0.6){ const r = micRate(); mic.done = true; if (r) micResult(r, false); }
   stopAll();
   if (mode === 'solo' && secs > 8){ logWpm(view.words.length, secs, 'solo'); }
   if (mode !== 'solo' && !view.readPaid){ view.readPaid = true; R.coins += 3; addCoins(3, 'read aloud'); }
@@ -1076,27 +1078,35 @@ function logWpm(n, secs, how){
 }
 
 // Read out loud: speech recognition follows along and turns words green.
-function startMic(){
+function startMic(resume){
   if (!SR) return;
-  mic.on = true; mic.done = false; mic.ptr = 0; mic.seg = 0; mic.t0 = 0; paintRead();
+  mic.on = true; mic.done = false; mic.heardAt = Date.now();
+  if (resume) mic.seg = mic.ptr; else { mic.ptr = 0; mic.seg = 0; mic.t0 = 0; mic.p0 = 0; }
+  paintRead();
   mic.last = Date.now(); mic.stalled = new Set(); clearInterval(mic.stall);
   mic.stall = setInterval(() => { // a word the reader is stuck on for 4 seconds goes into their word bank
     if (!mic.on || !mic.t0 || !view.words || mic.ptr >= view.words.length) return;
     if (Date.now() - mic.last > 4000 && !mic.stalled.has(mic.ptr)){ mic.stalled.add(mic.ptr); bankAdd(view.words[mic.ptr].raw); }
   }, 1000);
+  clearInterval(mic.watch);
+  mic.watch = setInterval(() => { // the iPad sometimes stops listening without saying so: offer to pick up where the reader is
+    if (!mic.on || mic.done) return;
+    if (Date.now() - (mic.heardAt||0) > 10000) setMicState(`<span class="notice" style="display:inline-block;padding:6px 12px">Not hearing you. <button class="btn small" data-a="${A(()=>{ const r = mic.rec; mic.rec = null; if (r){ try{ r.onend = null; r.abort(); }catch(e){} } startMic(true); })}">🎤 Keep going</button></span>`);
+  }, 2000);
   const btn = document.getElementById('micBtn'); if (btn) btn.textContent = '■ Stop';
   setMicState(`<span class="listen"><i></i>Listening… read out loud</span>`);
   document.getElementById('micOut').innerHTML = '';
   let rec;
   try{ rec = new SR(); }catch(e){ micFail(); return; }
   mic.rec = rec; rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
-  rec.onresult = e => { let t = ''; for (let i=0;i<e.results.length;i++) t += e.results[i][0].transcript + ' '; alignHeard(t); };
+  rec.onresult = e => { mic.heardAt = Date.now(); alignHeard(heardText(e)); };
+  rec.onstart = () => { mic.heardAt = Date.now(); };
   rec.onerror = e => { if (['not-allowed','service-not-allowed','audio-capture'].includes(e.error)) micFail(); };
   rec.onend = () => { if (mic.on && !mic.done && mic.rec === rec){ mic.seg = mic.ptr; try{ rec.start(); }catch(_){ } } };
   try{ rec.start(); }catch(e){ micFail(); }
 }
 function stopMic(){
-  const r = mic.rec; mic.on = false; mic.rec = null; clearInterval(mic.stall);
+  const r = mic.rec; mic.on = false; mic.rec = null; clearInterval(mic.stall); clearInterval(mic.watch);
   if (r){ try{ r.onend = null; r.abort(); }catch(e){} }
   const btn = document.getElementById('micBtn'); if (btn) btn.textContent = '🎤 Read it again';
 }
@@ -1115,36 +1125,65 @@ function sameWord(h, w){
   if (h === w) return true;
   if (SAME[w] && SAME[w].includes(h)) return true;
   if (/^\d+$/.test(w)) return false;
-  if (w.length >= 4 && h.length >= 3 && (w.startsWith(h) || h.startsWith(w.slice(0, Math.max(3, w.length-2))))) return true;
+  if (w.length >= 4 && ((h.length >= 4 && w.startsWith(h)) || h.startsWith(w.slice(0, Math.max(3, w.length-2))))) return true; // 'the' never stands in for 'there'
   return w.length >= 5 && lev(h, w) <= 1;
 }
 function lev(a, b){ const d = Array.from({length:a.length+1}, (_,i)=>[i]); for (let j=1;j<=b.length;j++) d[0][j]=j;
   for (let i=1;i<=a.length;i++) for (let j=1;j<=b.length;j++) d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); return d[a.length][b.length]; }
+// iPads can send each guess as the whole sentence so far; keep the longest form of each so words are not heard twice
+function heardText(e){
+  const segs = [];
+  for (let i=0;i<e.results.length;i++){
+    const t = String(e.results[i][0].transcript || '').trim().toLowerCase(), last = segs[segs.length-1];
+    if (!t) continue;
+    if (last != null && t.startsWith(last)) segs[segs.length-1] = t; else if (last != null && last.startsWith(t)) continue; else segs.push(t);
+  }
+  return segs.join(' ');
+}
 function alignHeard(text){
   if (!mic.on) return;
   const words = view.words, heard = text.toLowerCase().split(/\s+/).map(norm).filter(Boolean);
   let p = mic.seg;
   for (let i=0;i<heard.length && p<words.length;i++){
+    let hit = -1, two = false;
     for (let k=0;k<4 && p+k<words.length;k++){
       const w = words[p+k].n;
-      if (sameWord(heard[i], w) || (heard[i+1] && heard[i]+heard[i+1] === w)){ if (heard[i]+(heard[i+1]||'') === w && heard[i] !== w) i++; p = p+k+1; break; }
+      if (sameWord(heard[i], w)){ hit = k; break; }
+      if (heard[i+1] && heard[i] + heard[i+1] === w){ hit = k; two = true; break; }
     }
+    // the microphone sometimes misses a whole phrase: find the reader again where two heard words in a row match two page words in a row
+    if (hit < 0 && heard[i+1]) for (let k=4;k<16 && p+k+1<words.length;k++){
+      if (sameWord(heard[i], words[p+k].n) && sameWord(heard[i+1], words[p+k+1].n)){ hit = k; break; }
+    }
+    if (hit >= 0){ if (two) i++; p = p + hit + 1; }
   }
-  if (p > mic.ptr){ if (!mic.t0) mic.t0 = Date.now(); mic.ptr = p; mic.last = Date.now(); paintRead(); }
+  if (p > mic.ptr){ const now = Date.now(); if (!mic.t0){ mic.t0 = now; mic.p0 = p; } mic.ptr = p; mic.last = now; paintRead(); }
   checkMicDone();
+}
+// Reading speed = words between the first and the last word the microphone heard, over the time between them.
+// Both ends carry the same recognizer delay, so it cancels out. null when there is too little to time.
+function micRate(){
+  if (!mic.t0 || !(mic.last > mic.t0)) return null;
+  const n = mic.ptr - (mic.p0 || 0), secs = (mic.last - mic.t0)/1000;
+  if (n < 8 || secs < 4) return null;
+  return Math.round(n / (secs/60));
 }
 function checkMicDone(){
   const words = view.words; if (!words || mic.ptr < words.length || mic.done) return;
   mic.done = true; stopMic();
   const secs = Math.max(1, (Date.now() - (mic.t0 || view.t0))/1000);
   if (view.onMicDone){ const f = view.onMicDone; view.onMicDone = null; f(secs); return; }
+  micResult(micRate() || Math.round(words.length / (secs/60)), true);
+}
+function micResult(w, whole){
   const key = R.s.id+'#'+R.page, p = me();
-  const w = logWpm(words.length, secs, 'mic');
+  if (w >= 15 && w <= 300){ p.wpm.push({d:today(), w, how:'mic', s:R.s.id}); if (p.wpm.length > 60) p.wpm.shift(); save(); }
   p.best = p.best || {}; const prev = p.best[key];
   const beat = prev && w > prev;
   if (!prev || w > prev) p.best[key] = w; save();
   setMicState('');
-  document.getElementById('micOut').innerHTML = `<div class="result">You read ${words.length} words in ${Math.round(secs)} seconds. That's <b>${w} words a minute</b>${beat?`, faster than last time (${prev})! 🎉`: prev?` (your best is ${prev}).`:'.'}</div>`;
+  const out = document.getElementById('micOut');
+  if (out) out.innerHTML = `<div class="result">${whole ? 'You read the whole page' : 'You read this page'} at about <b>${w} words a minute</b>${beat?`, faster than last time (${prev})! 🎉`: prev?` (your best is ${prev}).`:'.'}</div>`;
   if (beat){ R.coins += 5; addCoins(5,'new best'); }
   confetti(20);
 }
@@ -1152,6 +1191,13 @@ function paintRead(){
   document.querySelectorAll('#passage .w').forEach((el,i) => { el.classList.toggle('read', i < mic.ptr); el.classList.toggle('now', mic.on && i === mic.ptr); });
 }
 // Read along: a highlighter moves across the words at the chosen speed.
+// time on each word: a bit more for longer words and at commas and full stops, scaled so the whole page
+// takes exactly as long as the chosen words-per-minute says
+function paceTimes(words, wpm){
+  const wt = words.map(w => { let x = 0.7 + 0.3*Math.max(1, syllables(w.raw).length); if (/[.!?]["”]?$/.test(w.raw)) x *= 1.8; else if (/[,;:]["”]?$/.test(w.raw)) x *= 1.3; return x; });
+  const sum = wt.reduce((a,b) => a+b, 0), total = words.length / wpm * 60000;
+  return wt.map(x => x / sum * total);
+}
 function runPace(){
   const p = me(), words = view.words; if (pace.i >= words.length) pace.i = 0;
   pace.run = true; document.getElementById('paceBtn').textContent = '⏸ Pause';
@@ -1159,7 +1205,7 @@ function runPace(){
     if (!pace.run) return;
     document.querySelectorAll('#passage .w').forEach((el,i) => { el.classList.toggle('now', i === pace.i); el.classList.toggle('read', i < pace.i); });
     const w = words[pace.i]; if (!w){ pace.run = false; const b = document.getElementById('paceBtn'); if (b) b.textContent = '↻ Read it again'; pace.i = 0; return; }
-    let ms = 60000 / p.pace; if (/[.!?]["”]?$/.test(w.raw)) ms *= 2; else if (/[,;:]["”]?$/.test(w.raw)) ms *= 1.5;
+    const ms = paceTimes(words, p.pace)[pace.i];
     pace.i++; pace.timer = setTimeout(step, ms);
   };
   step();
@@ -2858,7 +2904,7 @@ function vGym(){
   <div class="card" style="display:flex;flex-direction:column;gap:12px">
     <div class="gchart">${[0,1,2].map(i => `<div class="gbar"><i style="height:${v.reads[i] ? Math.round(v.reads[i]/max*100) : 0}%"></i><b>${v.reads[i] ? v.reads[i] : '–'}</b><span>Read ${i+1}</span></div>`).join('')}</div>
     <p class="mut" style="text-align:center;font-size:.9rem">Words read correctly per minute</p>
-    <div id="micOut"></div>
+    <div id="micOut">${v.note ? `<p class="notice">${esc(v.note)}</p>` : ''}</div>
     ${finished ? `<div class="result">${v.reads[2] > v.reads[0] ? `You got <b>${v.reads[2]-v.reads[0]} words a minute faster</b> from your first read to your last! 💪` : 'Great practice! Reading the same words again makes them easier every time.'}</div>
       <div class="row"><button class="btn" data-a="${A(()=>go({name:'gym'}))}">New passage</button><button class="btn ghost" data-a="${A(()=>go({name:'hub'}))}">Done</button></div>`
     : `<div class="ctrl">${v.run ? `<span id="micState" class="mut">${v.mode==='mic' ? '' : '⏱ Reading… grown-up taps any word read wrong'}</span><button class="btn" data-a="${A(()=>gymDone())}">✓ Done reading</button>`
@@ -2876,11 +2922,19 @@ function gymStart(){
 }
 function gymDone(secsIn){
   const v = view, p = me(); if (!v.run) return;
-  const secs = Math.max(5, secsIn || (Date.now() - (v.mode==='mic' && mic.t0 ? mic.t0 : v.t0))/1000);
-  const n = v.mode === 'mic' ? (mic.ptr || v.words.length) : v.words.length;
-  stopMic(); v.run = false; view.onMicDone = null;
+  const secs = Math.max(5, (Date.now() - v.t0)/1000);
+  let w;
+  if (v.mode === 'mic'){
+    const r = micRate(), heard = mic.ptr;
+    stopMic(); v.run = false; view.onMicDone = null;
+    if (!r || heard < v.words.length * 0.6){ v.note = 'The microphone did not hear enough of that read to time it. Try that read again, or choose "A grown-up listens".'; render(); return; }
+    w = r;
+  } else {
+    stopMic(); v.run = false; view.onMicDone = null;
+    w = Math.max(0, Math.round((v.words.length - v.errs.size) / (secs/60)));
+  }
+  v.note = '';
   v.errs.forEach(i => bankAdd(v.words[i].raw));
-  const w = Math.max(0, Math.round((n - v.errs.size) / (secs/60)));
   v.reads.push(w); addMinutes(secs/60);
   addCoins(5, 'read ' + v.reads.length);
   if (v.reads.length === 3){
@@ -2909,6 +2963,7 @@ function vCheckin(){
       <div class="modes"><button class="${v.mode==='grown'?'on':''}" data-a="${A(()=>{v.mode='grown'; render();})}">🧑 I'll listen and mark errors (most accurate)</button>
       <button class="${v.mode==='mic'?'on':''}" ${SR && !micBlocked ? '' : 'disabled'} data-a="${A(()=>{v.mode='mic'; render();})}">🎤 The microphone listens</button></div>` : ''}
     ${v.stage==='run' && v.mode==='grown' ? `<p class="notice">Tap any word read wrong. It turns red.</p>` : ''}
+    ${v.stage==='run' && v.mode==='mic' ? `<p class="notice">The minute starts when ${esc(p.name)} reads the first word.</p>` : ''}
     ${v.stage==='last' ? `<p class="notice">Time! Now tap the <b>last word</b> ${esc(p.name)} read.</p>` : ''}
     ${v.stage==='done' ? `<div class="result">${esc(p.name)} read <b>${v.w} words correct per minute</b>. The typical reader in grade ${p.grade} reads about ${benchFor(p.grade, today())} at this time of year.</div>` : ''}
   </div>
@@ -2924,19 +2979,20 @@ function vCheckin(){
 }
 function checkStart(){
   const v = view; v.stage = 'run'; v.left = 60; v.t0 = Date.now(); render();
-  if (v.mode === 'mic'){ view.onMicDone = () => checkFinish(mic.ptr, true); startMic(); }
+  if (v.mode === 'mic'){ view.onMicDone = () => checkFinish(micRate() || mic.ptr); startMic(); }
   gymT.timer = setInterval(() => {
-    v.left--; const el = document.getElementById('ckT'); if (el) el.textContent = v.left;
+    const el = document.getElementById('ckT');
+    if (v.mode === 'mic' && !mic.t0){ if (el) el.textContent = '60'; return; } // waits for the first word
+    v.left = v.mode === 'mic' ? Math.max(0, 60 - Math.floor((Date.now() - mic.t0)/1000)) : v.left - 1;
+    if (el) el.textContent = v.left;
     if (v.left <= 0){ gymStopTimer();
       if (v.mode === 'mic'){ const n = mic.ptr; stopMic(); v.ptr = n; checkFinish(n); }
       else { v.stage = 'last'; render(); } }
   }, 1000);
 }
-function checkFinish(wcpmOrWords, early){
+function checkFinish(w){
   const v = view, p = me(); gymStopTimer(); stopMic(); view.onMicDone = null;
-  let w = wcpmOrWords;
-  if (early){ const secs = Math.max(5, (Date.now() - v.t0)/1000); w = Math.round(wcpmOrWords / (secs/60)); }
-  v.w = Math.max(0, w); v.stage = 'done';
+  v.w = Math.max(0, Math.round(w)); v.stage = 'done';
   p.checks = p.checks || []; p.checks.push({d:today(), w:v.w, m:v.mode, title:v.psg.title});
   [...v.errs].forEach(i => bankAdd(v.words[i].raw));
   addCoins(15, 'check-in'); logEvent('checkin', v.psg.title, {w:v.w}); save(); render();
