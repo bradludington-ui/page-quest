@@ -240,6 +240,9 @@ a{color:var(--accent)}
 .hkey.hit{background:var(--good-soft);border-color:var(--good);color:var(--good);box-shadow:none}
 .hkey.miss{background:var(--soft);color:var(--mut);opacity:.5;box-shadow:none}
 @media (max-width:520px){.hkeys{grid-template-columns:repeat(7,1fr)}.hslot{width:1.7rem;font-size:1.4rem}}
+.w.fw{text-decoration:underline dotted var(--sun);text-decoration-thickness:3px;text-underline-offset:5px}
+.w.unclear{background:var(--sun-soft);text-decoration:underline wavy var(--sun);text-underline-offset:5px}
+.fwchip{background:var(--sun-soft);border:1px solid var(--sun)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -598,7 +601,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus})[view.name]();
 }
 function topbar(back){
   const p = me(), L = level(p);
@@ -861,7 +864,8 @@ function vIntro(){
   if (!view.tw){
     const tw = s.tricky.map(t => ({w:t[0], parts:t[1].split('-'), lit:0, def:defOf(t[0], s)}));
     const have = new Set(tw.map(x => bankKey(x.w)));
-    bankWords(p).filter(k => !have.has(k)).slice(0, 2).forEach(k => tw.push({w:k, parts:syllables(k), lit:0, def:(EXTRA.defs||{})[k] || '', bank:true}));
+    const fw = focusWords(p).filter(k => !have.has(k)), extra = fw.length ? fw.slice(0, 3) : bankWords(p).filter(k => !have.has(k)).slice(0, 2);
+    extra.forEach(k => tw.push({w:k, parts:splitOf(k), lit:0, def:meaningOf(k), bank:true, focus:isFocus(p, k)}));
     view.tw = tw;
   }
   const tw = view.tw, allLit = tw.every(x => x.lit >= x.parts.length);
@@ -875,7 +879,7 @@ function vIntro(){
   ${tw.length ? `<div class="card tw">
     <h2>Warm up: tricky words</h2>
     <p class="mut">Tap each chunk and say it out loud. Then say the whole word and read what it means.</p>
-    ${tw.map(x => `<div class="twrow">${x.bank ? '<span class="chip school">From your word bank</span>' : ''}${x.parts.map((pt,j) => `<button class="syl ${j < x.lit ? 'lit':''}" ${j===x.lit?`data-a="${A(()=>{x.lit++; render();})}"`:''} ${j>x.lit?'disabled':''}>${esc(pt)}</button>`).join('')}
+    ${tw.map(x => `<div class="twrow">${x.bank ? `<span class="chip school">${x.focus ? '🎯 Focus word' : 'From your word bank'}</span>` : ''}${x.parts.map((pt,j) => `<button class="syl ${j < x.lit ? 'lit':''}" ${j===x.lit?`data-a="${A(()=>{x.lit++; render();})}"`:''} ${j>x.lit?'disabled':''}>${esc(pt)}</button>`).join('')}
       ${x.lit >= x.parts.length ? `<span class="twdone">→ ${esc(x.w)} ✓</span>${x.def ? `<span class="def">means: ${esc(x.def)}</span>` : ''}` : ''}</div>`).join('')}
   </div>` : ''}
   <div class="card" style="display:flex;flex-direction:column;gap:12px">
@@ -941,7 +945,8 @@ function vRead(){
     app.innerHTML = `${head}
     <div class="card lv${s.lvl>=5?5:3}">
       ${phase==='look' ? `<p class="notice" style="margin-bottom:12px">Look back! The highlighted part has the answer. Read it again out loud.</p>` : ''}
-      <p class="passage" id="passage">${words.map((w,i) => (i ? (pg.t.slice(words[i-1].end, w.at).includes('\n') ? '<br>' : ' ') : '') + `<span class="w${ev.has(i)?' ev':''}${pg.t.includes('\n') && w.end <= pg.t.indexOf('\n') ? ' ptitle' : ''}" data-i="${i}">${esc(w.raw)}</span>`).join('')}</p>
+      <p class="passage" id="passage">${words.map((w,i) => (i ? (pg.t.slice(words[i-1].end, w.at).includes('\n') ? '<br>' : ' ') : '') + `<span class="w${ev.has(i)?' ev':''}${isFocus(p, bankKey(w.raw)) ? ' fw' : ''}${pg.t.includes('\n') && w.end <= pg.t.indexOf('\n') ? ' ptitle' : ''}" data-i="${i}">${esc(w.raw)}</span>`).join('')}</p>
+      ${words.some(w => isFocus(p, bankKey(w.raw))) ? `<p class="mut" style="font-size:.9rem;margin-top:6px"><span class="w fw">Dotted words</span> are your focus words. Read them carefully!</p>` : ''}
     </div>
     ${phase==='look' ? `<div><button class="btn" data-a="${A(()=>{ view.phase='q'; render(); })}">Try the question again</button></div>`
       : `<div class="card" style="display:flex;flex-direction:column;gap:12px">${modePicker(p)}<div id="ctrl"></div></div>`}`;
@@ -1081,7 +1086,7 @@ function logWpm(n, secs, how){
 function startMic(resume){
   if (!SR) return;
   mic.on = true; mic.done = false; mic.heardAt = Date.now();
-  if (resume) mic.seg = mic.ptr; else { mic.ptr = 0; mic.seg = 0; mic.t0 = 0; mic.p0 = 0; }
+  if (resume) mic.seg = mic.ptr; else { mic.ptr = 0; mic.seg = 0; mic.t0 = 0; mic.p0 = 0; mic.heard = new Set(); }
   paintRead();
   mic.last = Date.now(); mic.stalled = new Set(); clearInterval(mic.stall);
   mic.stall = setInterval(() => { // a word the reader is stuck on for 4 seconds goes into their word bank
@@ -1143,7 +1148,7 @@ function heardText(e){
 function alignHeard(text){
   if (!mic.on) return;
   const words = view.words, heard = text.toLowerCase().split(/\s+/).map(norm).filter(Boolean);
-  let p = mic.seg;
+  let p = mic.seg; const heardNow = new Set();
   for (let i=0;i<heard.length && p<words.length;i++){
     let hit = -1, two = false;
     for (let k=0;k<4 && p+k<words.length;k++){
@@ -1155,8 +1160,9 @@ function alignHeard(text){
     if (hit < 0 && heard[i+1]) for (let k=4;k<16 && p+k+1<words.length;k++){
       if (sameWord(heard[i], words[p+k].n) && sameWord(heard[i+1], words[p+k+1].n)){ hit = k; break; }
     }
-    if (hit >= 0){ if (two) i++; p = p + hit + 1; }
+    if (hit >= 0){ heardNow.add(p + hit); if (two) i++; p = p + hit + 1; }
   }
+  mic.heard = mic.heard || new Set(); heardNow.forEach(x => mic.heard.add(x));
   if (p > mic.ptr){ const now = Date.now(); if (!mic.t0){ mic.t0 = now; mic.p0 = p; } mic.ptr = p; mic.last = now; paintRead(); }
   checkMicDone();
 }
@@ -1183,7 +1189,8 @@ function micResult(w, whole){
   if (!prev || w > prev) p.best[key] = w; save();
   setMicState('');
   const out = document.getElementById('micOut');
-  if (out) out.innerHTML = `<div class="result">${whole ? 'You read the whole page' : 'You read this page'} at about <b>${w} words a minute</b>${beat?`, faster than last time (${prev})! 🎉`: prev?` (your best is ${prev}).`:'.'}</div>`;
+  const unclear = flagUnclear(R.s.pages[R.page].t);
+  if (out) out.innerHTML = `<div class="result">${whole ? 'You read the whole page' : 'You read this page'} at about <b>${w} words a minute</b>${beat?`, faster than last time (${prev})! 🎉`: prev?` (your best is ${prev}).`:'.'}</div>${unclearHtml(unclear)}`;
   if (beat){ R.coins += 5; addCoins(5,'new best'); }
   confetti(20);
 }
@@ -1379,8 +1386,9 @@ function vGrown(){
           ${checks.map(c => `<tr><td>${c.d}</td><td><b>${c.w}</b></td><td>${benchFor(p.grade, c.d)}</td><td>${c.m==='mic'?'Microphone':'Grown-up'}</td></tr>`).join('')}</table></div>` : ''}
         <div style="margin-top:8px"><button class="btn small ${checkDue(p)?'sun':'ghost'}" data-a="${A(()=>{ S.cur = p.id; save(); go({name:'checkin'}); })}">${checkDue(p) ? 'Start this month\'s check-in' : 'Do another check-in'}</button></div></div>
 
-      <div><h3>Word bank</h3><p class="mut" style="font-size:.9rem">Words ${esc(p.name)} tapped for help, skipped or got stuck on. They come back in warm-ups and games until read correctly 3 times. ${p.mastered ? `<b>${p.mastered} mastered so far.</b>` : ''}</p>
-        <p style="margin-top:6px">${bank.length ? bank.slice(0, 30).map(k => `<span class="chip">${esc(k)}${p.bank[k].n > 1 ? ' ×' + p.bank[k].n : ''}</span>`).join(' ') : '<span class="mut">Empty for now.</span>'}</p></div>
+      <div><h3>Focus words and word bank</h3><p class="mut" style="font-size:.9rem">Words ${esc(p.name)} tapped for help, got stuck on, that the microphone did not hear clearly, or that you marked. A word flagged on two different pages or days becomes a 🎯 focus word: it is underlined in stories, comes first in warm-ups and games, and gets daily practice in Today's Quest. Reading a word correctly 3 times masters it. ${p.mastered ? `<b>${p.mastered} mastered so far.</b>` : ''}</p>
+        ${focusWords(p).length ? `<p style="margin-top:6px">${focusWords(p).map(k => `<span class="chip fwchip">🎯 ${esc(k)} <span class="mut">${'✓'.repeat(p.bank[k].ok||0)}${'·'.repeat(3-(p.bank[k].ok||0))}</span></span>`).join(' ')}</p>` : ''}
+        <p style="margin-top:6px">${bank.filter(k => !isFocus(p, k)).length ? bank.filter(k => !isFocus(p, k)).slice(0, 30).map(k => `<span class="chip">${esc(k)}</span>`).join(' ') : (focusWords(p).length ? '' : '<span class="mut">Empty for now.</span>')}</p></div>
 
       ${seriesFor(p).length ? `<div><h3>Chapter books</h3>${seriesFor(p).map(se => { const c = chapterInfo(p, se); return `<p class="row"><span>${se.icon} ${esc(se.title)}: ${c.done ? 'finished' : `chapter ${c.n+1} of ${se.chapters.length}${c.locked ? ' (unlocks tomorrow)' : ''}`}</span>
         ${c.locked ? `<button class="btn ghost small" data-a="${A(()=>{ const st = seriesState(p, se.id); st.d = ''; p.series[se.id] = st; save(); render(); })}">Unlock now</button>` : ''}</p>`; }).join('')}</div>` : ''}
@@ -1486,7 +1494,7 @@ function vCatch(){
   const dpr = window.devicePixelRatio || 1; cv.style.height = H+'px'; cv.width = W*dpr; cv.height = H*dpr; cx.scale(dpr, dpr);
   const css = getComputedStyle(document.documentElement), col = n => css.getPropertyValue(n).trim();
   const C = {panel:col('--panel'), line:col('--line'), ink:col('--ink'), good:col('--good'), oops:col('--oops'), sun:col('--sun')};
-  const bankW = bankWords(p), real = (hard ? REAL5 : REAL3).concat(bankW, bankW), fake = hard ? FAKE5 : FAKE3, fs = W < 500 ? 18 : 22, base = hard ? 50 : 42;
+  const bankW = bankWords(p), real = (hard ? REAL5 : REAL3).concat(bankW, bankW, focusWords(p), focusWords(p)), fake = hard ? FAKE5 : FAKE3, fs = W < 500 ? 18 : 22, base = hard ? 50 : 42;
   const g = G = {k:'catch', score:0, lives:3, x:W/2, items:[], t:0, next:0.5, last:performance.now(), fake:[], hud:''};
   const move = e => { const r = cv.getBoundingClientRect(); g.x = Math.max(46, Math.min(W-46, e.clientX - r.left)); };
   cv.addEventListener('pointerdown', move); cv.addEventListener('pointermove', move);
@@ -1633,7 +1641,7 @@ function matchPairs(kind, p){
     const words = uniqBy(base.map(w => ({parts:w.split('-'), bank:''})), x => x.parts.join('').toLowerCase());
     const banked = bank.map(k => ({parts:syllables(k), bank:k})).filter(x => x.parts.length >= 2);
     const firsts = new Set(), seconds = new Set(), out = [];
-    const order = shuffle(banked).slice(0, 2).concat(freshOrder(p, kind, words, x => x.parts.join('').toLowerCase()));
+    const order = banked.slice(0, 2).concat(freshOrder(p, kind, words, x => x.parts.join('').toLowerCase()));
     for (const x of order){
       if (x.parts.length < 2) continue;
       const h = Math.ceil(x.parts.length/2), a = x.parts.slice(0,h).join('').toLowerCase(), b = x.parts.slice(h).join('').toLowerCase();
@@ -1704,7 +1712,7 @@ function hangPick(p){
   const hi = p.grade >= 5, ok = w => /^[a-z]+$/.test(w) && w.length >= (hi ? 5 : 4) && w.length <= (hi ? 12 : 9);
   const vocab = (hi ? MATCHWORDS.vocab5 : MATCHWORDS.vocab3).map(([w, def]) => ({w:w.toLowerCase(), def})).filter(x => ok(x.w));
   const banked = bankWords(p).filter(k => ok(k) && (EXTRA.defs||{})[k]).map(k => ({w:k, def:EXTRA.defs[k], bank:k}));
-  const list = shuffle(banked).slice(0, 1).concat(freshOrder(p, 'hang', vocab, x => x.w));
+  const list = banked.slice(0, 2).concat(freshOrder(p, 'hang', vocab, x => x.w));
   return uniqBy(list, x => x.w).slice(0, HANG_WORDS);
 }
 function vHang(){
@@ -2804,11 +2812,18 @@ function ringSvg(p){
 // ---------- Word bank: the words this reader actually struggles with ----------
 const BANK_SKIP = new Set('the and a an to of in is it was he she they you i we on at for with his her that this but not are be as had have said from or one all were so up out can no if my me do did what when there then them some him its our your'.split(' '));
 function bankKey(w){ return String(w).toLowerCase().replace(/[’']s$/,'').replace(/[^a-z]/g,''); }
-function bankAdd(w){
+function bankAdd(w, src, ctx){
   const p = me(); if (!p) return; const k = bankKey(w);
   if (k.length < 4 || BANK_SKIP.has(k)) return;
   p.bank = p.bank || {}; const b = p.bank[k] || (p.bank[k] = {n:0, ok:0, d:today()});
-  b.n++; b.ok = 0; b.d = today(); save();
+  // a word counts once per page (or per practice session), so tapping it twice on one page is not "routinely"
+  const occ = (view.name === 'read' && R) ? R.s.id + '#' + R.page : view.name + '|' + (view.psg ? view.psg.title : '') + '|' + today();
+  b.occ = b.occ || [];
+  if (!b.occ.includes(occ)){ b.n++; b.occ.push(occ); if (b.occ.length > 8) b.occ.shift(); }
+  b.ok = 0; b.d = today(); if (src) b.src = src;
+  if (!ctx && view.words){ const w0 = view.words.find(x => bankKey(x.raw) === k); const txt = (view.name === 'read' && R) ? R.s.pages[R.page].t : (view.psg && view.psg.t); if (w0 && txt) ctx = sentenceAt(txt, w0.at); }
+  if (ctx) b.ctx = ctx;
+  save();
 }
 function bankOk(w){
   const p = me(), k = bankKey(w); if (!p || !p.bank || !p.bank[k]) return;
@@ -2824,6 +2839,7 @@ function questItems(p){
   const q = questToday(p), f = p.focus || {}, ch = nextChapter(p);
   const items = [
     {k:'gym', icon:'🏋️', label:'Fluency Gym: read one passage 3 times', run:()=>go({name:'gym'})},
+    ...(focusWords(p).length || q.focus ? [{k:'focus', icon:'🎯', label:`Focus words: practise ${Math.min(6, focusWords(p).length) || 'your'} word${focusWords(p).length === 1 ? '' : 's'}`, run:()=>go({name:'focus'})}] : []),
     {k:'story', icon:'📖', label: ch && !ch.locked ? `Read today's chapter of ${ch.se.title}` : 'Read a story', run:()=> ch && !ch.locked ? go({name:'intro', id:ch.story.id}) : go({name:'library', tab:'rec'})}];
   if (vaultDue().length || q.vault) items.push({k:'vault', icon:'🔐', label:'Open the Memory Vault', run:()=>go({name:'vault', items:shuffle(vaultDue()).slice(0,6), i:0})});
   // matching games are the favourite, so they alternate day by day with the other practice games
@@ -2900,11 +2916,11 @@ function vGym(){
       ${v.mode==='grown' ? `<p class="mut" style="font-size:.9rem">Grown-up: tap Start, then tap any word read wrong (it turns red). Tap Done at the end.</p>` : ''}` : ''}
   </div>
   <div class="card"><p class="mut" style="margin-bottom:8px">From: ${esc(v.psg.title)}</p>
-    <p class="passage" id="passage">${words.map((w,i) => (i ? (v.psg.t.slice(words[i-1].end, w.at).includes('\n') ? '<br>' : ' ') : '') + `<span class="w${v.errs.has(i)?' err':''}" data-i="${i}">${esc(w.raw)}</span>`).join('')}</p></div>
+    <p class="passage" id="passage">${words.map((w,i) => (i ? (v.psg.t.slice(words[i-1].end, w.at).includes('\n') ? '<br>' : ' ') : '') + `<span class="w${v.errs.has(i)?' err':''}${isFocus(p, bankKey(w.raw)) ? ' fw' : ''}" data-i="${i}">${esc(w.raw)}</span>`).join('')}</p></div>
   <div class="card" style="display:flex;flex-direction:column;gap:12px">
     <div class="gchart">${[0,1,2].map(i => `<div class="gbar"><i style="height:${v.reads[i] ? Math.round(v.reads[i]/max*100) : 0}%"></i><b>${v.reads[i] ? v.reads[i] : '–'}</b><span>Read ${i+1}</span></div>`).join('')}</div>
     <p class="mut" style="text-align:center;font-size:.9rem">Words read correctly per minute</p>
-    <div id="micOut">${v.note ? `<p class="notice">${esc(v.note)}</p>` : ''}</div>
+    <div id="micOut">${v.note ? `<p class="notice">${esc(v.note)}</p>` : ''}${!v.run && v.unclear && v.unclear.length ? unclearHtml(v.unclear.map(k => ({k}))) : ''}</div>
     ${finished ? `<div class="result">${v.reads[2] > v.reads[0] ? `You got <b>${v.reads[2]-v.reads[0]} words a minute faster</b> from your first read to your last! 💪` : 'Great practice! Reading the same words again makes them easier every time.'}</div>
       <div class="row"><button class="btn" data-a="${A(()=>go({name:'gym'}))}">New passage</button><button class="btn ghost" data-a="${A(()=>go({name:'hub'}))}">Done</button></div>`
     : `<div class="ctrl">${v.run ? `<span id="micState" class="mut">${v.mode==='mic' ? '' : '⏱ Reading… grown-up taps any word read wrong'}</span><button class="btn" data-a="${A(()=>gymDone())}">✓ Done reading</button>`
@@ -2928,7 +2944,7 @@ function gymDone(secsIn){
     const r = micRate(), heard = mic.ptr;
     stopMic(); v.run = false; view.onMicDone = null;
     if (!r || heard < v.words.length * 0.6){ v.note = 'The microphone did not hear enough of that read to time it. Try that read again, or choose "A grown-up listens".'; render(); return; }
-    w = r;
+    w = r; v.unclear = unclearWords().map(x => x.k); flagUnclear(v.psg.t);
   } else {
     stopMic(); v.run = false; view.onMicDone = null;
     w = Math.max(0, Math.round((v.words.length - v.errs.size) / (secs/60)));
@@ -3116,7 +3132,8 @@ function dayData(p, d){
   if (!reads.length && (!first || d < first)) reads = Object.entries(p.done||{}).filter(([,x]) => x.d === d).map(([id]) => { const s = storyById(id); return s ? {type: s.series ? 'chapter' : 'story', title:s.title, id} : null; }).filter(Boolean);
   const words = [];
   for (const r of reads){ const s = storyById(r.id); if (s) for (const t of s.tricky){ const def = defOf(t[0], s); if (!words.some(w => w[0] === t[0])) words.push([t[0], def]); } }
-  return {d, mins: Math.floor(((p.daily||{})[d]) || 0), reads, gym: log.filter(e => e.type === 'gym'), vault: log.filter(e => e.type === 'vault'),
+  const practise = Object.entries(p.bank||{}).filter(([,b]) => b.d === d).sort((a,b) => b[1].n - a[1].n).map(([k,b]) => ({k, focus: b.n >= FOCUS_N}));
+  return {d, practise, mins: Math.floor(((p.daily||{})[d]) || 0), reads, gym: log.filter(e => e.type === 'gym'), vault: log.filter(e => e.type === 'vault'),
     games: log.filter(e => e.type === 'game'), checks: log.filter(e => e.type === 'checkin'), words};
 }
 function readLine(r){
@@ -3130,6 +3147,7 @@ function journalText(p, d){
     x.reads.forEach(r => { const s = storyById(r.id), sum = s && sumOf(s); if (sum) lines.push(`About ${s.series ? 'chapter ' + (s.chap+1) : r.title.split(':')[0]}: ${sum[0]}`); });
   } else lines.push('Read: practice passages and word games');
   if (x.words.length) lines.push('New words: ' + x.words.map(w => w[0]).join(', '));
+  if (x.practise.length) lines.push('Words to practise: ' + x.practise.map(w => w.k).join(', '));
   const extra = [];
   x.gym.forEach(g => extra.push(`Fluency practice, read a passage 3 times (${g.w[0]} → ${g.w[2]} words per minute)`));
   if (x.vault.length) extra.push('Memory review of earlier stories');
@@ -3185,12 +3203,103 @@ function vReport(){
         ${x.vault.map(g => `<li>Memory Vault: remembered ${g.right} of ${g.total}</li>`).join('')}
         ${x.checks.map(g => `<li>Monthly check-in: ${g.w} words correct per minute</li>`).join('')}
         ${x.games.length ? `<li>Games: ${[...new Set(x.games.map(g => g.title))].map(esc).join(', ')}</li>` : ''}</ul></div>` : ''}
+      ${x.practise.length ? `<div><h3>Words to practise</h3><p>${x.practise.map(w => `<span class="chip ${w.focus ? 'fwchip' : ''}">${w.focus ? '🎯 ' : ''}${esc(w.k)}</span>`).join(' ')}</p><p class="mut" style="font-size:.9rem">🎯 = flagged more than once, so it is a focus word.</p></div>` : ''}
       ${x.words.length ? `<div><h3>New words</h3><p>${x.words.map(w => `<span class="chip" title="${esc(w[1]||'')}">${esc(w[0])}</span>`).join(' ')}</p></div>` : ''}
       <div><h3>For the reading journal</h3><pre class="journal">${esc(txt)}</pre></div>
       <div class="row"><button class="btn small" data-a="${A(()=>copyText(txt, 'm'+n))}">Copy</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(txt, 'm'+n))}">Share…</button>` : ''}<span id="m${n}"></span></div>
     </div>`; }).join('')}
   ${S.profiles.length ? '' : '<p class="mut">No readers on this iPad yet.</p>'}
   <p class="mut">Each iPad keeps its own readers, so open the report on each child's iPad. Share sends the log to Messages, Mail or Notes.</p>`;
+}
+
+// ---------- Focus words: words a reader stumbles on again and again ----------
+// Any word flagged on two different pages or days (unclear to the microphone, tapped for help, stuck on,
+// or marked by a grown-up) becomes a focus word. Focus words show up everywhere until read correctly 3 times.
+const FOCUS_N = 2;
+function focusWords(p){ return bankWords(p).filter(k => p.bank[k].n >= FOCUS_N); }
+function isFocus(p, k){ const b = (p && p.bank || {})[k]; return !!(b && b.n >= FOCUS_N); }
+function meaningOf(k){
+  k = String(k).toLowerCase();
+  if ((EXTRA.defs||{})[k]) return EXTRA.defs[k];
+  const v = MATCHWORDS.vocab3.concat(MATCHWORDS.vocab5).find(x => x[0].toLowerCase() === k);
+  return v ? v[1] : '';
+}
+function sentenceAt(text, at){
+  const t = String(text).replace(/\n/g, ' ');
+  let a = at; while (a > 0 && !/[.!?]/.test(t[a-1])) a--;
+  let b = at; while (b < t.length && !/[.!?]/.test(t[b])) b++;
+  return t.slice(a, Math.min(t.length, b + 1)).replace(/^["\s]+/, '').trim().slice(0, 220);
+}
+// page words the microphone passed over without clearly hearing; longer words first, at most 4 a page
+function unclearWords(){
+  const words = view.words || [], heard = mic.heard || new Set(), out = [];
+  for (let i = 0; i < Math.min(mic.ptr, words.length); i++){
+    const k = bankKey(words[i].raw);
+    if (!heard.has(i) && k.length >= 4 && !BANK_SKIP.has(k) && !out.some(o => o.k === k)) out.push({i, k});
+  }
+  return out.sort((a,b) => b.k.length - a.k.length).slice(0, 4);
+}
+function flagUnclear(text){
+  const list = unclearWords();
+  list.forEach(x => bankAdd(view.words[x.i].raw, 'mic', sentenceAt(text, view.words[x.i].at)));
+  const heard = mic.heard || new Set();
+  document.querySelectorAll('#passage .w').forEach((el, i) => el.classList.toggle('unclear', i < mic.ptr && !heard.has(i) && list.some(x => x.k === bankKey(view.words[i].raw))));
+  return list;
+}
+function unclearHtml(list){
+  if (!list.length) return '';
+  const p = me();
+  return `<div class="notice" style="margin-top:10px"><b>Words to practise:</b> ${list.map(x => `<span class="chip fwchip">${isFocus(p, x.k) ? '🎯 ' : ''}${esc(x.k)}</span>`).join(' ')}
+    <p class="mut" style="font-size:.9rem;margin-top:4px">The iPad didn't hear these clearly. Tap an underlined word in the story to see it in chunks, then read it again out loud.${list.some(x => isFocus(p, x.k)) ? ' 🎯 means it is one of your focus words.' : ''}</p></div>`;
+}
+// listen for one word; cb(true) heard it, cb(false) did not, cb(null) no microphone
+function listenFor(word, cb){
+  stopRetell(); let rec;
+  try{ rec = new SR(); }catch(e){ cb(null); return; }
+  retellRec = rec; rec.lang = 'en-US'; rec.continuous = false; rec.interimResults = true;
+  let done = false;
+  const fin = ok => { if (done) return; done = true; clearTimeout(t); try{ rec.onend = null; rec.abort(); }catch(e){} if (retellRec === rec) retellRec = null; cb(ok); };
+  const t = setTimeout(() => fin(false), 7000);
+  rec.onresult = e => { const heard = heardText(e).split(/\s+/).map(norm); // 'pan cake' counts for pancake
+    if (heard.some((h, i) => h === word || h + (heard[i+1]||'') === word || (word.length >= 6 && lev(h, word) <= 1))) fin(true); };
+  rec.onerror = e => { if (['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){ micBlocked = true; fin(null); } };
+  rec.onend = () => fin(false);
+  try{ rec.start(); }catch(e){ fin(null); }
+}
+function vFocus(){
+  const p = me(), v = view;
+  if (!v.list){ v.list = focusWords(p).slice(0, 6); v.i = 0; v.lit = 0; v.got = 0; v.state = 'learn'; }
+  if (!v.list.length){
+    app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card"><h2>🎯 Focus words</h2><p>No focus words right now. Words you stumble on more than once will show up here.</p></div>`; return;
+  }
+  if (v.i >= v.list.length){
+    if (!v.paid){ v.paid = true; questMark('focus'); logEvent('focus', 'Focus words', {words:v.list.slice(), right:v.got}); }
+    app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <span class="big-emoji">🎯</span><h1>Focus words done!</h1><p>You read <b>${v.got} of ${v.list.length}</b> out loud.</p>
+      <p class="mut">Read a focus word correctly 3 times and it is mastered.</p>
+      <button class="btn" data-a="${A(()=>go({name:'hub'}))}">Today's quest</button></div>`;
+    return;
+  }
+  const k = v.list[v.i], b = (p.bank||{})[k] || {ok:0}, parts = splitOf(k), def = meaningOf(k), canMic = SR && !micBlocked;
+  const ctx = b.ctx ? esc(b.ctx).replace(new RegExp('\\b(' + k.replace(/[^a-z]/g,'') + ')\\b', 'i'), '<b>$1</b>') : '';
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <div class="card" style="display:flex;flex-direction:column;gap:14px">
+    <div class="row spread"><h2>🎯 Focus words</h2><span class="chip">Word ${v.i+1} of ${v.list.length}</span></div>
+    <p class="mut">Tap each chunk and say it. Then read the whole word out loud.</p>
+    <div class="twrow" style="justify-content:center">${parts.map((pt,j) => `<button class="syl ${j < v.lit ? 'lit':''}" ${j===v.lit?`data-a="${A(()=>{ v.lit++; if (v.lit >= parts.length) v.state = 'say'; render(); })}"`:''} ${j>v.lit?'disabled':''}>${esc(pt)}</button>`).join('')}</div>
+    ${v.lit >= parts.length ? `<p class="twdone" style="text-align:center;font-size:2.4rem">${esc(k)}</p>
+      ${def ? `<p style="text-align:center">It means: ${esc(def)}</p>` : ''}
+      ${ctx ? `<p class="mut" style="text-align:center">From your reading: “${ctx}”</p>` : ''}` : ''}
+    <p style="text-align:center" aria-label="${b.ok} of 3 correct reads">${[0,1,2].map(j => j < (b.ok||0) ? '✅' : '⚪').join(' ')} <span class="mut">read it right 3 times to master it</span></p>
+    <div class="row" style="justify-content:center">
+      ${v.state === 'say' ? (canMic ? `<button class="btn sun" data-a="${A(()=>{ v.state = 'listening'; render(); listenFor(k, ok => { if (view !== v) return; if (ok === null){ v.state = 'say'; render(); return; } v.state = ok ? 'right' : 'again'; if (ok){ v.got++; bankOk(k); addCoins(3); confetti(15); } render(); }); })}">🎤 Say it</button>`
+          : `<button class="btn" data-a="${A(()=>{ v.state = 'right'; v.got++; bankOk(k); addCoins(3); render(); })}">I read it out loud</button>`) : ''}
+      ${v.state === 'listening' ? `<span class="listen"><i></i>Listening… say “${esc(k)}”</span>` : ''}
+      ${v.state === 'right' ? `<span class="result">✓ Great reading!</span>` : ''}
+      ${v.state === 'again' ? `<span class="notice">I didn't quite hear it.</span><button class="btn sun small" data-a="${A(()=>{ v.state = 'say'; render(); })}">Try again</button>` : ''}
+      ${v.state === 'right' || v.state === 'again' ? `<button class="btn" data-a="${A(()=>{ v.i++; v.lit = 0; v.state = 'learn'; render(); })}">${v.i + 1 >= v.list.length ? 'Finish' : 'Next word'}</button>` : ''}
+    </div>
+  </div>`;
 }
 
 // ---------- Start ----------
