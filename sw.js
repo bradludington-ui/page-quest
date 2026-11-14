@@ -2,9 +2,11 @@
 // and falls back to the last saved copy when the iPad is offline.
 const CACHE = 'page-quest-v13';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png'];
+// Break Zone games: cached on install so they also work offline
+const GAMES = ['bowling', 'golf', 'hoops', 'penalty', 'hockey', 'fishing', 'stack', 'space', 'rings', 'rollball', 'balloons', 'draw', 'ttt', 'four', 'checkers'].map(g => 'games/' + g + '.js?v=1');
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE).then(() => Promise.all(GAMES.map(u => c.add(u).catch(() => {}))))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))

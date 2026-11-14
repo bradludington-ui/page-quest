@@ -20,6 +20,9 @@ Play: https://bradludington-ui.github.io/page-quest/
 
 Progress is saved on each iPad, in the home-screen app. Nothing is sent anywhere.
 
+## Break Zone
+Opens for the rest of the day once Today's Quest is finished. Fifteen just-for-fun games (no coins, their own best scores): Bowling, Mini Golf, Basketball, Penalty Kicks, Table Hockey, Fishing (with an aquarium), Tower Stacker, Space Dodge, Ring Toss, Roll & Score, Balloon Pop, Drawing Pad, Tic-Tac-Toe, Four in a Row and Checkers. Several can be played by two kids on one iPad. Each game is its own file in `games/` and loads only when opened.
+
 ## Reading growth tools
 - **Today's Quest**: a daily checklist (Fluency Gym, a story or chapter, Memory Vault, plus practice for each focus area a grown-up ticks).
 - **Fluency Gym**: one passage read aloud three times, scored by the microphone or a grown-up, with a words-per-minute chart.
