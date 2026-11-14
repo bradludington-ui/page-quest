@@ -224,6 +224,10 @@ a{color:var(--accent)}
 .install{border-color:var(--sun);background:var(--sun-soft)}
 .isteps{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px;line-height:1.45}
 .pcode{width:100%;min-height:90px;font:inherit;font-size:.85rem;padding:10px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+.journal{white-space:pre-wrap;font-family:var(--read);font-size:.95rem;line-height:1.55;background:var(--soft);border-radius:14px;padding:14px;margin:0;user-select:text;-webkit-user-select:text}
+.rlist{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.ritem{display:flex;gap:12px;align-items:flex-start;padding:12px;border:2px solid var(--line);border-radius:14px}
+.plist{margin:6px 0 0;padding-left:1.3em;display:flex;flex-direction:column;gap:4px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -577,7 +581,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, sum:vSum, series:vSeries, g_parts:vParts})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts})[view.name]();
 }
 function topbar(back){
   const p = me(), L = level(p);
@@ -1040,7 +1044,7 @@ function readDone(){
   stopAll();
   if (mode === 'solo' && secs > 8){ logWpm(view.words.length, secs, 'solo'); }
   if (mode !== 'solo' && !view.readPaid){ view.readPaid = true; R.coins += 3; addCoins(3, 'read aloud'); }
-  addMinutes(secs/60);
+  addMinutes(secs/60); if (R) R.mins = (R.mins||0) + Math.min(secs/60, 15);
   view.phase = 'q'; view.q = null; render();
 }
 function logWpm(n, secs, how){
@@ -1176,6 +1180,7 @@ function finishStory(){
   bumpStreak(); giveTickets(2); save();
   R.coins += bonus + chest + bookBonus; addCoins(bonus + chest + bookBonus, book === 'done' ? 'book finished!' : chest ? 'treasure chest!' : 'story done');
   questMark('story');
+  logEvent(s.series ? 'chapter' : 'story', s.title, {id:s.id, right, total, mins: R.mins || 0});
   confetti(book === 'done' ? 140 : 80);
   go({name:'finish', stars, right, total, chest, coins:R.coins, book});
 }
@@ -1213,7 +1218,7 @@ function vaultQ(it){
 function vVault(){
   const v = view;
   if (v.i >= v.items.length){
-    bumpStreak(); if (!v.paid){ v.paid = true; giveTickets(1); questMark('vault'); }
+    bumpStreak(); if (!v.paid){ v.paid = true; giveTickets(1); questMark('vault'); logEvent('vault', 'Memory Vault', {right:v.right||0, total:v.items.length}); }
     app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
       <span class="big-emoji">🔐</span><h1>Vault closed!</h1><p>You remembered <b>${v.right||0} of ${v.items.length}</b>.</p><p class="notice">🎟️ +1 game ticket</p>
       <button class="btn" data-a="${A(()=>go({name:'hub'}))}">Today's quest</button></div>`;
@@ -1275,7 +1280,7 @@ function vGrown(){
   const FOCUS = [['phonics','Phonics (sounding out words)'],['vocab','Vocabulary'],['lit','Understanding stories'],['info','Understanding nonfiction']];
   const week = [...Array(7)].map((_,i) => addDays(i-6));
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: me() ? 'hub' : 'profiles'}))}">← Back</button></div>
-  <h1>Reading progress</h1>
+  <div class="row spread"><h1>Reading progress</h1><button class="btn" data-a="${A(()=>go({name:'report'}))}">📋 Daily reading report</button></div>
   ${S.profiles.length ? '' : '<p class="mut">No readers yet.</p>'}
   ${S.profiles.map(p => {
     const sk = Object.entries(p.skills); const tot = sk.reduce((a,[,v])=>a+v[1],0), ok = sk.reduce((a,[,v])=>a+v[0],0);
@@ -1358,7 +1363,7 @@ function endGame(k, score, extra){
   const st = gameStat(k), newBest = score > st.best, prevMedal = medal(k, st.best);
   if (newBest) st.best = score;
   const coins = Math.max(2, Math.min(20, Math.round(score/15)));
-  save(); addCoins(coins, 'game'); questMark(k);
+  save(); addCoins(coins, 'game'); questMark(k); logEvent('game', GAMES[k].name, {score});
   if (newBest) confetti(60);
   go({name:'gameOver', k, score, newBest, coins, extra:extra||{}, gotMedal: medal(k, score) && medal(k, score) !== prevMedal && newBest ? medal(k, score) : ''});
 }
@@ -1799,7 +1804,7 @@ const SERIES = [
  blurb:'Twelve strawberry cupcakes vanish on bake sale day, and two kid detectives and one sleepy dog must find them!',
  chapters:[
   {title:'Crumbs on the Porch',
-   tricky:[['porch table','win-dow-sill','the ledge at the bottom of a window'],['detective','de-tec-tive','a person who solves mysteries'],['delicious','de-li-cious','tastes very, very good'],['whispered','whis-pered','said something very quietly']],
+   tricky:[['notebook','note-book','a small book of blank pages for writing'],['detective','de-tec-tive','a person who solves mysteries'],['delicious','de-li-cious','tastes very, very good'],['whispered','whis-pered','said something very quietly']],
    pages:[
     {t:'Nia Brooks and Gus Romero lived on Maple Street. They were best friends and also detectives. Their dog, Pickles, was a detective too. Well, Pickles mostly sniffed things and snored. On Saturday morning, the kids had a big choice to make. They could go to soccer practice, or they could help at the bake sale. "Let\'s help," said Nia. "Mrs. Ochoa needs us." Gus nodded. Mrs. Ochoa made the most delicious strawberry cupcakes in town.',
      q:'What choice did Nia and Gus make on Saturday morning?', o:['They chose to help at the bake sale','They chose to go to soccer practice','They chose to stay home and sleep'], e:'"Let\'s help," said Nia.', k:'detail'},
@@ -2092,7 +2097,7 @@ function gymDone(secsIn){
     p.gym = p.gym || []; p.gym.push({d:today(), w:v.reads.slice(), m:v.mode, s:v.psg.s}); if (p.gym.length > 60) p.gym.shift();
     p.wpm.push({d:today(), w:v.reads[0], how:'gym'}); if (p.wpm.length > 60) p.wpm.shift();
     save(); if (v.reads[2] > v.reads[0]){ addCoins(10, 'faster!'); confetti(60); }
-    questMark('gym');
+    questMark('gym'); logEvent('gym', v.psg.title, {w:v.reads.slice()});
   }
   render();
 }
@@ -2144,7 +2149,7 @@ function checkFinish(wcpmOrWords, early){
   v.w = Math.max(0, w); v.stage = 'done';
   p.checks = p.checks || []; p.checks.push({d:today(), w:v.w, m:v.mode, title:v.psg.title});
   [...v.errs].forEach(i => bankAdd(v.words[i].raw));
-  addCoins(15, 'check-in'); save(); render();
+  addCoins(15, 'check-in'); logEvent('checkin', v.psg.title, {w:v.w}); save(); render();
 }
 
 // ---------- Summary & retell (after the order check) ----------
@@ -2243,6 +2248,103 @@ function partsAnswer(i){
   if (i === 0){ g.streak++; g.right = (g.right||0) + 1; g.score += 10 + Math.min(10, (g.streak-1)*2); skillMark('vocabulary', true); confetti(12); }
   else { g.streak = 0; skillMark('vocabulary', false); }
   render();
+}
+
+// ---------- Activity log & end-of-day report (for school reading journals) ----------
+function nowTime(){ const d = new Date(); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function logEvent(type, title, extra){
+  const p = me(); if (!p) return;
+  p.log = p.log || []; p.log.push(Object.assign({d:today(), t:nowTime(), type, title}, extra || {}));
+  if (p.log.length > 600) p.log.splice(0, p.log.length - 600);
+  save();
+}
+const KIND_LBL = {fun:'story', tales:'folktale, myth or poems', fiction:'realistic fiction', people:'biography', series:'chapter book', mine:'story'};
+function kindOf(s){ if (!s) return 'story'; if (s.id === 'weather') return 'poems'; if (s.cat === 'tales') return /myth|Midas/i.test(s.title) ? 'myth' : 'folktale'; return KIND_LBL[s.cat] || 'story'; }
+function fmtTime(t){ const [h, m] = t.split(':').map(Number); return `${(h % 12) || 12}:${String(m).padStart(2,'0')} ${h < 12 ? 'AM' : 'PM'}`; }
+function niceDate(d, long){ return new Date(d + 'T12:00').toLocaleDateString(undefined, long ? {weekday:'long', month:'long', day:'numeric'} : {weekday:'short', month:'numeric', day:'numeric'}); }
+// Everything one reader did on one day. Days before the log existed fall back to finished stories and minutes.
+function dayData(p, d){
+  const log = (p.log||[]).filter(e => e.d === d);
+  let reads = log.filter(e => e.type === 'story' || e.type === 'chapter');
+  const first = (p.log||[]).length ? p.log[0].d : null;
+  if (!reads.length && (!first || d < first)) reads = Object.entries(p.done||{}).filter(([,x]) => x.d === d).map(([id]) => { const s = storyById(id); return s ? {type: s.series ? 'chapter' : 'story', title:s.title, id} : null; }).filter(Boolean);
+  const words = [];
+  for (const r of reads){ const s = storyById(r.id); if (s) for (const t of s.tricky){ const def = defOf(t[0], s); if (!words.some(w => w[0] === t[0])) words.push([t[0], def]); } }
+  return {d, mins: Math.floor(((p.daily||{})[d]) || 0), reads, gym: log.filter(e => e.type === 'gym'), vault: log.filter(e => e.type === 'vault'),
+    games: log.filter(e => e.type === 'game'), checks: log.filter(e => e.type === 'checkin'), words};
+}
+function readLine(r){
+  const s = storyById(r.id);
+  return `${r.title} (${kindOf(s)}${s ? `, ${s.pages.length} pages` : ''})`;
+}
+function journalText(p, d){
+  const x = dayData(p, d), lines = [`${p.name}: ${niceDate(d, true)}`, `Minutes read: ${x.mins}`];
+  if (x.reads.length){
+    lines.push('Read: ' + x.reads.map(readLine).join('; '));
+    x.reads.forEach(r => { const s = storyById(r.id), sum = s && sumOf(s); if (sum) lines.push(`About ${s.series ? 'chapter ' + (s.chap+1) : r.title.split(':')[0]}: ${sum[0]}`); });
+  } else lines.push('Read: practice passages and word games');
+  if (x.words.length) lines.push('New words: ' + x.words.map(w => w[0]).join(', '));
+  const extra = [];
+  x.gym.forEach(g => extra.push(`Fluency practice, read a passage 3 times (${g.w[0]} → ${g.w[2]} words per minute)`));
+  if (x.vault.length) extra.push('Memory review of earlier stories');
+  if (x.games.length) extra.push('Word games: ' + [...new Set(x.games.map(g => g.title))].join(', '));
+  if (extra.length) lines.push('Also: ' + extra.join('; '));
+  return lines.join('\n');
+}
+function weekText(p, end){
+  const days = [...Array(7)].map((_,i) => { const t = new Date(end + 'T12:00'); t.setDate(t.getDate() - 6 + i); return today(t); });
+  const lines = [`${p.name}: reading log, ${niceDate(days[0])} to ${niceDate(days[6])}`];
+  let total = 0;
+  days.forEach(d => { const x = dayData(p, d); total += x.mins; if (x.mins || x.reads.length) lines.push(`${niceDate(d)}: ${x.mins} min. ${x.reads.length ? x.reads.map(r => r.title).join('; ') : 'Practice passages and word games'}`); });
+  lines.push(`Total: ${total} minutes`);
+  return lines.join('\n');
+}
+function shareText(text, msgId){
+  const say = t => { const el = document.getElementById(msgId); if (el) el.innerHTML = t; };
+  if (navigator.share){ navigator.share({title:'Page Quest reading log', text}).catch(() => {}); return; }
+  try{ navigator.clipboard.writeText(text).then(() => say('<span class="result">✓ Copied</span>'), () => say('Press and hold the text above to copy it.')); }catch(e){ say('Press and hold the text above to copy it.'); }
+}
+function copyText(text, msgId){
+  const say = t => { const el = document.getElementById(msgId); if (el) el.innerHTML = t; };
+  try{ navigator.clipboard.writeText(text).then(() => say('<span class="result">✓ Copied. Paste it into Notes or a message.</span>'), () => say('Press and hold the text to copy it.')); }catch(e){ say('Press and hold the text to copy it.'); }
+}
+function vReport(){
+  const v = view; v.d = v.d || today(); v.range = v.range || 'day';
+  const shift = n => { const t = new Date(v.d + 'T12:00'); t.setDate(t.getDate() + n); const nd = today(t); if (nd <= today()) { v.d = nd; render(); } };
+  const all = S.profiles.map(p => v.range === 'day' ? journalText(p, v.d) : weekText(p, v.d)).join('\n\n');
+  app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'grownups'}))}">← Grown-ups</button></div>
+  <h1>Reading report</h1>
+  <div class="card row spread">
+    <div class="row"><button class="btn ghost small" aria-label="Earlier" data-a="${A(()=>shift(v.range === 'day' ? -1 : -7))}">◀</button>
+      <b style="font-family:var(--display);font-size:1.2rem">${v.range === 'day' ? niceDate(v.d, true) : `Week ending ${niceDate(v.d)}`}</b>
+      <button class="btn ghost small" aria-label="Later" ${v.d >= today() ? 'disabled' : ''} data-a="${A(()=>shift(v.range === 'day' ? 1 : 7))}">▶</button>
+      ${v.d !== today() ? `<button class="btn ghost small" data-a="${A(()=>{ v.d = today(); render(); })}">Today</button>` : ''}</div>
+    <div class="modes"><button class="${v.range==='day'?'on':''}" data-a="${A(()=>{ v.range='day'; render(); })}">Day</button><button class="${v.range==='week'?'on':''}" data-a="${A(()=>{ v.range='week'; render(); })}">Week</button></div>
+  </div>
+  ${S.profiles.length > 1 ? `<div class="row"><button class="btn small" data-a="${A(()=>copyText(all, 'allMsg'))}">Copy everyone's log</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(all, 'allMsg'))}">Share…</button>` : ''}<span id="allMsg"></span></div>` : ''}
+  ${S.profiles.map((p, n) => {
+    if (v.range === 'week'){ const txt = weekText(p, v.d);
+      return `<div class="card" style="display:flex;flex-direction:column;gap:10px"><h2>${p.av} ${esc(p.name)}</h2><pre class="journal">${esc(txt)}</pre>
+        <div class="row"><button class="btn small" data-a="${A(()=>copyText(txt, 'm'+n))}">Copy</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(txt, 'm'+n))}">Share…</button>` : ''}<span id="m${n}"></span></div></div>`; }
+    const x = dayData(p, v.d), txt = journalText(p, v.d), goal = goalOf(p);
+    return `<div class="card" style="display:flex;flex-direction:column;gap:12px">
+      <div class="row spread"><h2>${p.av} ${esc(p.name)}</h2><span class="chip" style="font-size:1rem">${x.mins >= goal ? '✓ ' : ''}${x.mins} of ${goal} minutes</span></div>
+      ${x.reads.length ? `<div><h3>What ${esc(p.name)} read</h3><div class="rlist">${x.reads.map(r => { const s = storyById(r.id), sum = s && sumOf(s);
+          return `<div class="ritem"><span class="big-emoji" style="font-size:2rem">${s ? s.icon : '📖'}</span><div style="min-width:0"><b>${esc(r.title)}</b>
+            <p class="mut">${esc(kindOf(s))}${r.t ? ` · ${fmtTime(r.t)}` : ''}${r.mins ? ` · ${Math.max(1, Math.round(r.mins))} min reading` : ''}${r.total ? ` · ${r.right} of ${r.total} questions right first try` : ''}</p>
+            ${sum ? `<p>About: ${esc(sum[0])}</p>` : ''}</div></div>`; }).join('')}</div></div>`
+        : `<p class="mut">No stories finished ${v.d === today() ? 'yet today' : 'this day'}.</p>`}
+      ${x.gym.length || x.vault.length || x.games.length || x.checks.length ? `<div><h3>Practice</h3><ul class="plist">
+        ${x.gym.map(g => `<li>Fluency Gym: read "${esc(g.title)}" 3 times, ${g.w[0]} → ${g.w[1]} → ${g.w[2]} words per minute</li>`).join('')}
+        ${x.vault.map(g => `<li>Memory Vault: remembered ${g.right} of ${g.total}</li>`).join('')}
+        ${x.checks.map(g => `<li>Monthly check-in: ${g.w} words correct per minute</li>`).join('')}
+        ${x.games.length ? `<li>Games: ${[...new Set(x.games.map(g => g.title))].map(esc).join(', ')}</li>` : ''}</ul></div>` : ''}
+      ${x.words.length ? `<div><h3>New words</h3><p>${x.words.map(w => `<span class="chip" title="${esc(w[1]||'')}">${esc(w[0])}</span>`).join(' ')}</p></div>` : ''}
+      <div><h3>For the reading journal</h3><pre class="journal">${esc(txt)}</pre></div>
+      <div class="row"><button class="btn small" data-a="${A(()=>copyText(txt, 'm'+n))}">Copy</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(txt, 'm'+n))}">Share…</button>` : ''}<span id="m${n}"></span></div>
+    </div>`; }).join('')}
+  ${S.profiles.length ? '' : '<p class="mut">No readers on this iPad yet.</p>'}
+  <p class="mut">Each iPad keeps its own readers, so open the report on each child's iPad. Share sends the log to Messages, Mail or Notes.</p>`;
 }
 
 // ---------- Start ----------
