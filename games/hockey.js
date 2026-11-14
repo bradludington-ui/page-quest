@@ -40,7 +40,7 @@
       const pads = [mkPad(0), mkPad(1)];
       function mkPad(side){ return {side, a: side ? LEN - 110 : 110, x: WID/2, ta: side ? LEN - 110 : 110, tx: WID/2, va: 0, vx: 0, ptr: null}; }
       const ai = {ta: LEN - 110, tx: WID/2, off: 0, cool: 0};
-      el._hk = () => ({mode, score: score.slice(), puck: toS(puck.a, puck.x), pad: toS(pads[0].a, pads[0].x), pa: puck.a, px: puck.x, port});
+      el._hk = () => ({mode, score: score.slice(), puck: toS(puck.a, puck.x), pad: toS(pads[0].a, pads[0].x), pad2: toS(pads[1].a, pads[1].x), pa: puck.a, px: puck.x, port});
 
       // ---- overlay screens ----
       const btn = (lab, attr, on, big) => `<button ${attr} style="pointer-events:auto;min-height:${big ? 60 : 52}px;min-width:${big ? 220 : 120}px;padding:8px 20px;border-radius:16px;border:2px solid ${on ? C.accent : C.line};background:${on ? C.accent : C.panel};color:${on ? C.accentInk : C.ink};font:700 ${big ? 26 : 20}px 'Baloo 2',sans-serif;cursor:pointer">${lab}</button>`;

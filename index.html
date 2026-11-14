@@ -248,6 +248,19 @@ a{color:var(--accent)}
 .btile h3{font-family:var(--display)}
 .breakgrid.locked .btile{opacity:.5}
 .tile.bopen{border-color:var(--good);background:var(--good-soft)}
+.ghost *{fill:none!important;stroke:var(--mut)!important;stroke-width:1.2!important;stroke-dasharray:3 3;opacity:.55}
+.ghost text{display:none}
+.tshelf{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
+.tbuild{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:16px;background:var(--soft);font-weight:600;font-size:.85rem}
+.tbuild.complete{background:var(--sun-soft);box-shadow:0 0 0 2px var(--sun) inset}
+.builds{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.bcard{display:flex;gap:14px;align-items:flex-start}
+.bcard.complete{border-color:var(--sun);background:var(--sun-soft)}
+.bpic{flex:none;background:var(--soft);border-radius:16px;padding:6px}
+.plist2{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.plist2 .btn{white-space:nowrap}
+.chip.got{background:var(--good-soft);color:var(--good)}
+@media (max-width:520px){.builds{grid-template-columns:1fr}.bcard{flex-direction:column;align-items:center}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -744,7 +757,7 @@ function vHub(){
     <button class="tile" data-a="${A(()=>go({name:'gym'}))}"><span class="ic">🏋️</span><span><b>Fluency Gym</b><span class="mut">Read it 3 times, get faster</span></span></button>
     <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Break Zone</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : 'Opens when today\'s quest is done'}</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'arcade'}))}"><span class="ic">🎮</span><span><b>Game arcade</b><span class="mut">${tix(p)} ticket${tix(p)===1?'':'s'} to play</span></span></button>
-    <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">${p.owned.length} treasure${p.owned.length===1?'':'s'} collected</span></span></button>
+    <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">Build trophies, buy sports gear</span></span></button>
     <button class="tile" data-a="${A(()=>{S.cur=null; save(); go({name:'profiles'});})}"><span class="ic">👋</span><span><b>Switch reader</b><span class="mut">Back to the start</span></span></button>
   </div>
   ${checkDue(p) ? `<p class="mut">📏 This month's reading check-in is ready. Ask a grown-up to start it from the Grown-ups page.</p>` : ''}`;
@@ -1092,7 +1105,7 @@ function logWpm(n, secs, how){
 function startMic(resume){
   if (!SR) return;
   mic.on = true; mic.done = false; mic.heardAt = Date.now();
-  if (resume) mic.seg = mic.ptr; else { mic.ptr = 0; mic.seg = 0; mic.t0 = 0; mic.p0 = 0; mic.heard = new Set(); }
+  if (resume) mic.seg = mic.ptr; else { mic.ptr = 0; mic.seg = 0; mic.t0 = 0; mic.p0 = 0; mic.heard = new Set(); mic.counted = 0; }
   paintRead();
   mic.last = Date.now(); mic.stalled = new Set(); clearInterval(mic.stall);
   mic.stall = setInterval(() => { // a word the reader is stuck on for 4 seconds goes into their word bank
@@ -1117,6 +1130,7 @@ function startMic(resume){
   try{ rec.start(); }catch(e){ micFail(); }
 }
 function stopMic(){
+  countAloud();
   const r = mic.rec; mic.on = false; mic.rec = null; clearInterval(mic.stall); clearInterval(mic.watch);
   if (r){ try{ r.onend = null; r.abort(); }catch(e){} }
   const btn = document.getElementById('micBtn'); if (btn) btn.textContent = '🎤 Read it again';
@@ -1335,16 +1349,91 @@ function vaultAnswer(i, el){
 }
 
 // ---------- Shop ----------
+// ---------- Treasure shop: treasures, sports gear, and build-a-trophy sets ----------
+const SPORTS = [
+ ['⚽','Soccer ball',40],['🏀','Basketball',40],['🏈','Football',40],['⚾','Baseball',40],['🎾','Tennis ball',35],['🏐','Volleyball',35],
+ ['🏉','Rugby ball',40],['🥏','Flying disc',35],['🏓','Ping pong paddle',35],['🏒','Hockey stick',45],['🎳','Bowling pins',45],['⛳','Golf flag',50],
+ ['🥅','Goal net',60],['⛸️','Ice skate',50],['🛼','Roller skate',50],['🛹','Skateboard',55],['🚲','Bike',70],['🥊','Boxing glove',45],
+ ['🏹','Bow and arrow',55],['🥉','Bronze medal',60],['🥈','Silver medal',90],['🥇','Gold medal',120]];
+// Each set is drawn from its parts (viewBox 0 0 100 120); a part not bought yet shows as a dashed outline.
+const BUILDS = [
+ {id:'robot', name:'Robot', bonus:60, parts:[
+   ['legs','Legs',35,'<rect x="30" y="88" width="14" height="22" rx="3" fill="#7a8ca6"/><rect x="56" y="88" width="14" height="22" rx="3" fill="#7a8ca6"/><rect x="25" y="108" width="22" height="8" rx="3" fill="#56657c"/><rect x="53" y="108" width="22" height="8" rx="3" fill="#56657c"/>'],
+   ['body','Body',45,'<rect x="26" y="50" width="48" height="40" rx="8" fill="#9fb3cf"/><rect x="38" y="60" width="24" height="14" rx="3" fill="#2a5bd7"/><circle cx="42" cy="82" r="3" fill="#e2553a"/><circle cx="50" cy="82" r="3" fill="#f6c24a"/><circle cx="58" cy="82" r="3" fill="#1c8f5a"/>'],
+   ['larm','Left arm',30,'<rect x="11" y="52" width="13" height="30" rx="6" fill="#8ea2bf"/><circle cx="17.5" cy="87" r="6" fill="#56657c"/>'],
+   ['rarm','Right arm',30,'<rect x="76" y="52" width="13" height="30" rx="6" fill="#8ea2bf"/><circle cx="82.5" cy="87" r="6" fill="#56657c"/>'],
+   ['head','Head',45,'<rect x="32" y="20" width="36" height="28" rx="8" fill="#b8c8de"/><circle cx="43" cy="33" r="5" fill="#f6c24a"/><circle cx="57" cy="33" r="5" fill="#f6c24a"/><rect x="42" y="41" width="16" height="3" rx="1.5" fill="#56657c"/>'],
+   ['antenna','Antenna',25,'<line x1="50" y1="20" x2="50" y2="9" stroke="#56657c" stroke-width="3"/><circle cx="50" cy="7" r="4.5" fill="#e2553a"/>']]},
+ {id:'rocket', name:'Rocket', bonus:60, parts:[
+   ['body','Rocket body',45,'<rect x="37" y="34" width="26" height="58" rx="5" fill="#e8eef8" stroke="#9fb3cf" stroke-width="2"/>'],
+   ['nose','Nose cone',35,'<path d="M37 35 Q50 2 63 35 Z" fill="#e2553a"/>'],
+   ['window','Window',30,'<circle cx="50" cy="54" r="8" fill="#6fc3ff" stroke="#2a5bd7" stroke-width="3"/>'],
+   ['fins','Fins',35,'<path d="M37 70 L22 96 L37 92 Z" fill="#2a5bd7"/><path d="M63 70 L78 96 L63 92 Z" fill="#2a5bd7"/>'],
+   ['flame','Booster flame',40,'<path d="M41 92 Q50 122 59 92 Z" fill="#f6a21a"/><path d="M45 92 Q50 110 55 92 Z" fill="#ffe680"/>']]},
+ {id:'car', name:'Race car', bonus:60, parts:[
+   ['body','Car body',50,'<path d="M8 76 Q12 60 32 58 L58 52 Q72 52 82 62 L93 66 Q95 76 90 80 L10 82 Z" fill="#e2553a"/><rect x="40" y="70" width="40" height="3" fill="#b2381f"/>'],
+   ['wheels','Wheels',40,'<circle cx="28" cy="84" r="10" fill="#2b2b2b"/><circle cx="28" cy="84" r="4" fill="#c9c9c9"/><circle cx="76" cy="84" r="10" fill="#2b2b2b"/><circle cx="76" cy="84" r="4" fill="#c9c9c9"/>'],
+   ['spoiler','Spoiler',30,'<rect x="82" y="44" width="15" height="5" rx="2" fill="#2b2b2b"/><rect x="87" y="49" width="4" height="14" fill="#2b2b2b"/>'],
+   ['driver','Driver',35,'<circle cx="52" cy="50" r="8" fill="#f6c24a"/><rect x="51" y="46" width="9" height="4" rx="2" fill="#2b2b2b"/>'],
+   ['number','Number 7',25,'<circle cx="36" cy="70" r="7" fill="#ffffff"/><text x="36" y="74" font-size="10" font-weight="700" text-anchor="middle" fill="#2b2b2b" font-family="Arial, sans-serif">7</text>']]},
+ {id:'castle', name:'Castle', bonus:70, parts:[
+   ['wall','Castle wall',50,'<rect x="24" y="60" width="52" height="52" fill="#b9a68a"/><rect x="24" y="53" width="9" height="8" fill="#b9a68a"/><rect x="39" y="53" width="9" height="8" fill="#b9a68a"/><rect x="54" y="53" width="9" height="8" fill="#b9a68a"/><rect x="67" y="53" width="9" height="8" fill="#b9a68a"/>'],
+   ['ltower','Left tower',40,'<rect x="9" y="40" width="20" height="72" fill="#a8957a"/><path d="M7 41 L19 20 L31 41 Z" fill="#2a5bd7"/>'],
+   ['rtower','Right tower',40,'<rect x="71" y="40" width="20" height="72" fill="#a8957a"/><path d="M69 41 L81 20 L93 41 Z" fill="#2a5bd7"/>'],
+   ['gate','Gate',35,'<path d="M41 112 L41 90 Q50 78 59 90 L59 112 Z" fill="#5a3d22"/>'],
+   ['flags','Flags',30,'<line x1="19" y1="21" x2="19" y2="6" stroke="#5a3d22" stroke-width="2"/><path d="M19 6 L31 10 L19 14 Z" fill="#e2553a"/><line x1="81" y1="21" x2="81" y2="6" stroke="#5a3d22" stroke-width="2"/><path d="M81 6 L93 10 L81 14 Z" fill="#e2553a"/>']]},
+ {id:'dragon', name:'Dragon', bonus:70, parts:[
+   ['body','Dragon body',50,'<ellipse cx="48" cy="80" rx="25" ry="16" fill="#1c8f5a"/><path d="M34 92 L32 106 L40 106 L42 94 Z M54 94 L56 106 L64 106 L62 92 Z" fill="#167048"/>'],
+   ['head','Head',40,'<circle cx="78" cy="60" r="12" fill="#1c8f5a"/><circle cx="82" cy="57" r="3" fill="#ffffff"/><circle cx="83" cy="57" r="1.5" fill="#000"/><path d="M70 50 L72 40 L76 49 Z M78 48 L82 38 L84 49 Z" fill="#f6c24a"/>'],
+   ['wings','Wings',45,'<path d="M42 68 L26 34 L52 52 L60 38 L60 68 Z" fill="#52d495"/>'],
+   ['tail','Tail',30,'<path d="M24 82 Q6 90 10 106 Q16 96 28 90 Z" fill="#1c8f5a"/><path d="M8 104 L4 112 L14 108 Z" fill="#f6c24a"/>'],
+   ['fire','Fire breath',35,'<path d="M89 62 Q100 54 99 64 Q108 66 98 70 Q100 76 90 68 Z" fill="#f6a21a"/>']]},
+ {id:'cup', name:'Champion cup', bonus:80, parts:[
+   ['base','Wooden base',35,'<rect x="28" y="100" width="44" height="14" rx="2" fill="#8a5a2b"/><rect x="36" y="104" width="28" height="6" rx="1" fill="#f6c24a"/>'],
+   ['stem','Stem',30,'<rect x="45" y="80" width="10" height="20" fill="#e9a614"/><rect x="38" y="95" width="24" height="6" rx="2" fill="#e9a614"/>'],
+   ['bowl','Cup',55,'<path d="M28 30 L72 30 Q72 74 50 80 Q28 74 28 30 Z" fill="#f6c24a"/><path d="M36 36 Q36 60 46 70" stroke="#fff4c2" stroke-width="3" fill="none"/>'],
+   ['handles','Handles',35,'<path d="M29 38 Q12 40 17 56 Q21 63 31 61" stroke="#e9a614" stroke-width="5" fill="none"/><path d="M71 38 Q88 40 83 56 Q79 63 69 61" stroke="#e9a614" stroke-width="5" fill="none"/>'],
+   ['star','Gold star',45,'<path d="M50 6 L53.5 15 L63 15.5 L55.5 21.5 L58 31 L50 25.5 L42 31 L44.5 21.5 L37 15.5 L46.5 15 Z" fill="#f6c24a" stroke="#e9a614" stroke-width="1.5"/>']]}];
+function partsOf(p, id){ p.parts = p.parts || {}; return p.parts[id] || []; }
+function buildDone(p, b){ return b.parts.every(pt => partsOf(p, b.id).includes(pt[0])); }
+function buildSvg(p, b, size){
+  const have = partsOf(p, b.id);
+  return `<svg viewBox="0 0 100 120" width="${size}" height="${size*1.2}" role="img" aria-label="${esc(b.name)}: ${have.length} of ${b.parts.length} parts">
+    ${b.parts.map(pt => have.includes(pt[0]) ? `<g>${pt[3]}</g>` : `<g class="ghost">${pt[3]}</g>`).join('')}</svg>`;
+}
+function buyPart(b, pt){
+  const p = me(); if (p.coins < pt[2] || partsOf(p, b.id).includes(pt[0])) return;
+  p.coins -= pt[2]; p.parts[b.id] = partsOf(p, b.id).concat(pt[0]); save();
+  if (buildDone(p, b)){ addCoins(b.bonus, b.name + ' complete!'); confetti(120); view.done = b.id; } else confetti(25);
+  render();
+}
 function vShop(){
-  const p = me();
+  const p = me(), tab = view.tab || 'builds';
+  const done = BUILDS.filter(b => buildDone(p, b)), started = BUILDS.filter(b => !buildDone(p, b) && partsOf(p, b.id).length);
+  const sports = SPORTS.filter(s => p.owned.includes(s[0])), treasures = SHOP.filter(s => p.owned.includes(s[0]));
+  const buy = (e, c) => `<button class="btn small ${p.coins >= c ? 'sun' : 'ghost'}" ${p.coins >= c ? '' : 'disabled'} data-a="${A(()=>{ if (p.coins < c || p.owned.includes(e)) return; p.coins -= c; p.owned.push(e); save(); confetti(40); render(); })}"><span class="coin"></span>${c}</button>`;
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}
   <h1>Treasure shop</h1>
-  <div class="card"><h3 style="margin-bottom:8px">My treasure shelf</h3>
-    <div class="shelf">${p.owned.length ? p.owned.join(' ') : '<span class="mut" style="font-size:1rem">Nothing yet. Read stories to earn coins!</span>'}</div></div>
-  <div class="shop">${SHOP.map(([e,c]) => { const own = p.owned.includes(e), can = p.coins >= c;
-    return `<div class="item ${own?'own':''}"><span class="big">${e}</span>
-      ${own ? '<span class="chip">Yours!</span>' : `<button class="btn small ${can?'sun':'ghost'}" ${can?'':'disabled'} data-a="${A(()=>{ if (p.coins < c) return; p.coins -= c; p.owned.push(e); save(); confetti(40); render(); })}"><span class="coin"></span>${c}</button>`}</div>`; }).join('')}</div>`;
+  <div class="card troom"><h2>My trophy room</h2>
+    ${done.length || started.length ? `<div class="tshelf">${done.concat(started).map(b => `<div class="tbuild ${buildDone(p,b)?'complete':''}">${buildSvg(p, b, 78)}<span>${esc(b.name)}${buildDone(p,b) ? ' 🏆' : ` (${partsOf(p,b.id).length}/${b.parts.length})`}</span></div>`).join('')}</div>` : ''}
+    ${sports.length ? `<p class="mut" style="margin-top:6px">Sports gear</p><div class="shelf">${sports.map(s => `<span title="${esc(s[1])}">${s[0]}</span>`).join(' ')}</div>` : ''}
+    ${treasures.length ? `<p class="mut" style="margin-top:6px">Treasures</p><div class="shelf">${treasures.map(s => s[0]).join(' ')}</div>` : ''}
+    ${!done.length && !started.length && !sports.length && !treasures.length ? '<p class="mut">Empty for now. Read stories to earn coins, then build your first trophy!</p>' : ''}
+  </div>
+  ${view.done ? `<p class="result">🏆 You finished the ${esc(BUILDS.find(b => b.id === view.done).name)}! +${BUILDS.find(b => b.id === view.done).bonus} bonus coins.</p>` : ''}
+  <div class="tabs">${[['builds','🤖 Build-a-Trophy'],['sports','⚽ Sports gear'],['treasures','💎 Treasures']].map(([k,l]) => `<button class="${tab===k?'on':''}" data-a="${A(()=>{ view.tab = k; view.done = null; render(); })}">${l}</button>`).join('')}</div>
+  ${tab === 'builds' ? `<p class="mut">Buy the parts one at a time. Finish a set to put it in your trophy room and win bonus coins!</p>
+    <div class="builds">${BUILDS.map(b => { const have = partsOf(p, b.id), full = buildDone(p, b), left = b.parts.filter(pt => !have.includes(pt[0])).reduce((a,pt) => a + pt[2], 0);
+      return `<div class="card bcard ${full?'complete':''}"><div class="bpic">${buildSvg(p, b, 120)}</div>
+        <div style="min-width:0;flex:1"><h3>${esc(b.name)}</h3><p class="mut">${full ? '✓ Complete!' : `${have.length} of ${b.parts.length} parts · ${left} coins to finish · +${b.bonus} bonus`}</p>
+        <div class="plist2">${b.parts.map(pt => have.includes(pt[0]) ? `<span class="chip got">✓ ${esc(pt[1])}</span>`
+          : `<button class="btn small ${p.coins >= pt[2] ? 'sun' : 'ghost'}" ${p.coins >= pt[2] ? '' : 'disabled'} data-a="${A(()=>buyPart(b, pt))}">${esc(pt[1])} · <span class="coin"></span>${pt[2]}</button>`).join('')}</div></div></div>`; }).join('')}</div>` : ''}
+  ${tab === 'sports' ? `<div class="shop">${SPORTS.map(([e, n, c]) => `<div class="item ${p.owned.includes(e)?'own':''}"><span class="big">${e}</span><span class="mut" style="font-size:.85rem;text-align:center">${esc(n)}</span>
+      ${p.owned.includes(e) ? '<span class="chip">Yours!</span>' : buy(e, c)}</div>`).join('')}</div>` : ''}
+  ${tab === 'treasures' ? `<div class="shop">${SHOP.map(([e, c]) => `<div class="item ${p.owned.includes(e)?'own':''}"><span class="big">${e}</span>
+      ${p.owned.includes(e) ? '<span class="chip">Yours!</span>' : buy(e, c)}</div>`).join('')}</div>` : ''}`;
 }
+
 
 // ---------- Grown-ups ----------
 let grownOk = false; // stays open for this visit once the times-table gate is passed
@@ -2797,6 +2886,25 @@ const MATCHWORDS = {
   ]
 };
 
+
+// ---------- Out-loud minutes: only time the microphone heard the reader (opens the Break Zone) ----------
+// Counted from the first word the microphone heard to the last one, so pauses at the start and walking away do not count.
+const BREAK_ALOUD = 20;
+function countAloud(){
+  if (!mic.t0 || !(mic.last > mic.t0)) return;
+  const from = Math.max(mic.t0, mic.counted || 0), secs = (mic.last - from)/1000;
+  mic.counted = mic.last;
+  if (secs > 0) addAloud(secs);
+}
+function addAloud(secs){
+  const p = me(); if (!p || !(secs > 0)) return;
+  p.aloud = p.aloud || {}; const t = today();
+  for (const d of Object.keys(p.aloud)) if (d < addDays(-60)) delete p.aloud[d];
+  const was = aloudToday(p);
+  p.aloud[t] = (p.aloud[t]||0) + Math.min(secs, 900)/60; save();
+  if (was < BREAK_ALOUD && aloudToday(p) >= BREAK_ALOUD){ floatText('🎉 Break Zone open!'); confetti(100); }
+}
+function aloudToday(p){ return ((p.aloud||{})[today()]) || 0; }
 
 // ---------- Daily reading minutes (matches the class reading logs) ----------
 function goalOf(p){ return p.goal || (p.grade >= 5 ? 20 : 15); }
