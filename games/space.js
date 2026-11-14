@@ -157,7 +157,7 @@
         for (let L = 0; L < 3; L++){ cx.fillStyle = L === 2 ? '#ffffff' : L === 1 ? '#c9d4ff' : '#7f8bb8'; for (const s of stars[L]){ cx.fillRect(s.x*W, s.y*H, s.r, s.r*(L === 2 ? 2.5 : 1)); } }
         const u = unit();
         for (const it of g.items){
-          if (it.type === 'star'){ cx.fillStyle = 'rgba(255,224,102,.22)'; cx.beginPath(); cx.arc(it.x, it.y, it.r*1.25 + Math.sin(it.ph)*3, 0, 7); cx.fill(); stamp('⭐', Math.round(34*u), it.x, it.y, Math.sin(it.ph)*0.25); }
+          if (it.type === 'star'){ cx.fillStyle = 'rgba(255,236,140,.38)'; cx.beginPath(); cx.arc(it.x, it.y, it.r*1.25 + Math.sin(it.ph)*3, 0, 7); cx.fill(); stamp('⭐', Math.round(34*u), it.x, it.y, Math.sin(it.ph)*0.25); }
           else { cx.strokeStyle = 'rgba(127,227,255,.7)'; cx.lineWidth = 3; cx.beginPath(); cx.arc(it.x, it.y, it.r*1.3 + Math.sin(it.ph)*3, 0, 7); cx.stroke(); stamp('🛡️', Math.round(36*u), it.x, it.y, 0); }
         }
         for (const k of g.rocks){ const sp = rockSprite(k.kind, Math.round(k.r/4)*4); cx.save(); cx.translate(k.x, k.y); cx.rotate(k.rot); cx.drawImage(sp.c, -sp.sz/2, -sp.sz/2, sp.sz, sp.sz); cx.restore(); }

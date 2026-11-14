@@ -349,7 +349,7 @@
       const ax = bx + pl.dx*len, ay = by + pl.dy*len, an = Math.atan2(pl.dy, pl.dx);
       cx.beginPath(); cx.moveTo(ax + Math.cos(an)*12, ay + Math.sin(an)*12); cx.lineTo(ax + Math.cos(an + 2.5)*12, ay + Math.sin(an + 2.5)*12); cx.lineTo(ax + Math.cos(an - 2.5)*12, ay + Math.sin(an - 2.5)*12); cx.closePath(); cx.fill();
       // power meter
-      const mh = 110, mw = 18, mx = Math.min(W - mw - 12, bx + 48), my = Math.max(L.top + 4, Math.min(H - L.bot - mh - 4, by - mh/2));
+      const mh = 110, mw = 18, mx = Math.max(12, Math.min(W - mw - 12, pl.dx > 0.2 ? bx - 48 - mw : bx + 48)), my = Math.max(L.top + 4, Math.min(H - L.bot - mh - 4, by - mh/2));
       cx.fillStyle = 'rgba(0,0,0,.45)'; rr(mx - 3, my - 3, mw + 6, mh + 6, 8); cx.fill();
       const g = cx.createLinearGradient(0, my + mh, 0, my); g.addColorStop(0, '#7dff8a'); g.addColorStop(0.55, '#ffd65a'); g.addColorStop(1, '#ff6b5a');
       cx.fillStyle = g; rr(mx, my + mh*(1 - pl.pow), mw, mh*pl.pow, 5); cx.fill();

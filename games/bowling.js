@@ -367,9 +367,10 @@
         cx.beginPath(); cx.moveTo(P2.x, y0); cx.lineTo(P2.x + Math.cos(a)*len, y0 + Math.sin(a)*len); cx.stroke(); cx.restore();
       }
       if ((phase === 'aim') && hintOn){
-        proj(ball.x, ball.z, P2); const y0 = P2.y - BR*P2.s*2 - 14, t = performance.now()/1000;
+        proj(ball.x, ball.z, P2); const y0 = P2.y - BR*P2.s*2 - 34, t = performance.now()/1000;
+        cx.fillStyle = 'rgba(10,6,25,.55)'; rr(P2.x - 130, y0 - 34, 260, 62, 16); cx.fill();
         cx.fillStyle = 'rgba(255,255,255,.95)'; cx.font = `700 ${Math.max(16, Math.min(24, W/34))}px ${HEAD_FONT}`; cx.textAlign = 'center'; cx.textBaseline = 'bottom';
-        cx.fillText('Swipe up to roll!', P2.x, y0 - (RM ? 0 : Math.abs(Math.sin(t*3))*8));
+        cx.fillText('Swipe up to roll!', P2.x, y0 - (RM ? 0 : Math.abs(Math.sin(t*3))*3));
         cx.font = `500 ${Math.max(12, Math.min(16, W/52))}px ${TXT_FONT}`; cx.fillStyle = 'rgba(255,255,255,.75)';
         cx.fillText('Curve your swipe to spin', P2.x, y0 + 20);
       }
@@ -422,8 +423,8 @@
       const pl = players[cur], fr = pl.frames[frame];
       const t = (nP === 2 ? pl.av + ' ' + pl.name + ' · ' : '') + 'Frame ' + (frame + 1) + ' · Ball ' + (fr.length + (phase === 'result' ? 0 : 1));
       cx.font = `700 15px ${TXT_FONT}`; const w = cx.measureText(t).width + 24;
-      cx.fillStyle = 'rgba(10,6,25,.6)'; rr(W/2 - w/2, L.vt + 6, w, 28, 14); cx.fill();
-      cx.fillStyle = '#fff'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(t, W/2, L.vt + 20);
+      cx.fillStyle = 'rgba(10,6,25,.6)'; rr(12, L.vt + 8, w, 28, 14); cx.fill();
+      cx.fillStyle = '#fff'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(t, 12 + w/2, L.vt + 22);
     }
 
     function drawPins(){ // little pin map, like the display above a real lane

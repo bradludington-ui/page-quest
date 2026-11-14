@@ -8,7 +8,7 @@
       const C = api.colors, RM = !!api.reducedMotion;
       const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       const HEAD = "'Baloo 2', 'Trebuchet MS', system-ui, sans-serif", TXT = 'Lexend, Verdana, system-ui, sans-serif';
-      const EMOJI = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+      const EMOJI = "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif";
       const ROUND_TIME = 120, ROUND_CASTS = 10;
 
       // ---------- species ----------
@@ -345,7 +345,7 @@
         cx.strokeStyle = '#2e9a58'; cx.lineWidth = 5; cx.lineCap = 'round';
         for (let i = 1; i < 8; i++){ const bx = dx + (W - dx)*i/8, by = botY(bx); cx.beginPath(); cx.moveTo(bx, by); for (let k = 1; k < 5; k++) cx.lineTo(bx + Math.sin(performance.now()/700 + k + i)*6, by - k*14); cx.stroke(); }
         // ambient fish
-        for (const a of g.ambient){ const y = S + 24 + a.depth*(deepY() - S - 60) + Math.sin(a.ph)*5; drawSp(cx, a.sp, a.px, a.x, Math.min(y, botY(a.x) - 16), a.v > 0, 0, 0.85); }
+        for (const a of g.ambient){ const y = S + 24 + a.depth*(deepY() - S - 60) + Math.sin(a.ph)*5; drawSp(cx, a.sp, a.px, a.x, Math.min(y, botY(a.x) - a.px*0.6), a.v > 0, 0, 0.85); }
         // dock
         cx.fillStyle = '#7a4a26'; for (let x = 18; x < dx; x += 46) cx.fillRect(x, S - 14, 10, Math.min(H - S + 14, botY(x) - S + 30));
         cx.fillStyle = '#a8703f'; cx.fillRect(0, S - 26, dx + 6, 18); cx.fillStyle = '#8b5a2f'; for (let x = 0; x < dx; x += 24) cx.fillRect(x, S - 26, 2, 18);
@@ -400,14 +400,16 @@
           // catch progress
           const px = bxp - 26; rr(px, byp, 14, bh, 7); cx.fillStyle = 'rgba(0,0,0,.35)'; cx.fill();
           const k = Math.max(0, Math.min(1, r.prog)); rr(px, byp + bh*(1 - k), 14, bh*k, 7); cx.fillStyle = k > 0.25 ? '#ffd23f' : '#ff7a59'; cx.fill();
-          label(g.hold ? 'Reeling…' : 'Hold to reel up!', Math.min(W/2, bxp - 150), byp - 0 + 20, 24, '#fff');
+          if (!g.msg) label(g.hold ? 'Reeling…' : 'Hold to reel up!', Math.min(W/2, bxp - 150), byp + 20, 24, '#fff');
         }
         // HUD
         if (g.mode === 'play'){
           const left = Math.max(0, ROUND_TIME - g.time), mm = Math.floor(left/60), ss = Math.floor(left%60);
-          rr(12, 12, 300, 44, 16); cx.fillStyle = 'rgba(0,40,70,.55)'; cx.fill();
-          cx.fillStyle = '#fff'; cx.font = `800 22px ${HEAD}`; cx.textAlign = 'left'; cx.textBaseline = 'middle';
-          cx.fillText(`🎣 ${Math.max(0, ROUND_CASTS - g.casts)}   ⏱️ ${mm}:${String(ss).padStart(2,'0')}   ⭐ ${g.score}`, 24, 35);
+          const hud = `🎣 ${Math.max(0, ROUND_CASTS - g.casts)}   ⏱️ ${mm}:${String(ss).padStart(2,'0')}   ⭐ ${g.score}`;
+          cx.font = `800 22px ${HEAD}`; const hw = cx.measureText(hud).width + 26;
+          rr(12, 12, hw, 44, 16); cx.fillStyle = 'rgba(0,40,70,.55)'; cx.fill();
+          cx.fillStyle = '#fff'; cx.textAlign = 'left'; cx.textBaseline = 'middle';
+          cx.fillText(hud, 25, 35);
           const hint = g.phase === 'aim' ? (g.casts === 0 ? '👈 Pull back and let go to cast!' : 'Pull back and let go!') : g.phase === 'wait' ? 'Wait for a bite…' : g.phase === 'sink' ? 'Wait for a bite…' : '';
           if (hint) label(hint, (dx + W)/2, S + 40, 24, '#fff');
           if (g.phase === 'bite'){ const pulse = RM ? 1 : 1 + Math.sin(performance.now()/70)*0.08; label('TAP NOW!', g.bob.x, S - 40, Math.round(34*pulse), '#ffe27a'); }

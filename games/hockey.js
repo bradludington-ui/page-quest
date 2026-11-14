@@ -228,6 +228,7 @@
         const tx = Math.min(t0.x, t1.x), ty = Math.min(t0.y, t1.y), tw = Math.abs(t1.x - t0.x), th = Math.abs(t1.y - t0.y);
         const ice = cx.createLinearGradient(tx, ty, tx + tw, ty + th); ice.addColorStop(0, '#eef7ff'); ice.addColorStop(1, '#d6ebff');
         cx.fillStyle = ice; cx.beginPath(); cx.roundRect ? cx.roundRect(tx, ty, tw, th, 22*sc) : cx.rect(tx, ty, tw, th); cx.fill();
+        cx.save(); cx.beginPath(); cx.rect(tx, ty, tw, th); cx.clip();
         // air holes (a sparse dot grid)
         cx.fillStyle = 'rgba(80,120,170,.18)';
         for (let a = 40; a < LEN; a += 60) for (let x = 40; x < WID; x += 60) { const p = toS(a, x); cx.fillRect(p.x - 1.2, p.y - 1.2, 2.4, 2.4); }
@@ -236,6 +237,7 @@
         const cc = toS(MID, WID/2); cx.beginPath(); cx.arc(cc.x, cc.y, 80*sc, 0, 7); cx.stroke();
         cx.strokeStyle = 'rgba(60,110,220,.45)';
         for (const end of [0, LEN]) { const g = toS(end, WID/2); cx.beginPath(); cx.arc(g.x, g.y, 120*sc, 0, 7); cx.stroke(); }
+        cx.restore();
         // goals
         for (const [end, col] of [[0, '#2f7bff'], [LEN, '#ff4b5c']]) {
           cx.strokeStyle = col; cx.lineWidth = 10*sc; cx.lineCap = 'round';

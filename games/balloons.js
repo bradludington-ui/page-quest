@@ -102,8 +102,8 @@
     start(el, api){
       const k = kit(el, api), cx = k.cx, C = k.C;
       const COLS = ['#ff4d6d', '#ffb020', '#36c2ff', '#7be05a', '#b07cff', '#ff7ad9', '#2ee6c5'];
-      const KINDS = [{r:0.075, sp:0.13, pts:10, w:5}, {r:0.058, sp:0.18, pts:20, w:4}, {r:0.042, sp:0.26, pts:30, w:3}];
-      let state = 'menu', time = 60, score = 0, balloons = [], balls = [], bits = [], pops = [], spawnT = 0, rainbowT = 10, elapsed = 0, popped = 0, hint = 0;
+      const KINDS = [{r:0.068, sp:0.13, pts:10, w:5}, {r:0.052, sp:0.18, pts:20, w:4}, {r:0.038, sp:0.26, pts:30, w:3}];
+      let reload = 0, state = 'menu', time = 60, score = 0, balloons = [], balls = [], bits = [], pops = [], spawnT = 0, rainbowT = 10, elapsed = 0, popped = 0, hint = 0;
       const M = () => Math.min(k.W, k.H), launch = () => ({x:k.W / 2, y:k.H - M() * 0.07});
       function spawn(rainbow){
         const kd = rainbow ? KINDS[1] : pick(), r = kd.r * M() * (0.9 + Math.random() * 0.2), hard = clamp(elapsed / 60, 0, 1);
@@ -120,7 +120,7 @@
       k.on(k.cv, 'pointermove', e => { if (down) fl.add(k.pt(e)); });
       const up = e => {
         if (!down) return; down = false; const p = k.pt(e); fl.add(p); if (state !== 'play') return;
-        if (balls.filter(b => !b.stuck).length >= 4) return;
+        if (reload > 0 || balls.filter(b => !b.stuck).length >= 2) return; reload = 0.35;
         const o = launch(), g = k.H * 0.55, v = fl.vel(); let vx, vy;
         if (v.dist > 40 && Math.hypot(v.vx, v.vy) > 300 && v.vy < 0){
           const sp = clamp(Math.hypot(v.vx, v.vy) * 1.1, k.H * 1.1, k.H * 2.6), d = Math.hypot(v.vx, v.vy); vx = v.vx / d * sp; vy = v.vy / d * sp;
@@ -134,7 +134,7 @@
       function burst(b){
         b.alive = false; popped++;
         let pts = b.pts; score += pts;
-        const n = api.reducedMotion ? 6 : 12; for (let i = 0; i < n; i++){ const a = i / n * Math.PI * 2 + Math.random() * 0.4, s = rnd(120, 320); bits.push({x:b.x, y:b.y, vx:Math.cos(a) * s, vy:Math.sin(a) * s, life:0.6, t:0, col:b.rainbow ? COLS[i % COLS.length] : b.col, w:rnd(4, 9)}); }
+        const n = api.reducedMotion ? 6 : 12; for (let i = 0; i < n; i++){ const a = i / n * Math.PI * 2 + Math.random() * 0.4, s = rnd(120, 320); bits.push({x:b.x, y:b.y, vx:Math.cos(a) * s, vy:Math.sin(a) * s, life:0.6, t:0, col:b.rainbow ? COLS[i % COLS.length] : b.col, w:rnd(6, 12)}); }
         bits.push({ring:true, x:b.x, y:b.y, r:b.r, t:0, life:0.35, col:'#fff'});
         if (b.rainbow){ time += 5; pops.push({txt:'🌈 +5 seconds!', x:b.x, y:b.y, t:0, col:'#ffd23f', big:true}); api.confetti(30); }
         pops.push({txt:'+' + pts, x:b.x, y:b.y - b.r, t:0, col:'#fff'});
@@ -160,13 +160,15 @@
         for (let i = bits.length - 1; i >= 0; i--){ const p = bits[i]; p.t += dt; if (!p.ring){ p.vy += 500 * dt; p.x += p.vx * dt; p.y += p.vy * dt; } if (p.t > p.life) bits.splice(i, 1); }
         for (let i = pops.length - 1; i >= 0; i--){ pops[i].t += dt; if (pops[i].t > 1.1) pops.splice(i, 1); }
         if (hint > 0) hint -= dt;
+        if (reload > 0) reload -= dt;
       }
       function drawWall(){
         const W = k.W, H = k.H;
         const g = cx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#2a6fdb'); g.addColorStop(1, '#5aa8ff'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
         cx.fillStyle = 'rgba(255,255,255,.08)'; const s = Math.max(36, M() * 0.1); for (let y = 0, r = 0; y < H; y += s, r++) for (let x = (r % 2) * s / 2; x < W; x += s){ cx.beginPath(); cx.arc(x, y, s * 0.12, 0, 7); cx.fill(); }
-        // counter at the bottom
-        const ch = M() * 0.12; cx.fillStyle = '#e8424c'; cx.fillRect(0, H - ch, W, ch); cx.fillStyle = '#fff'; for (let x = 0; x < W; x += 60) cx.fillRect(x, H - ch, 30, ch);
+      }
+      function drawCounter(){
+        const W = k.W, H = k.H, ch = M() * 0.12; cx.fillStyle = '#e8424c'; cx.fillRect(0, H - ch, W, ch); cx.fillStyle = '#fff'; for (let x = 0; x < W; x += 60) cx.fillRect(x, H - ch, 30, ch);
         cx.fillStyle = 'rgba(0,0,0,.2)'; cx.fillRect(0, H - ch, W, 5);
       }
       function drawBalloon(b){
@@ -182,6 +184,7 @@
       function draw(){
         drawWall();
         balloons.forEach(drawBalloon);
+        drawCounter();
         bits.forEach(p => { const a = 1 - p.t / p.life; cx.globalAlpha = a; if (p.ring){ cx.strokeStyle = p.col; cx.lineWidth = 3; cx.beginPath(); cx.arc(p.x, p.y, p.r * (1 + p.t * 3), 0, 7); cx.stroke(); } else { cx.fillStyle = p.col; cx.save(); cx.translate(p.x, p.y); cx.rotate(p.t * 9 + p.w); cx.fillRect(-p.w / 2, -p.w / 4, p.w, p.w / 2); cx.restore(); } cx.globalAlpha = 1; });
         balls.forEach(b => { const a = b.stuck ? clamp(1 - (b.life - 0.5) / 0.4, 0, 1) : 1; cx.globalAlpha = a; const sq = b.stuck ? 1 + Math.min(b.life * 6, 1) * 0.25 : 1;
           cx.fillStyle = '#ffe14d'; cx.beginPath(); cx.ellipse(b.x, b.y, b.r * sq, b.r / sq, 0, 0, 7); cx.fill(); cx.strokeStyle = '#d9a400'; cx.lineWidth = 2; cx.stroke();
