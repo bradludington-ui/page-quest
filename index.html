@@ -411,6 +411,9 @@ body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(
 .kskills{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}.kskills li{display:flex;flex-direction:column;gap:4px}.kstars{color:var(--sun);letter-spacing:2px}
 .kpbar{display:block;height:10px;border-radius:5px;background:var(--line);overflow:hidden}.kpbar i{display:block;height:100%;background:var(--good);border-radius:5px}
 .extab td:first-child{white-space:nowrap;padding-right:14px}.extab td.num{white-space:normal;text-align:right;width:auto}.extab td:first-child{width:1%}.extab td.num br+*{display:inline}
+.exgrid th.exkid{text-align:center;font-size:.85rem;color:var(--ink)}.exgrid td.num{text-align:center;width:auto;white-space:nowrap}.exgrid td:first-child{white-space:nowrap;font-weight:600}.exread{margin:4px 0;line-height:1.5}
+@media (max-width:600px){.exgrid{font-size:.82rem}.exgrid td,.exgrid th{padding:7px 3px!important}.exgrid td:first-child{white-space:normal;font-weight:600}.exgrid td.num{white-space:normal}}
+.exgrid{width:100%;table-layout:auto}
 </style>
 
 </head>
@@ -7762,32 +7765,59 @@ function summaryNotes(k){
   return n;
 }
 function vExecSum(){
-  const local = !!view.local, kids = local ? S.profiles.filter(p => !isParent(p)) : null;
+  const v = view, local = !!v.local, kids = local ? S.profiles.filter(p => !isParent(p)) : null, page = v.page || 'day';
   const names = local ? kids.map(p => p.name) : [...new Set(logRows().map(r => r.n))].sort(), K = local ? kids.map(p => kidSummary(p.name, p)) : names.map(n => kidSummary(n));
   const chg = (a, b) => b == null || a == null ? '' : a > b ? ` <span style="color:var(--good)">▲</span>` : a < b ? ` <span style="color:var(--oops)">▼</span>` : '';
-  const ago = ts => { if (!ts) return 'never'; const m = Math.round((Date.now() - ts) / 60000); return m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`; };
-  const row = (k, v, cls) => `<tr${cls ? ` class="${cls}"` : ''}><td>${k}</td><td class="num">${v}</td></tr>`;
+  const ago = ts => { if (!ts) return 'never'; const m = Math.round((Date.now() - ts) / 60000); return m < 60 ? `${m}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : `${Math.round(m / 1440)}d ago`; };
+  const ok = (a, b) => a >= b ? ' <span style="color:var(--good)">✓</span>' : '';
+  const R = (lab, f) => `<tr><td>${lab}</td>${K.map(k => `<td class="num">${f(k)}</td>`).join('')}</tr>`;
+  const head = `<tr><th></th>${K.map(k => `<th class="num exkid">${esc(k.a || '')}<br>${esc(k.name)}</th>`).join('')}</tr>`;
+  const mr = r => (r.mt || []).reduce((a, q) => a + (q[2] || 0), 0), mt = r => (r.mt || []).reduce((a, q) => a + (q[3] || 0), 0);
+  let body = '';
+  if (!K.length) body = `<p class="mut">${local ? 'No readers on this iPad yet.' : 'No scans yet. Scan each child\'s code to fill this in.'}</p>`;
+  else if (page === 'day'){
+    const T = k => k.td || {};
+    body = `<div class="card"><h2>📅 Today</h2><p class="mut">${niceDate(today(), true)}</p>
+      <table class="daytab exgrid">${head}
+        ${R('📖 Reading', k => `<b>${T(k).m || 0}</b>/${T(k).gl || (k.g >= 5 ? 20 : 15)}${ok(T(k).m || 0, T(k).gl || (k.g >= 5 ? 20 : 15))}`)}
+        ${R('🎤 Out loud', k => `<b>${T(k).al || 0}</b>/${BREAK_ALOUD}${ok(T(k).al || 0, BREAK_ALOUD)}`)}
+        ${R('🔢 Math', k => `<b>${T(k).mm || 0}</b>/${MATH_GOAL}${ok(T(k).mm || 0, MATH_GOAL)}`)}
+        ${R('✅ Math right', k => mt(T(k)) ? `${Math.round(mr(T(k)) / mt(T(k)) * 100)}%` : '–')}
+        ${R('⚡ Speed', k => T(k).s ? `${bandOf(k.g, T(k).s).ic} ${T(k).s}` : '–')}
+        ${R('🧠 Brain Break', k => (T(k).al || 0) >= BREAK_ALOUD && (T(k).mm || 0) >= MATH_GOAL ? '✅' : '🔒')}
+        ${local ? '' : R('📷 Scanned', k => `<span class="mut">${ago(k.last)}</span>`)}</table>
+      <h3>What they read</h3>${K.map(k => `<p class="exread"><b>${esc(k.name)}:</b> ${k.td && (k.td.rd || []).length ? schoolDay(k.td).map(b => `${esc(b.book)}${b.mins ? ` <span class="mut">${b.mins} min</span>` : ''}`).join(' · ') : '<span class="mut">nothing yet</span>'}</p>`).join('')}
+      ${exNotes(K, true)}</div>`;
+  } else {
+    body = `<div class="card"><h2>🗓 Last 7 days</h2><p class="mut">${niceDate(addDays(-6))} to ${niceDate(today())} · ▲▼ vs the 7 days before</p>
+      <table class="daytab exgrid">${head}
+        ${R('📅 Days read', k => `<b>${k.days}</b>/7`)}
+        ${R('📖 Reading min', k => `<b>${k.read}</b>${chg(k.read, k.readPrev)}`)}
+        ${R('Per day', k => Math.round(k.read / 7))}
+        ${R('🎯 Goal met', k => `${k.met}/7`)}
+        ${R('🎤 Out loud', k => k.aloud)}
+        ${R('🔢 Math min', k => `<b>${k.math}</b>${chg(k.math, k.mathPrev)}`)}
+        ${R('✅ Math right', k => k.mT ? `${Math.round(k.mR / k.mT * 100)}%` : '–')}
+        ${R('🧠 Brain Break', k => `${k.bb}/7`)}
+        ${R('⚡ Speed', k => k.sNow ? `${bandOf(k.g, k.sNow).ic} ${k.sNow}${chg(k.sNow, k.sPrev)}` : '–')}
+        ${R('🚀 Target', k => normAt(k.g, 75) + '+')}
+        ${R('📚 Books', k => k.titles.length)}</table>
+      <h3>Books and stories</h3>${K.map(k => `<p class="exread"><b>${esc(k.name)}:</b> ${k.titles.length ? k.titles.map(esc).join(' · ') : '<span class="mut">none</span>'}</p>`).join('')}
+      ${exNotes(K, false)}</div>`;
+  }
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: local ? 'grownups' : 'hub'}))}">← ${local ? 'Grown-ups' : 'Back'}</button>${local ? '' : `<button class="btn small sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button>`}</div>
-  <h1>📋 Summary</h1><p class="mut">${niceDate(today(), true)} · today and the last 7 days</p>
-  ${K.length ? `<div class="card"><h3>At a glance</h3><table class="daytab extab"><tr><th>Child</th><th class="num">Today<br><span class="mut">read · math</span></th><th class="num">7 days<br><span class="mut">read · math</span></th></tr>
-    ${K.map(k => `<tr><td><b>${esc(k.a || '')} ${esc(k.name)}</b></td><td class="num">${k.td ? `${k.td.m || 0} · ${k.td.mm || 0}` : '–'}</td><td class="num">${k.read}${chg(k.read, k.readPrev)} · ${k.math}${chg(k.math, k.mathPrev)}</td></tr>`).join('')}</table>
-    <p class="mut" style="font-size:.85rem">Minutes. ▲▼ compare with the 7 days before.</p></div>` : '<p class="mut">No scans yet. Scan each child\'s code to fill this in.</p>'}
-  ${K.map(k => { const b = k.sNow && bandOf(k.g, k.sNow), notes = summaryNotes(k), td = k.td;
-    return `<div class="card" style="display:flex;flex-direction:column;gap:10px">
-      <div class="row spread"><h2>${esc(k.a || '')} ${esc(k.name)} <span class="mut" style="font-size:1rem">Grade ${k.g}</span></h2>${local ? '' : `<span class="mut" style="font-size:.85rem">scanned ${ago(k.last)}</span>`}</div>
-      ${notes.length ? `<ul class="exnotes">${notes.map(([ic, t]) => `<li><span>${ic}</span>${esc(t)}</li>`).join('')}</ul>` : ''}
-      <table class="daytab extab"><tr><th>Today</th><th class="num"></th></tr>
-        ${td ? row('Reading', `<b>${td.m || 0}</b> of ${td.gl || 20} min${(td.m || 0) >= (td.gl || 20) ? ' ✓' : ''}`) + row('Out loud', `<b>${td.al || 0}</b> of ${BREAK_ALOUD} min`) + row('Math', `<b>${td.mm || 0}</b> of ${MATH_GOAL} min${(td.mt || []).reduce((a, q) => a + (q[3] || 0), 0) ? ` · ${(td.mt || []).reduce((a, q) => a + (q[2] || 0), 0)} of ${(td.mt || []).reduce((a, q) => a + (q[3] || 0), 0)} right` : ''}`)
-          + row('Brain Break', (td.al || 0) >= BREAK_ALOUD && (td.mm || 0) >= MATH_GOAL ? '✅ earned' : '🔒 not yet') + row('Read', (td.rd || []).length ? schoolDay(td).map(x => esc(x.book)).join('<br>') : '<span class="mut">no titles</span>')
-          : row(`<span class="mut">${local ? 'Nothing yet today' : 'Not scanned today'}</span>`, '')}</table>
-      <table class="daytab extab"><tr><th>Last 7 days</th><th class="num"></th></tr>
-        ${row('Days read', `<b>${k.days}</b> of 7`)}${row('Reading', `<b>${k.read}</b> min · ${Math.round(k.read / 7)}/day${chg(k.read, k.readPrev)}`)}${row('Out loud', `<b>${k.aloud}</b> min`)}
-        ${row('Reading goal met', `<b>${k.met}</b> of 7 days`)}${row('Math', `<b>${k.math}</b> min${chg(k.math, k.mathPrev)}${k.mT ? ` · ${Math.round(k.mR / k.mT * 100)}% right` : ''}`)}
-        ${row('Brain Break earned', `<b>${k.bb}</b> of 7 days`)}${row('Reading speed', k.sNow ? `<b>${b.ic} ${k.sNow}</b> wpm${chg(k.sNow, k.sPrev)} <span class="mut">(target ${normAt(k.g, 75)}+)</span>` : '–')}
-        ${row('Books and stories', k.titles.length ? k.titles.map(esc).join('<br>') : '–')}</table>
-      ${local ? '' : `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name}))}">Full log →</button><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name, tab:'math'}))}">🔢 Math</button><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name, tab:'ir'}))}">🎯 Scores</button></div>`}</div>`; }).join('')}`;
+  <div class="row spread"><h1>📋 Summary</h1><div class="modes"><button class="${page==='day'?'on':''}" data-a="${A(()=>{ v.page = 'day'; render(); })}">📅 Today</button><button class="${page==='week'?'on':''}" data-a="${A(()=>{ v.page = 'week'; render(); })}">🗓 7 days</button></div></div>
+  ${body}
+  ${local || !K.length ? '' : `<div class="row">${K.map(k => `<button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name}))}">${esc(k.name)}'s full log →</button>`).join('')}</div>`}`;
   if (K.some(k => k.ms) && !window.MathSkills){ const myView = view; Promise.all([loadMath({grade:3}), loadMath({grade:5})].map(x => x.catch(() => {}))).then(() => { if (view === myView) render(); }); }
 }
+// watch-outs and highlights for the page: today's only the day items, the week page the rest
+function exNotes(K, day){
+  const items = [];
+  K.forEach(k => summaryNotes(k).forEach(([ic, t]) => { const isDay = /today/i.test(t) || /Nothing logged|No reading or math yet/.test(t); if (isDay === day) items.push(`<li><span>${ic}</span><span><b>${esc(k.name)}:</b> ${esc(t)}</span></li>`); }));
+  return items.length ? `<h3>${day ? 'Needs attention today' : 'Highlights and watch-outs'}</h3><ul class="exnotes">${items.join('')}</ul>` : `<p class="mut" style="margin-top:8px">${day ? '🎉 Everyone is on track today.' : 'Nothing to flag this week.'}</p>`;
+}
+
 // the kids' own math card: unit, what they are great at and working on, facts to master
 function myMathCard(p){
   if (!MATH_ON) return '';
