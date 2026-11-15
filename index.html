@@ -1887,7 +1887,7 @@ function vGrown(){
   const FOCUS = [['phonics','Phonics (sounding out words)'],['vocab','Vocabulary'],['lit','Understanding stories'],['info','Understanding nonfiction']];
   const week = [...Array(7)].map((_,i) => addDays(i-6));
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: me() ? 'hub' : 'profiles'}))}">← Back</button></div>
-  <div class="row spread"><h1>Reading progress</h1><button class="btn" data-a="${A(()=>go({name:'report'}))}">📋 Daily reading report</button></div>
+  <div class="row spread"><h1>Reading progress</h1><span class="row"><button class="btn sun" data-a="${A(()=>go({name:'execsum', local:true}))}">📋 Summary</button><button class="btn" data-a="${A(()=>go({name:'report'}))}">🗒 Daily reading report</button></span></div>
   ${S.profiles.length > 1 && S.profiles.some(p => !breakOpen(p)) ? `<div class="card row spread"><span>Did everyone make their reading time some other way?</span><button class="btn small sun" data-a="${A(()=>{ S.profiles.forEach(p => { if (!breakOpen(p)) p.breakDay = today(); }); save(); render(); })}">🎉 Open Brain Break for everyone today</button></div>` : ''}
   ${S.profiles.length ? '' : '<p class="mut">No readers yet.</p>'}
   ${S.profiles.map(p => {
@@ -4929,7 +4929,7 @@ function reportPack(d, range, who){
     const inPack = new Set(range === 'day' ? [d] : [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return today(t); }));
     const h = [...Array(28)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 1 - i); return today(t); }).filter(dd => !inPack.has(dd))
       .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length || x.mm) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), readTitles(p, dd, x).map(r => [String(r[0]).slice(0, 70), r[1], r[4] || 0]), x.mm, mathTopics(x.math)] : null; }).filter(Boolean);
-    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), ms: mathPack(p), dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
+    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), ms: mathPack(p), dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length || x.mm)};
     return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), ms: mathPack(p)}, day(d));
   })};
 }
@@ -7732,19 +7732,25 @@ function vMyStats(){
 }
 
 // ---------- Brad's summary: today and the rolling week, for every child, at a glance ----------
-function kidSummary(name){
-  const L = logStore(), kid = L.kids[name] || {}, rows = logRows().filter(r => r.n === name), t = today(), w0 = addDays(-6), p0 = addDays(-13);
+// on a child's iPad the same rows are built from the child's own data (no scanning needed)
+function localSumRows(p){
+  const rows = [], seen = new Set();
+  [today(), addDays(-7)].forEach(d => (reportPack(d, 'week', [p]).k[0].dd || []).forEach(r => { if (!seen.has(r.d)){ seen.add(r.d); rows.push(Object.assign({n:p.name, g:p.grade, a:p.av, at:Date.now()}, r)); } }));
+  return rows.sort((a, b) => b.d.localeCompare(a.d));
+}
+function kidSummary(name, local){
+  const L = local ? {kids:{[name]: {g:local.grade, a:local.av, ms:mathPack(local)}}} : logStore(), kid = L.kids[name] || {}, rows = local ? localSumRows(local) : logRows().filter(r => r.n === name), t = today(), w0 = addDays(-6), p0 = addDays(-13);
   const td = rows.find(r => r.d === t), wk = rows.filter(r => r.d >= w0), pw = rows.filter(r => r.d >= p0 && r.d < w0);
   const sum = (a, k) => a.reduce((x, r) => x + (r[k] || 0), 0), g = kid.g || 3;
   const mright = a => a.reduce((x, r) => x + (r.mt || []).reduce((y, q) => y + (q[2] || 0), 0), 0), mtot = a => a.reduce((x, r) => x + (r.mt || []).reduce((y, q) => y + (q[3] || 0), 0), 0);
   const sp = a => median(a.filter(r => r.s).map(r => r.s)), bb = r => (r.al || 0) >= BREAK_ALOUD && (r.mm || 0) >= MATH_GOAL;
   const last = Math.max(0, ...rows.map(r => r.at || 0));
-  return {name, g, a:kid.a, td, wk, last, days: wk.filter(r => (r.m || 0) > 0).length, read: sum(wk, 'm'), aloud: sum(wk, 'al'), math: sum(wk, 'mm'), met: wk.filter(r => (r.m || 0) >= (r.gl || 20)).length,
+  return {name, g, a:kid.a, local: !!local, td, wk, last, days: wk.filter(r => (r.m || 0) > 0).length, read: sum(wk, 'm'), aloud: sum(wk, 'al'), math: sum(wk, 'mm'), met: wk.filter(r => (r.m || 0) >= (r.gl || 20)).length,
     bb: wk.filter(bb).length, titles: [...new Set(wk.flatMap(r => (r.rd || []).map(x => bookOf(x[0]).book)))], mR: mright(wk), mT: mtot(wk), sNow: sp(wk), sPrev: sp(pw), readPrev: sum(pw, 'm'), mathPrev: sum(pw, 'mm'), ms: kid.ms};
 }
 function summaryNotes(k){
   const n = [], tg = normAt(k.g, 75);
-  if (!k.td) n.push(['⚠️', 'Nothing logged for today yet. Scan their code after they read.']);
+  if (!k.td) n.push(['⚠️', k.local ? 'No reading or math yet today.' : 'Nothing logged for today yet. Scan their code after they read.']);
   else { if ((k.td.m || 0) < (k.td.gl || 20)) n.push(['📖', `Reading goal not met today (${k.td.m || 0} of ${k.td.gl || 20} min).`]); if ((k.td.mm || 0) < MATH_GOAL) n.push(['🔢', `Math not done today (${k.td.mm || 0} of ${MATH_GOAL} min).`]); }
   if (k.days < 5) n.push(['📅', `Read on ${k.days} of the last 7 days.`]);
   if (k.sNow && k.sPrev && k.sNow < k.sPrev - 3) n.push(['🐢', `Reading speed slipped: ${k.sPrev} → ${k.sNow} words/min.`]);
@@ -7756,29 +7762,30 @@ function summaryNotes(k){
   return n;
 }
 function vExecSum(){
-  const names = [...new Set(logRows().map(r => r.n))].sort(), K = names.map(kidSummary);
+  const local = !!view.local, kids = local ? S.profiles.filter(p => !isParent(p)) : null;
+  const names = local ? kids.map(p => p.name) : [...new Set(logRows().map(r => r.n))].sort(), K = local ? kids.map(p => kidSummary(p.name, p)) : names.map(n => kidSummary(n));
   const chg = (a, b) => b == null || a == null ? '' : a > b ? ` <span style="color:var(--good)">▲</span>` : a < b ? ` <span style="color:var(--oops)">▼</span>` : '';
   const ago = ts => { if (!ts) return 'never'; const m = Math.round((Date.now() - ts) / 60000); return m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`; };
   const row = (k, v, cls) => `<tr${cls ? ` class="${cls}"` : ''}><td>${k}</td><td class="num">${v}</td></tr>`;
-  app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'hub'}))}">← Back</button><button class="btn small sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button></div>
+  app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: local ? 'grownups' : 'hub'}))}">← ${local ? 'Grown-ups' : 'Back'}</button>${local ? '' : `<button class="btn small sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button>`}</div>
   <h1>📋 Summary</h1><p class="mut">${niceDate(today(), true)} · today and the last 7 days</p>
   ${K.length ? `<div class="card"><h3>At a glance</h3><table class="daytab extab"><tr><th>Child</th><th class="num">Today<br><span class="mut">read · math</span></th><th class="num">7 days<br><span class="mut">read · math</span></th></tr>
     ${K.map(k => `<tr><td><b>${esc(k.a || '')} ${esc(k.name)}</b></td><td class="num">${k.td ? `${k.td.m || 0} · ${k.td.mm || 0}` : '–'}</td><td class="num">${k.read}${chg(k.read, k.readPrev)} · ${k.math}${chg(k.math, k.mathPrev)}</td></tr>`).join('')}</table>
     <p class="mut" style="font-size:.85rem">Minutes. ▲▼ compare with the 7 days before.</p></div>` : '<p class="mut">No scans yet. Scan each child\'s code to fill this in.</p>'}
   ${K.map(k => { const b = k.sNow && bandOf(k.g, k.sNow), notes = summaryNotes(k), td = k.td;
     return `<div class="card" style="display:flex;flex-direction:column;gap:10px">
-      <div class="row spread"><h2>${esc(k.a || '')} ${esc(k.name)} <span class="mut" style="font-size:1rem">Grade ${k.g}</span></h2><span class="mut" style="font-size:.85rem">scanned ${ago(k.last)}</span></div>
+      <div class="row spread"><h2>${esc(k.a || '')} ${esc(k.name)} <span class="mut" style="font-size:1rem">Grade ${k.g}</span></h2>${local ? '' : `<span class="mut" style="font-size:.85rem">scanned ${ago(k.last)}</span>`}</div>
       ${notes.length ? `<ul class="exnotes">${notes.map(([ic, t]) => `<li><span>${ic}</span>${esc(t)}</li>`).join('')}</ul>` : ''}
       <table class="daytab extab"><tr><th>Today</th><th class="num"></th></tr>
         ${td ? row('Reading', `<b>${td.m || 0}</b> of ${td.gl || 20} min${(td.m || 0) >= (td.gl || 20) ? ' ✓' : ''}`) + row('Out loud', `<b>${td.al || 0}</b> of ${BREAK_ALOUD} min`) + row('Math', `<b>${td.mm || 0}</b> of ${MATH_GOAL} min${(td.mt || []).reduce((a, q) => a + (q[3] || 0), 0) ? ` · ${(td.mt || []).reduce((a, q) => a + (q[2] || 0), 0)} of ${(td.mt || []).reduce((a, q) => a + (q[3] || 0), 0)} right` : ''}`)
           + row('Brain Break', (td.al || 0) >= BREAK_ALOUD && (td.mm || 0) >= MATH_GOAL ? '✅ earned' : '🔒 not yet') + row('Read', (td.rd || []).length ? schoolDay(td).map(x => esc(x.book)).join('<br>') : '<span class="mut">no titles</span>')
-          : row('<span class="mut">Not scanned today</span>', '')}</table>
+          : row(`<span class="mut">${local ? 'Nothing yet today' : 'Not scanned today'}</span>`, '')}</table>
       <table class="daytab extab"><tr><th>Last 7 days</th><th class="num"></th></tr>
         ${row('Days read', `<b>${k.days}</b> of 7`)}${row('Reading', `<b>${k.read}</b> min · ${Math.round(k.read / 7)}/day${chg(k.read, k.readPrev)}`)}${row('Out loud', `<b>${k.aloud}</b> min`)}
         ${row('Reading goal met', `<b>${k.met}</b> of 7 days`)}${row('Math', `<b>${k.math}</b> min${chg(k.math, k.mathPrev)}${k.mT ? ` · ${Math.round(k.mR / k.mT * 100)}% right` : ''}`)}
         ${row('Brain Break earned', `<b>${k.bb}</b> of 7 days`)}${row('Reading speed', k.sNow ? `<b>${b.ic} ${k.sNow}</b> wpm${chg(k.sNow, k.sPrev)} <span class="mut">(target ${normAt(k.g, 75)}+)</span>` : '–')}
         ${row('Books and stories', k.titles.length ? k.titles.map(esc).join('<br>') : '–')}</table>
-      <div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name}))}">Full log →</button><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name, tab:'math'}))}">🔢 Math</button><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name, tab:'ir'}))}">🎯 Scores</button></div></div>`; }).join('')}`;
+      ${local ? '' : `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name}))}">Full log →</button><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name, tab:'math'}))}">🔢 Math</button><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name, tab:'ir'}))}">🎯 Scores</button></div>`}</div>`; }).join('')}`;
   if (K.some(k => k.ms) && !window.MathSkills){ const myView = view; Promise.all([loadMath({grade:3}), loadMath({grade:5})].map(x => x.catch(() => {}))).then(() => { if (view === myView) render(); }); }
 }
 // the kids' own math card: unit, what they are great at and working on, facts to master
