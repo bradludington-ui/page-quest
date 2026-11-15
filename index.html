@@ -4925,8 +4925,8 @@ function reportPack(d, range, who){
     const inPack = new Set(range === 'day' ? [d] : [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return today(t); }));
     const h = [...Array(28)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 1 - i); return today(t); }).filter(dd => !inPack.has(dd))
       .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length || x.mm) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), readTitles(p, dd, x).map(r => [String(r[0]).slice(0, 70), r[1], r[4] || 0]), x.mm, mathTopics(x.math)] : null; }).filter(Boolean);
-    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
-    return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom}))}, day(d));
+    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), ms: mathPack(p), dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
+    return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), ms: mathPack(p)}, day(d));
   })};
 }
 // a child's own code, from the bottom of their home screen: just their report, today or this week
@@ -4983,7 +4983,7 @@ function logMergeInto(L, pack, at){
   (pack.k || []).forEach(k => {
     const kid = L.kids[k.n] || (L.kids[k.n] = {g:k.g, a:k.a, days:{}}); kid.g = k.g; if (k.a) kid.a = k.a;
     const byD = (old, add) => { const m = {}; (old || []).concat(add || []).forEach(x => m[x.d] = x); return Object.values(m).sort((a, b) => a.d.localeCompare(b.d)); };
-    if (k.ir) kid.ir = byD(kid.ir, k.ir); if (k.cp) kid.cp = byD(kid.cp, k.cp); if (k.map) kid.map = byD(kid.map, k.map);
+    if (k.ms && (!kid.msAt || at >= kid.msAt)){ kid.ms = k.ms; kid.msAt = at; } if (k.ir) kid.ir = byD(kid.ir, k.ir); if (k.cp) kid.cp = byD(kid.cp, k.cp); if (k.map) kid.map = byD(kid.map, k.map);
     (k.h || []).forEach(([d, m, al, sp, gl, rd, mm, mt]) => { const b = sp ? bandOf(k.g, sp, d) : null;
       logPut(kid, {d, m, al, s: sp || null, gl, b: b ? b.k : null, tg: normAt(k.g, 75, d), rd: (rd||[]).map(t => Array.isArray(t) ? [t[0], t[1]||0, 0, 0, t[2]||0] : [t, 0, 0, 0]), wp: [], gy: [], mm: mm || 0, mt: mt || []}, 'hist', at); });
     if (pack.r === 'day') logPut(kid, {d: pack.d, m:k.m, al:k.al, s:k.s, gl:k.gl, b:k.b, tg:k.tg, rd:k.rd||[], wp:k.wp||[], gy:k.gy||[], t:k.t, mm:k.mm||0, mt:k.mt||[]}, 'day', at);
@@ -5001,7 +5001,7 @@ function weekStart(d){ const t = new Date(d + 'T12:00'); t.setDate(t.getDate() -
 function logWeeks(rows){
   const W = new Map();
   rows.forEach(r => { const k = r.n + '|' + weekStart(r.d), w = W.get(k) || {n:r.n, g:r.g, ws:weekStart(r.d), days:0, m:0, al:0, met:0, stories:0, sp:[], titles:[]};
-    w.days++; w.m += r.m||0; w.al += r.al||0; if ((r.m||0) >= (r.gl||20)) w.met++; (r.rd||[]).forEach(x => { w.stories++; w.titles.push(x[0]); }); if (r.s) w.sp.push(r.s); W.set(k, w); });
+    w.days++; w.m += r.m||0; w.al += r.al||0; w.mm = (w.mm || 0) + (r.mm || 0); if ((r.m||0) >= (r.gl||20)) w.met++; (r.rd||[]).forEach(x => { w.stories++; w.titles.push(x[0]); }); if (r.s) w.sp.push(r.s); W.set(k, w); });
   return [...W.values()].map(w => Object.assign(w, {s: median(w.sp)})).sort((a, b) => b.ws.localeCompare(a.ws) || a.n.localeCompare(b.n));
 }
 function csvCell(v){ v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
@@ -5181,7 +5181,7 @@ function dayLogHtml(rows, withChild){
         return (withChild ? `<tr class="kidhead"><td colspan="2">${esc(r.a || '')} ${esc(r.n)}</td></tr>` : '') +
           bs.map(b => `<tr><td>${esc(b.book)}${b.parts.length ? ` <span class="mut">(${esc(b.parts.map(q => q.replace('Chapter', 'Ch')).join(', '))})</span>` : ''}</td><td class="num">${b.mins ? (b.est ? '~' : '') + b.mins : '–'}</td></tr>`).join('') +
           `<tr class="daytot"><td>Total minutes read</td><td class="num"><b>${r.m || 0}</b></td></tr>` +
-          (r.mm ? (r.mt || []).map(t => `<tr><td>🔢 ${esc(t[0])}</td><td class="num">${t[1] || '–'}</td></tr>`).join('') + `<tr class="daytot"><td>Math minutes</td><td class="num"><b>${r.mm}</b></td></tr>` : ''); }).join('')}
+          (r.mm ? (r.mt || []).map(t => `<tr><td>🔢 ${esc(t[0])}${t[3] ? ` <span class="mut">(${t[2]} of ${t[3]} right)</span>` : ''}</td><td class="num">${t[1] || '–'}</td></tr>`).join('') + `<tr class="daytot"><td>Math minutes</td><td class="num"><b>${r.mm}</b></td></tr>` : ''); }).join('')}
     </table>
     <p class="mut" style="font-size:.85rem">The total also counts reading practice, so it can be more than the titles add up to. ~ = estimated from the pages read (reading from before titles were timed).</p></div>`;
 }
@@ -5201,8 +5201,24 @@ function vKidLog(){
       <h3>Growth goal</h3>${irGoalHtml(irGoal(fake))}` : '<p class="mut">No i-Ready results yet. Enter them on the child\'s iPad under Grown-ups, then scan their code.</p>'}
       <h3>Monthly checkpoints</h3>${cpTableHtml(fake.cps)}
       <h3>MAP math</h3>${(kid.map || []).length ? `<table class="daytab"><tr><th>Test</th><th class="num">RIT</th><th class="num">Percentile</th></tr>${kid.map.slice().reverse().map(r => `<tr><td>${niceDate(r.d)}</td><td class="num"><b>${r.rit}</b></td><td class="num">${r.pct ? r.pct + '%' : '–'}</td></tr>`).join('')}</table>` : '<p class="mut">No MAP math scores yet.</p>'}`; }
-  else if (tab === 'week') body = `<table class="daytab"><tr><th>Week of</th><th class="num">Minutes</th><th class="num">Days</th><th class="num">Speed</th></tr>
-    ${logWeeks(mine).map(w => `<tr><td>${dt(w.ws)}</td><td class="num"><b>${w.m}</b></td><td class="num">${w.days}</td><td class="num">${speedCell(w.s, w.g, w.ws)}</td></tr>`).join('')}</table>
+  else if (tab === 'math'){ const kid = logStore().kids[who] || {}, ms = kid.ms, mrows = mine.filter(r => r.mm);
+    // skill names come from the problem sets; load them on this phone if they are not here yet
+    if (ms && !Object.keys(window.MathSkills || {}).some(k => k.startsWith('g' + (kid.g >= 5 ? 5 : 3) + '.'))){ const myView = view; loadMath({grade: kid.g}).then(() => { if (view === myView) render(); }).catch(() => {}); }
+    const pct = v => Math.round(v[0] / v[1] * 100), col = q => q >= 80 ? 'var(--good)' : q >= 60 ? 'var(--ink)' : 'var(--oops)';
+    const names = (window.MathSkills ? null : null), nm = k => { const M = window.MathSkills || {}, full = Object.keys(M).find(x => x.endsWith('.' + k)); return full ? M[full].name : k.replace(/([a-z])([0-9])/g, '$1 $2').replace(/^./, c => c.toUpperCase()); };
+    const sk = ms ? Object.entries(ms.s).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1]) : [], solved = sk.reduce((a, x) => a + x[1][1], 0), right = sk.reduce((a, x) => a + x[1][0], 0);
+    body = ms || mrows.length ? `<table class="daytab"><tr><th>Math</th><th class="num"></th></tr>
+        ${ms ? `<tr><td>Unit this week</td><td class="num"><b>${esc(ms.u)}</b></td></tr>` : ''}
+        <tr><td>Math minutes, last 7 days</td><td class="num"><b>${mine.filter(r => r.d >= addDays(-6)).reduce((a, r) => a + (r.mm || 0), 0)}</b></td></tr>
+        ${solved ? `<tr><td>Problems solved</td><td class="num"><b>${solved}</b></td></tr><tr><td>Right on the first try</td><td class="num"><b style="color:${col(right / solved * 100)}">${Math.round(right / solved * 100)}%</b></td></tr>` : ''}</table>
+      ${sk.length ? `<h3>Skills, weakest first</h3><table class="daytab"><tr><th>Skill</th><th class="num">First try</th><th class="num">Level</th></tr>${sk.map(([k, v]) => `<tr><td>${esc(nm(k))}</td><td class="num"><b style="color:${col(pct(v))}">${pct(v)}%</b> <span class="mut">(${v[1]})</span></td><td class="num">${v[2]} of 3</td></tr>`).join('')}</table>
+        <p class="mut" style="font-size:.85rem">Level goes up after 3 right in a row and down after 2 misses. Green 80%+, red under 60%.</p>` : ''}
+      ${ms && ms.f.length ? `<h3>Facts still to master</h3><p>${ms.f.map(f => `<span class="chip">${esc(f.replace('x', ' × ').replace('/', ' ÷ ').replace(/^sq/, '√'))}</span>`).join(' ')}</p>` : ''}
+      ${mrows.length ? `<h3>Math by day</h3><table class="daytab"><tr><th>Day</th><th class="num">Minutes</th><th class="num">Right</th></tr>${mrows.slice(0, 14).map(r => { const rr = (r.mt || []).reduce((a, t) => a + (t[2] || 0), 0), tt = (r.mt || []).reduce((a, t) => a + (t[3] || 0), 0); return `<tr><td>${dt(r.d, {weekday:'short', month:'short', day:'numeric'})}</td><td class="num"><b>${r.mm}</b></td><td class="num">${tt ? `${rr} of ${tt}` : '–'}</td></tr>`; }).join('')}</table>` : ''}`
+      : '<p class="mut">No math yet. It shows here after the child does math and you scan their code.</p>'; }
+  else if (tab === 'week') body = `<table class="daytab"><tr><th>Week of</th><th class="num">Reading</th><th class="num">Math</th><th class="num">Speed</th></tr>
+    ${logWeeks(mine).map(w => `<tr><td>${dt(w.ws)}</td><td class="num"><b>${w.m}</b></td><td class="num">${w.mm || '–'}</td><td class="num">${speedCell(w.s, w.g, w.ws)}</td></tr>`).join('')}</table>
+    <p class="mut" style="font-size:.85rem">Reading and math are minutes for the week.</p>
     <p class="mut" style="font-size:.85rem">Speed is words per minute, out loud. ✅ on grade level · 🚀 top 25% · 🟠 some risk · 🔴 high risk.</p>`;
   else {
     const tot = k => mine.reduce((a, r) => a + (r[k]||0), 0), sp = mine.filter(r => r.s).sort((a, b) => a.d.localeCompare(b.d)), f = sp[0], l = sp[sp.length-1];
@@ -5210,14 +5226,15 @@ function vKidLog(){
     body = `<table class="daytab"><tr><th>All time, since ${dt(mine[mine.length-1].d)}</th><th class="num"></th></tr>
       ${line('Days read', mine.length)}${line('Minutes read', tot('m'))}${line('Hours read', Math.round(tot('m')/6)/10)}${line('Minutes out loud', tot('al'))}
       ${line('Stories and chapters', mine.reduce((a, r) => a + (r.rd||[]).length, 0))}${line('Days the goal was met', mine.filter(r => (r.m||0) >= (r.gl||20)).length)}
-      ${l ? line('First reading speed', `${f.s} wpm`) + line('Latest reading speed', `${bandOf(g, l.s, l.d).ic} ${l.s} wpm`) + line('Target for grade ' + g, `${normAt(g, 75)}+ wpm`) : ''}</table>`;
+      ${l ? line('First reading speed', `${f.s} wpm`) + line('Latest reading speed', `${bandOf(g, l.s, l.d).ic} ${l.s} wpm`) + line('Target for grade ' + g, `${normAt(g, 75)}+ wpm`) : ''}
+      ${tot('mm') ? line('Math minutes', tot('mm')) + line('Days with math', mine.filter(r => r.mm).length) : ''}</table>`;
   }
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'hub'}))}">← Back</button><button class="btn small sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button></div>
   <h1>📒 Reading log</h1>
   ${names.length ? `<div class="tabs">${names.map(nm => `<button class="${nm===who && !v.speed?'on':''}" data-a="${A(()=>{ v.who = nm; v.speed = false; v.logDay = null; render(); })}">${esc(nm)}</button>`).join('')}<button class="${v.speed?'on':''}" data-a="${A(()=>{ v.speed = true; render(); })}">⚡ Speed</button></div>` : '<p class="mut">No days logged yet.</p>'}
   ${v.speed && names.length ? speedHtml(rows) : who ? `<div class="card" style="display:flex;flex-direction:column;gap:12px">
     <h2>${esc((mine[0]||{}).a || '')} ${esc(who)} <span class="mut" style="font-size:1rem">Grade ${g}</span></h2>
-    <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">Day log</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">By week</button><button class="${tab==='all'?'on':''}" data-a="${A(()=>{ v.tab='all'; render(); })}">All time</button><button class="${tab==='ir'?'on':''}" data-a="${A(()=>{ v.tab='ir'; render(); })}">🎯 Scores</button></div>
+    <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">Day log</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">By week</button><button class="${tab==='all'?'on':''}" data-a="${A(()=>{ v.tab='all'; render(); })}">All time</button><button class="${tab==='ir'?'on':''}" data-a="${A(()=>{ v.tab='ir'; render(); })}">🎯 Scores</button><button class="${tab==='math'?'on':''}" data-a="${A(()=>{ v.tab='math'; render(); })}">🔢 Math</button></div>
     ${body}</div>` : ''}
   <div class="card">${logFilesHtml(today(), rows.length)}</div>`;
 }
@@ -7302,7 +7319,12 @@ function irCardHtml(p){
 }
 
 // ---------- Math: the second subject ----------
-function mathTopics(list){ const T = {}; (list || []).forEach(e => { T[e.title] = (T[e.title] || 0) + (e.mins || 0); }); return Object.entries(T).map(([t, m]) => [t, Math.round(m)]); }
+function mathPack(p){
+  if (!MATH_ON || !p.math) return null; const m = mathState(p), s = {};
+  Object.entries(m.stat).forEach(([k, v]) => { if (v[1]) s[k.replace(/^g\d\./, '')] = [v[0], v[1], m.lvl[k] || 1]; });
+  return {u: mathUnitNow(p).name, s, f: Object.keys(m.facts).filter(k => m.facts[k].n > (m.facts[k].ok || 0)).slice(0, 16)};
+}
+function mathTopics(list){ const T = {}; (list || []).forEach(e => { const x = T[e.title] || (T[e.title] = [0, 0, 0]); x[0] += e.mins || 0; x[1] += e.right || 0; x[2] += e.total || 0; }); return Object.entries(T).map(([t, x]) => [t, Math.round(x[0]), x[1], x[2]]); }
 // Brain Break needs 20 minutes of out-loud reading AND 10 minutes of math, each counted only while actually working.
 // Problems come from generators in math/g3.js and math/g5.js (window.MathSkills), loaded when a child opens Math.
 const MATH_GOAL = 10;
