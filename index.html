@@ -425,7 +425,7 @@ body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(
 </head>
 <body>
 <canvas id="fx"></canvas>
-<script src="cheer.js?v=1" defer onload="if (typeof view !== 'undefined' && view && view.name === 'mystats') render()"></script>
+<script src="cheer.js?v=2" defer onload="if (typeof view !== 'undefined' && view && view.name === 'mystats') render()"></script>
 <div id="app"><p class="mut">Loading Page Quest…</p></div>
 
 <script>
@@ -2318,10 +2318,11 @@ function hangNext(){
 // ---------- Celebration ----------
 // Sports celebrations (cheer.js): a short drawn scene with the child's own player, for the big moments.
 // Falls back to confetti if the drawings have not loaded or the child turned them off.
+function cheerOpts(p, o){ return Object.assign({look: p.player, sound: !(p.player || {}).quiet, onSound: on => { p.player = Object.assign({}, p.player, {quiet: !on}); save(); }}, o); }
 function fname(p){ return String((p && p.name) || '').trim().split(/\s+/)[0] || 'Champ'; }
 function cheer(kind, title, sub, n){
   const p = me();
-  if (p && window.Cheer && !(p.player || {}).off && Cheer.play(kind, {look: p.player, title, sub})) return true;
+  if (p && window.Cheer && !(p.player || {}).off && Cheer.play(kind, cheerOpts(p, {title, sub}))) return true;
   confetti(n || 60); return false;
 }
 function floatText(t){ const d = document.createElement('div'); d.className = 'float'; d.textContent = t; document.body.appendChild(d); setTimeout(()=>d.remove(), 1200); }
@@ -7728,7 +7729,8 @@ function myPlayerCard(p){
       <div><b>Team colors</b><div class="mprow">${Object.keys(Cheer.KITS).map(k => `<button class="pswatch kit ${(pl.kit || 'blue') === k ? 'on' : ''}" style="background:linear-gradient(135deg,${Cheer.KITS[k].kit} 55%,${Cheer.KITS[k].shorts} 55%)" aria-label="${Cheer.KITS[k].name}" data-a="${set('kit', k)}"></button>`).join('')}</div></div>
       <div><b>Number</b><div class="mprow"><button class="btn small ghost" aria-label="Lower number" data-a="${set('num', num > 1 ? num - 1 : 99)}">−</button><b class="mpnum">${num}</b><button class="btn small ghost" aria-label="Higher number" data-a="${set('num', num < 99 ? num + 1 : 1)}">+</button></div></div>
     </div></div>
-    <div><b>Watch one</b><div class="mprow">${[['goal', '⚽ Goal'], ['slide', '🥳 Knee slide'], ['trophy', '🏆 Trophy'], ['swish', '🏀 Swish']].map(([k, t]) => `<button class="btn small" data-a="${A(() => Cheer.play(k, {look: p.player, title: k === 'trophy' ? `Champion, ${fname(p)}!` : `GOAL, ${fname(p)}!`, sub: 'This is how it looks when you finish something big.', button: 'Done'}))}">${t}</button>`).join('')}</div></div>
+    <div><b>Watch one</b><div class="mprow">${[['goal', '⚽ Goal'], ['slide', '🥳 Knee slide'], ['trophy', '🏆 Trophy'], ['swish', '🏀 Swish']].map(([k, t]) => `<button class="btn small" data-a="${A(() => Cheer.play(k, cheerOpts(p, {title: k === 'trophy' ? `Champion, ${fname(p)}!` : `GOAL, ${fname(p)}!`, sub: 'This is how it looks when you finish something big.', button: 'Done'})))}">${t}</button>`).join('')}</div></div>
+    <label class="mpoff"><input type="checkbox" ${pl.quiet ? '' : 'checked'} data-a="${A(() => { p.player = Object.assign({}, p.player, {quiet: !(p.player || {}).quiet}); save(); render(); })}"> Sound</label>
     <label class="mpoff"><input type="checkbox" ${pl.off ? '' : 'checked'} data-a="${A(() => { p.player = Object.assign({}, p.player, {off: !(p.player || {}).off}); save(); render(); })}"> Show celebrations</label>
   </div>`;
 }
