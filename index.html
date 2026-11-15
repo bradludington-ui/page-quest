@@ -279,6 +279,39 @@ a{color:var(--accent)}
 .speedgoal .sflag{transform:translateX(-15%)}
 .qrwrap{background:#fff;padding:10px;border-radius:14px;width:min(86vw,460px)}.qrwrap svg{width:100%;height:auto;display:block}
 .scanbox{position:relative;width:min(88vw,420px);aspect-ratio:1;border-radius:18px;overflow:hidden;background:#000}.scanbox video{width:100%;height:100%;object-fit:cover}.scanframe{position:absolute;inset:14%;border:4px solid #fff;border-radius:16px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.bbhero{position:relative;overflow:hidden;border-radius:26px;padding:24px 26px;margin:6px 0 14px;display:flex;gap:18px;align-items:center;justify-content:space-between;color:#fff;
+  background:radial-gradient(120% 140% at 0% 0%,#7c3aed 0%,#4338ca 45%,#0f172a 100%);box-shadow:0 14px 30px -12px rgba(67,56,202,.6)}
+.bbhero.open{background:radial-gradient(120% 140% at 0% 0%,#f59e0b 0%,#db2777 45%,#4338ca 100%)}
+.bbhero h1{color:#fff;font-size:2.4rem;margin:0 0 6px;text-shadow:0 3px 12px rgba(0,0,0,.3)}
+.bbhero p{color:#e0e7ff;max-width:560px;margin:0 0 12px}.bbhero p b{color:#fff}
+.bbtext{position:relative;z-index:1;min-width:0}
+.bbopen{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 14px;font-weight:700}
+.bbghost{background:rgba(255,255,255,.15)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important}
+.bbring{width:120px;height:120px;flex:none;position:relative;z-index:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.3))}
+.bbbig{font-size:5rem;flex:none;position:relative;z-index:1;animation:bbfloat 3s ease-in-out infinite;filter:drop-shadow(0 8px 14px rgba(0,0,0,.35))}
+.bbsparks i{position:absolute;top:110%;color:rgba(255,255,255,.55);font-style:normal;font-size:1.2rem;animation:bbspark 6s linear infinite}
+@keyframes bbspark{0%{transform:translateY(0) rotate(0);opacity:0}15%{opacity:1}100%{transform:translateY(-260px) rotate(180deg);opacity:0}}
+@keyframes bbfloat{50%{transform:translateY(-8px) rotate(-4deg)}}
+.bbgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.bbtile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:var(--panel);border:2px solid var(--line);
+  box-shadow:0 8px 18px -10px rgba(15,23,42,.35);transition:transform .18s cubic-bezier(.3,1.6,.5,1),box-shadow .18s}
+.bbtile:hover,.bbtile:focus-visible{transform:translateY(-4px) scale(1.02);box-shadow:0 16px 26px -12px rgba(15,23,42,.45)}
+.bbtile:active{transform:scale(.97)}
+.bbtile:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.bbart{position:relative;height:118px;display:grid;place-items:center;background:linear-gradient(135deg,var(--c1),var(--c2));overflow:hidden}
+.bbart::before{content:"";position:absolute;inset:-40% -10% auto auto;width:70%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.18)}
+.bbart::after{content:"";position:absolute;left:-15%;bottom:-55%;width:60%;aspect-ratio:1;border-radius:50%;background:rgba(0,0,0,.12)}
+.bbart span{position:relative;font-size:4rem;filter:drop-shadow(0 8px 10px rgba(0,0,0,.35));transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+.bbtile:hover .bbart span{transform:scale(1.12) rotate(-6deg)}
+.bbinfo{display:flex;flex-direction:column;gap:4px;padding:12px 14px 14px;flex:1}
+.bbinfo b{font-family:var(--display);font-size:1.25rem;color:var(--ink)}
+.bbinfo>span{color:var(--mut);font-size:.9rem;line-height:1.35}
+.bbchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:6px}
+.bbchips span{font-size:.8rem;font-weight:700;color:var(--ink);background:var(--soft,rgba(100,116,139,.12));border-radius:999px;padding:3px 10px}
+.bbgrid.locked .bbtile{cursor:default;filter:saturate(.35);opacity:.75}
+.bbgrid.locked .bbtile:hover{transform:none}
+@media (max-width:560px){.bbhero{flex-direction:column;align-items:flex-start}.bbring{width:84px;height:84px;position:absolute;top:16px;right:16px}.bbhero h1{max-width:calc(100% - 90px)}.bbhero h1{font-size:2rem}.bbgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.bbart{height:92px}.bbart span{font-size:3rem}.bbinfo>span:not(.bbchips){display:none}}
+@media (prefers-reduced-motion:reduce){.bbsparks,.bbbig{animation:none}.bbsparks{display:none}.bbtile,.bbart span{transition:none}}
 </style>
 
 </head>
@@ -1033,7 +1066,7 @@ function vHub(){
   <div class="card quest">
     <div class="row spread"><div style="min-width:0"><h2>Today's quest</h2><p class="mut">${qdone === qi.length ? '🎉 All done today! Bonus ticket and 20 coins earned.' : `Finish all ${qi.length} for a bonus ticket and 20 coins.`}</p></div>
       <div class="ring" title="Minutes read today">${ringSvg(p)}<span class="mut">of ${goalOf(p)} min<br>today</span></div></div>
-    <div class="aloudline ${breakOpen(p) ? 'open' : ''}"><span>🎤 Out loud today: <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min</b></span>${breakOpen(p) ? '<span>🎉 Break Zone open!</span>' : '<span class="mut">opens the Break Zone</span>'}<div class="abar"><i style="width:${Math.min(100, aloudToday(p)/BREAK_ALOUD*100)}%"></i></div></div>
+    <div class="aloudline ${breakOpen(p) ? 'open' : ''}"><span>🎤 Out loud today: <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min</b></span>${breakOpen(p) ? '<span>🎉 Brain Break open!</span>' : '<span class="mut">opens Brain Break</span>'}<div class="abar"><i style="width:${Math.min(100, aloudToday(p)/BREAK_ALOUD*100)}%"></i></div></div>
     <div class="qlist">${qi.map(i => `<button class="qitem ${i.done?'done':''}" ${i.done?'disabled':''} data-a="${A(i.run)}"><span class="qcheck">${i.done?'✓':''}</span><span>${i.icon} ${esc(i.label)}</span></button>`).join('')}</div>
   </div>
   ${ch ? `<div class="card row spread"><div class="row" style="min-width:0"><span class="big-emoji">${ch.se.icon}</span><div style="min-width:0"><h3>${esc(ch.se.title)}</h3><p class="mut">${ch.locked ? `Chapter ${ch.n+1} unlocks tomorrow. What do you think will happen?` : `Chapter ${ch.n+1} of ${ch.se.chapters.length} is ready!`}</p></div></div>
@@ -1045,7 +1078,7 @@ function vHub(){
   <div class="tiles">
     <button class="tile" data-a="${A(()=>go({name:'library', tab:'rec'}))}"><span class="ic">📚</span><span><b>Pick a story</b><span class="mut">Read, answer, earn coins</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'gym'}))}"><span class="ic">🏋️</span><span><b>Fluency Gym</b><span class="mut">Read it 3 times, get faster</span></span></button>
-    <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Break Zone</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : `🎤 ${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min out loud`}</span></span></button>
+    <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Brain Break</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : `🎤 ${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min out loud`}</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'wordgame'}))}"><span class="ic">🕵️</span><span><b>Word Detective</b><span class="mut">Guess the secret word · free any time</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'arcade'}))}"><span class="ic">🎮</span><span><b>Game arcade</b><span class="mut">${tix(p)} ticket${tix(p)===1?'':'s'} to play</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">Build trophies, buy sports gear</span></span></button>
@@ -1205,7 +1238,7 @@ function modePicker(p){
   if (!p.mode) p.mode = SR ? 'mic' : 'pace';
   return `<div class="modes">${Object.entries(MODES).filter(([k]) => k !== 'mic' || SR).map(([k,m]) =>
     `<button class="${p.mode===k?'on':''}" data-a="${A(()=>{p.mode=k; save(); render();})}" title="${m.sub}">${m.label}</button>`).join('')}</div>
-    <p class="mut" style="font-size:.9rem">${p.mode === 'mic' ? '🎤 Counts toward the Break Zone. ' : (SR && !micBlocked ? 'Only 🎤 Read out loud counts toward the Break Zone. ' : '')}${MODES[p.mode].sub}${micBlocked && p.mode==='mic' ? ' (the microphone is not available on this page, so the highlighter will be used)' : ''}</p>`;
+    <p class="mut" style="font-size:.9rem">${p.mode === 'mic' ? '🎤 Counts toward Brain Break. ' : (SR && !micBlocked ? 'Only 🎤 Read out loud counts toward Brain Break. ' : '')}${MODES[p.mode].sub}${micBlocked && p.mode==='mic' ? ' (the microphone is not available on this page, so the highlighter will be used)' : ''}</p>`;
 }
 
 // ---------- Reading ----------
@@ -1747,7 +1780,7 @@ function vGrown(){
   const week = [...Array(7)].map((_,i) => addDays(i-6));
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: me() ? 'hub' : 'profiles'}))}">← Back</button></div>
   <div class="row spread"><h1>Reading progress</h1><button class="btn" data-a="${A(()=>go({name:'report'}))}">📋 Daily reading report</button></div>
-  ${S.profiles.length > 1 && S.profiles.some(p => !breakOpen(p)) ? `<div class="card row spread"><span>Did everyone make their reading time some other way?</span><button class="btn small sun" data-a="${A(()=>{ S.profiles.forEach(p => { if (!breakOpen(p)) p.breakDay = today(); }); save(); render(); })}">🎉 Open the Break Zone for everyone today</button></div>` : ''}
+  ${S.profiles.length > 1 && S.profiles.some(p => !breakOpen(p)) ? `<div class="card row spread"><span>Did everyone make their reading time some other way?</span><button class="btn small sun" data-a="${A(()=>{ S.profiles.forEach(p => { if (!breakOpen(p)) p.breakDay = today(); }); save(); render(); })}">🎉 Open Brain Break for everyone today</button></div>` : ''}
   ${S.profiles.length ? '' : '<p class="mut">No readers yet.</p>'}
   ${S.profiles.map(p => {
     const sk = Object.entries(p.skills); const tot = sk.reduce((a,[,v])=>a+v[1],0), ok = sk.reduce((a,[,v])=>a+v[0],0);
@@ -1764,11 +1797,11 @@ function vGrown(){
       <div><h3>Focus areas</h3><p class="mut" style="font-size:.9rem">Tick the areas where school reports show ${esc(p.name)} below grade level. Each one adds daily practice to Today's Quest and changes which stories come first.</p>
         <div class="pick words" style="margin-top:8px">${FOCUS.map(([k,l]) => `<button class="${f[k]?'on':''}" aria-pressed="${!!f[k]}" data-a="${A(()=>{ p.focus = Object.assign({}, p.focus, {[k]: !f[k]}); save(); render(); })}">${f[k]?'✓ ':''}${l}</button>`).join('')}</div></div>
 
-      <div><h3>Break Zone today</h3>
-        <p class="mut" style="font-size:.9rem">${esc(p.name)} has read <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} minutes</b> out loud today. ${breakOpen(p) ? (p.breakDay === today() && aloudToday(p) < BREAK_ALOUD ? 'You opened the Break Zone for today.' : 'The Break Zone is open.') : 'The Break Zone is locked.'}</p>
+      <div><h3>Brain Break today</h3>
+        <p class="mut" style="font-size:.9rem">${esc(p.name)} has read <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} minutes</b> out loud today. ${breakOpen(p) ? (p.breakDay === today() && aloudToday(p) < BREAK_ALOUD ? 'You opened Brain Break for today.' : 'Brain Break is open.') : 'Brain Break is locked.'}</p>
         <div style="margin-top:8px">${p.breakDay === today()
           ? `<button class="btn ghost small" data-a="${A(()=>{ p.breakDay = ''; save(); render(); })}">Undo: lock it again</button>`
-          : aloudToday(p) < BREAK_ALOUD ? `<button class="btn small sun" data-a="${A(()=>{ p.breakDay = today(); save(); render(); })}">🎉 Open the Break Zone for today</button>` : ''}</div></div>
+          : aloudToday(p) < BREAK_ALOUD ? `<button class="btn small sun" data-a="${A(()=>{ p.breakDay = today(); save(); render(); })}">🎉 Open Brain Break for today</button>` : ''}</div></div>
 
       <div><h3>Daily reading goal</h3><div class="pick words" style="margin-top:8px">${[10,15,20,30].map(m => `<button class="${goalOf(p)===m?'on':''}" data-a="${A(()=>{ p.goal = m; save(); render(); })}">${m} min</button>`).join('')}</div>
         <div class="week">${week.map(d => { const m = Math.floor((p.daily||{})[d]||0); return `<div class="wday"><i style="height:${Math.round(m/maxDay*100)}%" class="${m>=goalOf(p)?'met':''}"></i><b>${m}</b><span>${new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'short'})}</span></div>`; }).join('')}</div></div>
@@ -3930,7 +3963,7 @@ const BOOKS5 = [
 ];
 SERIES.push(...BOOKS1, ...BOOKS2, ...BOOKS3, ...BOOKS4, ...BOOKS5);
 
-// ---------- Out-loud minutes: only time the microphone heard the reader (opens the Break Zone) ----------
+// ---------- Out-loud minutes: only time the microphone heard the reader (opens Brain Break) ----------
 // Counted from the first word the microphone heard to the last one, so pauses at the start and walking away do not count.
 const BREAK_ALOUD = 20;
 function countAloud(){
@@ -3945,7 +3978,7 @@ function addAloud(secs){
   for (const d of Object.keys(p.aloud)) if (d < addDays(-60)) delete p.aloud[d];
   const was = aloudToday(p);
   p.aloud[t] = (p.aloud[t]||0) + Math.min(secs, 900)/60; save();
-  if (was < BREAK_ALOUD && aloudToday(p) >= BREAK_ALOUD){ floatText('🎉 Break Zone open!'); confetti(100); }
+  if (was < BREAK_ALOUD && aloudToday(p) >= BREAK_ALOUD){ floatText('🎉 Brain Break open!'); confetti(100); }
 }
 function aloudToday(p){ return ((p.aloud||{})[today()]) || 0; }
 
@@ -4454,7 +4487,7 @@ function vReport(){
         ${x.vault.map(g => `<li>Memory Vault: remembered ${g.right} of ${g.total}</li>`).join('')}
         ${x.checks.map(g => `<li>Monthly check-in: ${g.w} words correct per minute</li>`).join('')}
         ${x.games.length ? `<li>Games: ${[...new Set(x.games.map(g => g.title))].map(esc).join(', ')}</li>` : ''}
-        ${x.breaks.length ? `<li>Break Zone (for fun): ${[...new Set(x.breaks.map(g => g.title))].map(esc).join(', ')}</li>` : ''}</ul></div>` : ''}
+        ${x.breaks.length ? `<li>Brain Break (for fun): ${[...new Set(x.breaks.map(g => g.title))].map(esc).join(', ')}</li>` : ''}</ul></div>` : ''}
       ${x.practise.length ? `<div><h3>Words to practise</h3><p>${x.practise.map(w => `<span class="chip ${w.focus ? 'fwchip' : ''}">${w.focus ? '🎯 ' : ''}${esc(w.k)}</span>`).join(' ')}</p><p class="mut" style="font-size:.9rem">🎯 = flagged more than once, so it is a focus word.</p></div>` : ''}
       ${x.speed ? `<div><h3>Reading speed</h3><p>${x.speed.w} words a minute (middle of ${x.speed.n} read${x.speed.n===1?'':'s'} out loud) · ${bandOf(p.grade, x.speed.w, v.d).ic} ${bandOf(p.grade, x.speed.w, v.d).lab} · target ${normAt(p.grade, 75, v.d)}+</p></div>` : ''}
       ${x.words.length ? `<div><h3>New words</h3><p>${x.words.map(w => `<span class="chip" title="${esc(w[1]||'')}">${esc(w[0])}</span>`).join(' ')}</p></div>` : ''}
@@ -4555,7 +4588,7 @@ function vFocus(){
   </div>`;
 }
 
-// ---------- Break Zone: just-for-fun games, open once Today's Quest is done ----------
+// ---------- Brain Break: just-for-fun games, open once Today's Quest is done ----------
 // Each game lives in games/<id>.js and registers itself as window.BreakGames[id] = {start(el, api) -> cleanup}.
 // Break games give no coins (reading stays the way to earn treasure); they keep their own best scores.
 const BREAK_LIST = [
@@ -4576,10 +4609,14 @@ const BREAK_LIST = [
   {id:'ttt',      name:'Tic-Tac-Toe',    icon:'❌', players:'1-2', blurb:'Three in a row. Play the computer or a friend.'},
   {id:'four',     name:'Four in a Row',  icon:'🔴', players:'1-2', blurb:'Drop discs and connect four.'},
   {id:'checkers', name:'Checkers',       icon:'⚫', players:'1-2', blurb:'Jump and crown your pieces.'}];
+const BREAK_LOOK = {bowling:['#4f46e5','#22d3ee'], golf:['#15803d','#84cc16'], hoops:['#ea580c','#facc15'], penalty:['#16a34a','#0ea5e9'],
+  baseball:['#1e3a8a','#0ea5e9'], joust:['#9333ea','#f59e0b'], hockey:['#0369a1','#67e8f9'], fishing:['#0e7490','#2dd4bf'], stack:['#b45309','#fb7185'],
+  space:['#1e1b4b','#7c3aed'], rings:['#db2777','#fbbf24'], rollball:['#7c2d12','#f97316'], balloons:['#c026d3','#38bdf8'], draw:['#e11d48','#f59e0b'],
+  ttt:['#0f766e','#a3e635'], four:['#1d4ed8','#f43f5e'], checkers:['#7f1d1d','#a16207']};
 window.BreakGames = window.BreakGames || {};
 let breakCleanup = null;
 function breakStop(){ if (breakCleanup){ try{ breakCleanup(); }catch(e){} breakCleanup = null; } }
-const BREAK_OPEN_DAYS = ['2026-11-14']; // days a grown-up opened the Break Zone for every child, on every iPad
+const BREAK_OPEN_DAYS = ['2026-11-14']; // days a grown-up opened the Brain Break for every child, on every iPad
 function breakOpen(p){ return aloudToday(p) >= BREAK_ALOUD || p.breakDay === today() || BREAK_OPEN_DAYS.includes(today()); } // breakDay: a grown-up opened it for today
 function breakApi(p, g){
   p.breakScores = p.breakScores || {}; p.breakStore = p.breakStore || {};
@@ -4612,23 +4649,26 @@ function loadBreakGame(id){
   });
 }
 function vBreak(){
-  const p = me(), open = breakOpen(p), mins = Math.floor(aloudToday(p)), need = Math.max(1, Math.ceil(BREAK_ALOUD - aloudToday(p)));
+  const p = me(), open = breakOpen(p), mins = Math.floor(aloudToday(p)), need = Math.max(1, Math.ceil(BREAK_ALOUD - aloudToday(p))), pct = Math.min(100, aloudToday(p)/BREAK_ALOUD*100);
+  const ring = `<svg viewBox="0 0 120 120" class="bbring"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="12"/>
+    <circle cx="60" cy="60" r="50" fill="none" stroke="#fde047" stroke-width="12" stroke-linecap="round" stroke-dasharray="${(pct/100*314).toFixed(1)} 314" transform="rotate(-90 60 60)"/>
+    <text x="60" y="58" text-anchor="middle" font-size="30" font-weight="800" fill="#fff" font-family="Baloo 2, system-ui">${mins}</text><text x="60" y="80" text-anchor="middle" font-size="13" fill="#e0e7ff">of ${BREAK_ALOUD} min</text></svg>`;
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}
-  <div class="row spread"><h1>🎉 Break Zone</h1>${open ? '<span class="chip school">Open all day today!</span>' : ''}</div>
-  ${open ? `<p class="mut">Just for fun. You read out loud for ${BREAK_ALOUD} minutes today, so play as much as you like.</p>` : `
-  <div class="card" style="display:flex;flex-direction:column;gap:12px">
-    <h2>🔒 Read out loud for ${BREAK_ALOUD} minutes to open the Break Zone</h2>
-    <div class="abar"><i style="width:${Math.min(100, aloudToday(p)/BREAK_ALOUD*100)}%"></i></div>
-    <p><b>${mins} of ${BREAK_ALOUD} minutes</b> read out loud today. About ${need} more minute${need===1?'':'s'} to go!</p>
-    <p class="mut">Only reading the microphone hears counts: choose 🎤 <b>Read out loud</b> on a story, or use the Fluency Gym with the microphone. Then every game here is open for the rest of the day.</p>
-    <div class="row"><button class="btn" data-a="${A(()=>go({name:'library', tab:'rec'}))}">🎤 Read a story out loud</button><button class="btn ghost" data-a="${A(()=>go({name:'gym', mode:'mic'}))}">🏋️ Fluency Gym</button></div>
-  </div>`}
-  <div class="games breakgrid ${open ? '' : 'locked'}">${BREAK_LIST.map(g => { const best = (p.breakScores||{})[g.id];
-    return `<button class="gtile btile" ${open ? '' : 'disabled'} data-a="${A(()=>go({name:'breakgame', id:g.id}))}">
-      <span class="big-emoji">${g.icon}</span><h3>${g.name}</h3><p class="mut">${g.blurb}</p>
-      <span class="row" style="gap:6px">${g.players === '1-2' ? '<span class="chip">👥 1 or 2 players</span>' : ''}${best != null && !g.noScore ? `<span class="chip">🏆 Best ${best}</span>` : ''}</span></button>`; }).join('')}</div>`;
+  <div class="bbhero ${open ? 'open' : ''}">
+    <div class="bbsparks" aria-hidden="true">${'✦✧✦✧✦✧'.split('').map((c,i) => `<i style="left:${8+i*16}%;animation-delay:${i*.7}s">${c}</i>`).join('')}</div>
+    <div class="bbtext"><h1>🧠 Brain Break</h1>
+      <p>${open ? `You read out loud for ${BREAK_ALOUD} minutes today. <b>Every game is open, play as much as you like!</b>` : `Read out loud for <b>${BREAK_ALOUD} minutes</b> to unlock every game today. About <b>${need} more minute${need===1?'':'s'}</b> to go!`}</p>
+      ${open ? '<span class="bbopen">🔓 Open all day today</span>' : `<div class="row"><button class="btn sun" data-a="${A(()=>go({name:'library', tab:'rec'}))}">🎤 Read a story out loud</button><button class="btn ghost bbghost" data-a="${A(()=>go({name:'gym', mode:'mic'}))}">🏋️ Fluency Gym</button></div>`}</div>
+    ${open ? '<div class="bbbig" aria-hidden="true">🎮</div>' : ring}
+  </div>
+  ${open ? '' : '<p class="mut" style="margin:-4px 4px 0">Only reading the microphone hears counts: choose 🎤 <b>Read out loud</b> on a story, or the Fluency Gym with the microphone.</p>'}
+  <div class="bbgrid ${open ? '' : 'locked'}">${BREAK_LIST.map(g => { const best = (p.breakScores||{})[g.id], c = BREAK_LOOK[g.id] || ['#334155','#64748b'];
+    return `<button class="bbtile" style="--c1:${c[0]};--c2:${c[1]}" ${open ? '' : 'disabled'} data-a="${A(()=>go({name:'breakgame', id:g.id}))}">
+      <span class="bbart" aria-hidden="true"><span>${g.icon}</span></span>
+      <span class="bbinfo"><b>${g.name}</b><span>${g.blurb}</span>
+      <span class="bbchips">${g.players === '1-2' ? '<span>👥 1–2 players</span>' : ''}${best != null && !g.noScore ? `<span>🏆 ${g.lower ? 'Best' : 'Best'} ${best}</span>` : ''}${open ? '' : '<span>🔒</span>'}</span></span></button>`; }).join('')}</div>`;
 }
-// Word Detective: a five-letter word-guessing game, free to play any time (no tickets, no Break Zone lock)
+// Word Detective: a five-letter word-guessing game, free to play any time (no tickets, no Brain Break lock)
 const WORDGAME = {id:'wordguess', name:'Word Detective', icon:'🕵️', players:'1', blurb:'Crack the secret word in six guesses.'};
 function vWordGame(){
   const p = me(), g = WORDGAME;
@@ -4649,7 +4689,7 @@ function vWordGame(){
 function vBreakGame(){
   const p = me(), g = BREAK_LIST.find(x => x.id === view.id) || (/^_/.test(view.id||'') ? {id:view.id, name:'Test', icon:'🧪', players:'1', blurb:''} : null);
   if (!g || !breakOpen(p)){ go({name:'break'}); return; }
-  app.innerHTML = `<div class="row spread"><button class="btn ghost small" data-a="${A(()=>go({name:'break'}))}">← Break Zone</button>
+  app.innerHTML = `<div class="row spread"><button class="btn ghost small" data-a="${A(()=>go({name:'break'}))}">← Brain Break</button>
     <h2>${g.icon} ${g.name}</h2><span class="chip">${p.av} ${esc(p.name)}</span></div>
     <div id="breakHost" class="breakhost"><p class="mut" style="padding:20px">Loading…</p></div>`;
   const host = document.getElementById('breakHost');
