@@ -359,6 +359,21 @@ a{color:var(--accent)}
 .daytab .num{text-align:right;white-space:nowrap;width:1%}
 .daytab tr.kidhead td{font-family:var(--display);font-weight:800;font-size:1.05rem;padding-top:16px;border-bottom:2px solid var(--line)}
 .daytab tr.daytot td{background:var(--soft,rgba(100,116,139,.1));font-weight:700}
+.article{display:flex;flex-direction:column;gap:12px;font-size:calc(1.12rem * var(--fs,1));line-height:1.7}.article h2{font-family:var(--display)}.article h3{font-family:var(--display);font-size:1.15rem;margin-top:4px}
+.article + .article{border-top:3px dashed var(--line);padding-top:16px;margin-top:8px}.artlist{margin:0 0 0 22px;display:flex;flex-direction:column;gap:4px}
+.iwords{display:flex;flex-direction:column;gap:6px;margin-top:6px}.iwords span{border-left:4px solid var(--sun);padding-left:10px}
+.iqlay{display:flex;flex-direction:column;gap:16px}#app:has(.iqlay){max-width:1180px}
+@media (min-width:900px){.iqlay{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}.iqlay .iart{max-height:calc(100vh - 140px);overflow:auto;position:sticky;top:12px}.iqlay .iq{position:sticky;top:12px}}
+@media (max-width:899px){.iqlay .iart{max-height:42vh;overflow:auto}}
+.iq{display:flex;flex-direction:column;gap:12px}.irpart{font-weight:800;color:var(--accent);margin-top:4px}
+.opt.sel{outline:3px solid var(--accent);background:var(--sun-soft)}.result.miss{background:var(--oops-soft)}
+.ilist{display:flex;flex-direction:column;gap:8px}.ilitem{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;border:2px solid var(--line);border-radius:16px;background:var(--panel)}
+.ilitem .ic{font-size:2rem}.ilitem>span:nth-child(2){display:flex;flex-direction:column;flex:1;min-width:0}.ilitem.done{border-color:var(--good)}
+.irform{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:8px}.irform label{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:.9rem}
+.irform input,.irform select{font:inherit;font-weight:400;padding:10px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+.irgoal{display:flex;flex-direction:column;gap:10px}.irbar{position:relative;height:18px;border-radius:9px;background:var(--soft,rgba(100,116,139,.15));margin:30px 0 4px}
+.irbar>i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--good))}
+.irmk{position:absolute;top:-30px;transform:translateX(-50%);font-size:.75rem;white-space:nowrap;border-left:2px dashed var(--mut);height:48px;padding-left:4px}.irmk.str{border-color:var(--good);color:var(--good)}
 </style>
 
 </head>
@@ -985,7 +1000,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint})[view.name]();
   // tables that turn into stacked cards on a phone: each cell is labelled with its column heading
   document.querySelectorAll('table.rtab').forEach(t => { const hs = [...t.rows[0].cells].map(c => c.textContent.trim()); [...t.rows].slice(1).forEach(r => [...r.cells].forEach((c, i) => c.dataset.l = hs[i] || '')); });
 }
@@ -1126,6 +1141,7 @@ function vHub(){
     <p class="mut" style="margin-top:6px">Every story or chapter moves you one stop. Treasure chests wait at stops 5, 10 and 15.</p></div>
   <div class="tiles">
     <button class="tile" data-a="${A(()=>go({name:'library', tab:'rec'}))}"><span class="ic">📚</span><span><b>Pick a story</b><span class="mut">Read, answer, earn coins</span></span></button>
+    ${infoSet(p).length ? `<button class="tile" data-a="${A(()=>go({name:'infolab'}))}"><span class="ic">🔬</span><span><b>Info Lab</b><span class="mut">Real-world articles, test-style questions</span></span></button>` : ''}
     <button class="tile" data-a="${A(()=>go({name:'gym'}))}"><span class="ic">🏋️</span><span><b>Fluency Gym</b><span class="mut">Read it 3 times, get faster</span></span></button>
     <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Brain Break</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : `🎤 ${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min out loud`}</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'wordgame'}))}"><span class="ic">🕵️</span><span><b>Word Detective</b><span class="mut">Guess the secret word · free any time</span></span></button>
@@ -1844,6 +1860,7 @@ function vGrown(){
         <span class="chip">${tot ? Math.round(ok/tot*100) : '–'}% right on first try</span><span class="chip">${p.vault.length} in memory vault</span>
         <span class="chip">${Object.values(p.games||{}).reduce((a,g)=>a+g.plays,0)} games played</span></div>
 
+      ${irCardHtml(p)}
       ${speedCard(p)}
 
       <div><h3>Focus areas</h3><p class="mut" style="font-size:.9rem">Tick the areas where school reports show ${esc(p.name)} below grade level. Each one adds daily practice to Today's Quest and changes which stories come first.</p>
@@ -4078,11 +4095,13 @@ function bankWords(p){ const b = p.bank || {}; return Object.keys(b).sort((x,y) 
 // ---------- Today's Quest ----------
 function questToday(p){ p.quest = p.quest || {}; return p.quest[today()] || {}; }
 function questItems(p){
-  const q = questToday(p), f = p.focus || {}, ch = nextChapter(p);
+  const q = questToday(p), f = Object.assign({}, p.focus || {}, irFocus(p)), ch = nextChapter(p);
   const items = [
     {k:'gym', icon:'🏋️', label:'Fluency Gym: read one passage 3 times', run:()=>go({name:'gym'})},
     ...(focusWords(p).length || q.focus ? [{k:'focus', icon:'🎯', label:`Focus words: practise ${Math.min(6, focusWords(p).length) || 'your'} word${focusWords(p).length === 1 ? '' : 's'}`, run:()=>go({name:'focus'})}] : []),
     {k:'story', icon:'📖', label: ch && !ch.locked ? `Read today's chapter of ${ch.se.title}` : 'Read a story', run:()=> ch && !ch.locked ? go({name:'intro', id:ch.story.id}) : go({name:'library', tab:'rec'})}];
+  if ((typeof CHECKS !== 'undefined' && cpDue(p)) || q.check) items.unshift({k:'check', icon:'🎯', label:'Monthly checkpoint (about 15 minutes)', run:()=>go({name:'checkpoint'})});
+  if (infoSet(p).length && (f.info || f.lit || q.info || Math.floor(Date.now() / 86400000) % 2 === 0)) items.push({k:'info', icon:'🔬', label:'Info Lab: read a real-world article', run:()=>go({name:'infolab'})});
   if (vaultDue().length || q.vault) items.push({k:'vault', icon:'🔐', label:'Open the Memory Vault', run:()=>go({name:'vault', items:shuffle(vaultDue()).slice(0,6), i:0})});
   // matching games are the favourite, so they alternate day by day with the other practice games
   const odd = Math.floor(Date.now() / 86400000) % 2 === 1;
@@ -4843,8 +4862,8 @@ function reportPack(d, range, who){
     const inPack = new Set(range === 'day' ? [d] : [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return today(t); }));
     const h = [...Array(28)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 1 - i); return today(t); }).filter(dd => !inPack.has(dd))
       .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), x.reads.map(r => [String(r.title).slice(0, 70), Math.round(r.mins||0)])] : null; }).filter(Boolean);
-    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
-    return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h}, day(d));
+    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, ir:(p.iready||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
+    return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h, ir:(p.iready||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom}))}, day(d));
   })};
 }
 // a child's own code, from the bottom of their home screen: just their report, today or this week
@@ -4900,6 +4919,8 @@ function logMergeInto(L, pack, at){
   at = at || Date.now();
   (pack.k || []).forEach(k => {
     const kid = L.kids[k.n] || (L.kids[k.n] = {g:k.g, a:k.a, days:{}}); kid.g = k.g; if (k.a) kid.a = k.a;
+    const byD = (old, add) => { const m = {}; (old || []).concat(add || []).forEach(x => m[x.d] = x); return Object.values(m).sort((a, b) => a.d.localeCompare(b.d)); };
+    if (k.ir) kid.ir = byD(kid.ir, k.ir); if (k.cp) kid.cp = byD(kid.cp, k.cp);
     (k.h || []).forEach(([d, m, al, sp, gl, rd]) => { const b = sp ? bandOf(k.g, sp, d) : null;
       logPut(kid, {d, m, al, s: sp || null, gl, b: b ? b.k : null, tg: normAt(k.g, 75, d), rd: (rd||[]).map(t => Array.isArray(t) ? [t[0], t[1]||0, 0, 0] : [t, 0, 0, 0]), wp: [], gy: []}, 'hist', at); });
     if (pack.r === 'day') logPut(kid, {d: pack.d, m:k.m, al:k.al, s:k.s, gl:k.gl, b:k.b, tg:k.tg, rd:k.rd||[], wp:k.wp||[], gy:k.gy||[], t:k.t}, 'day', at);
@@ -5109,6 +5130,12 @@ function vKidLog(){
   const speedCell = (s, g2, d) => s ? `${bandOf(g2, s, d).ic} ${s}` : '–';
   let body = '';
   if (tab === 'school') body = dayLogHtml(mine, false);
+  else if (tab === 'ir'){ const kid = logStore().kids[who] || {}, fake = {iready: kid.ir || [], cps: kid.cp || []}, l = irLatest(fake);
+    body = `${l ? `<table class="daytab"><tr><th>Diagnostic ${niceDate(l.d)}</th><th class="num">Level</th></tr>
+      ${irHas(l.pl) ? `<tr><td><b>Overall${irHas(l.s) ? ` (score ${l.s})` : ''}</b></td><td class="num"><b>${irTier(l.pl).ic} ${IR_LEVELS[l.pl]}</b></td></tr>` : ''}
+      ${IR_DOMS.filter(([k]) => irHas((l.dom||{})[k])).map(([k, lab]) => `<tr><td>${lab}</td><td class="num">${irTier(l.dom[k]).ic} ${IR_LEVELS[l.dom[k]]}</td></tr>`).join('')}</table>
+      <h3>Growth goal</h3>${irGoalHtml(irGoal(fake))}` : '<p class="mut">No i-Ready results yet. Enter them on the child\'s iPad under Grown-ups, then scan their code.</p>'}
+      <h3>Monthly checkpoints</h3>${cpTableHtml(fake.cps)}`; }
   else if (tab === 'week') body = `<table class="daytab"><tr><th>Week of</th><th class="num">Minutes</th><th class="num">Days</th><th class="num">Speed</th></tr>
     ${logWeeks(mine).map(w => `<tr><td>${dt(w.ws)}</td><td class="num"><b>${w.m}</b></td><td class="num">${w.days}</td><td class="num">${speedCell(w.s, w.g, w.ws)}</td></tr>`).join('')}</table>
     <p class="mut" style="font-size:.85rem">Speed is words per minute, out loud. ✅ on grade level · 🚀 top 25% · 🟠 some risk · 🔴 high risk.</p>`;
@@ -5125,7 +5152,7 @@ function vKidLog(){
   ${names.length ? `<div class="tabs">${names.map(nm => `<button class="${nm===who && !v.speed?'on':''}" data-a="${A(()=>{ v.who = nm; v.speed = false; v.logDay = null; render(); })}">${esc(nm)}</button>`).join('')}<button class="${v.speed?'on':''}" data-a="${A(()=>{ v.speed = true; render(); })}">⚡ Speed</button></div>` : '<p class="mut">No days logged yet.</p>'}
   ${v.speed && names.length ? speedHtml(rows) : who ? `<div class="card" style="display:flex;flex-direction:column;gap:12px">
     <h2>${esc((mine[0]||{}).a || '')} ${esc(who)} <span class="mut" style="font-size:1rem">Grade ${g}</span></h2>
-    <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">Day log</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">By week</button><button class="${tab==='all'?'on':''}" data-a="${A(()=>{ v.tab='all'; render(); })}">All time</button></div>
+    <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">Day log</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">By week</button><button class="${tab==='all'?'on':''}" data-a="${A(()=>{ v.tab='all'; render(); })}">All time</button><button class="${tab==='ir'?'on':''}" data-a="${A(()=>{ v.tab='ir'; render(); })}">🎯 i-Ready</button></div>
     ${body}</div>` : ''}
   <div class="card">${logFilesHtml(today(), rows.length)}</div>`;
 }
@@ -5221,6 +5248,185 @@ async function openReportLink(){
   render(); return true;
 }
 window.addEventListener('hashchange', () => { if (/^#r=/.test(location.hash)) openReportLink(); });
+
+// ---------- i-Ready: results, informational reading, monthly checkpoints, goal tracker ----------
+// The parent's goal: raise each child's i-Ready Diagnostic reading scores, out of "high risk" and past their peers.
+// A grown-up enters each Diagnostic from the family report; the daily quest then works on the weakest domains.
+const IR_DOMS = [['phon','Phonics'],['hfw','High-Frequency Words'],['voc','Vocabulary'],['lit','Literature'],['info','Informational Text']];
+const IR_LEVELS = ['3+ grades below','2 grades below','1 grade below','Early on grade level','Mid on grade level','Late on grade level','Above grade level'];
+// i-Ready's own colours: red = 2 or more grades below, yellow = 1 below, green = on or above
+function irTier(lv){ lv = +lv; return lv <= 1 ? {ic:'🔴', lab:'High risk', col:'var(--oops)'} : lv === 2 ? {ic:'🟡', lab:'1 grade below', col:'var(--sun)'} : lv >= 6 ? {ic:'🚀', lab:'Above grade', col:'var(--good)'} : {ic:'🟢', lab:'On grade level', col:'var(--good)'}; }
+const irHas = v => v !== '' && v != null && !isNaN(+v);
+function irList(p){ return (p.iready || []).slice().sort((a, b) => a.d.localeCompare(b.d)); }
+function irLatest(p){ return irList(p).pop() || null; }
+// the school year runs August to July; its first Diagnostic is the baseline the growth targets are measured from
+function schoolYearStart(d){ const t = new Date((d || today()) + 'T12:00'), y = t.getMonth() >= 7 ? t.getFullYear() : t.getFullYear() - 1; return y + '-08-01'; }
+function irBaseline(p){ const L = irList(p), sy = schoolYearStart(); return L.find(r => r.d >= sy && irHas(r.s)) || L.filter(r => irHas(r.s))[0] || null; }
+// weakest domains first; only domains below "early on grade level" count as weak
+function irWeak(p){ const r = irLatest(p); if (!r || !r.dom) return []; return IR_DOMS.map(x => x[0]).filter(k => irHas(r.dom[k]) && +r.dom[k] <= 2).sort((a, b) => r.dom[a] - r.dom[b]); }
+function irFocus(p){ const w = irWeak(p), f = {}; w.forEach(k => { f[k === 'phon' || k === 'hfw' ? 'phonics' : k === 'voc' ? 'vocab' : k] = true; }); return f; }
+function irGoal(p){
+  const b = irBaseline(p), l = irLatest(p); if (!b || !l || !irHas(l.s)) return null;
+  const typ = irHas(b.typ) ? +b.s + +b.typ : null, str = irHas(b.str) ? +b.s + +b.str : null, gain = +l.s - +b.s;
+  return {base:+b.s, now:+l.s, gain, typ, str, d0:b.d, d1:l.d, pctStr: str ? Math.round(gain / (str - b.s) * 100) : null, pctTyp: typ ? Math.round(gain / (typ - b.s) * 100) : null};
+}
+function irGoalHtml(g){
+  if (!g) return '<p class="mut">Enter a Diagnostic with its overall score and growth targets to see progress.</p>';
+  const lo = g.base, hi = Math.max(g.str || 0, g.typ || 0, g.now) + 5, pc = v => Math.max(0, Math.min(100, (v - lo) / (hi - lo) * 100));
+  return `<div class="irgoal"><div class="irbar"><i style="width:${pc(g.now)}%"></i>${g.typ ? `<span class="irmk" style="left:${pc(g.typ)}%"><b>Typical ${g.typ}</b></span>` : ''}${g.str ? `<span class="irmk str" style="left:${pc(g.str)}%"><b>Stretch ${g.str}</b></span>` : ''}</div>
+    <table class="daytab"><tr><td>Start of year (${niceDate(g.d0)})</td><td class="num">${g.base}</td></tr><tr><td>Latest (${niceDate(g.d1)})</td><td class="num"><b>${g.now}</b></td></tr>
+      <tr><td>Points gained</td><td class="num"><b style="color:${g.gain >= 0 ? 'var(--good)' : 'var(--oops)'}">${g.gain >= 0 ? '+' : ''}${g.gain}</b></td></tr>
+      ${g.typ ? `<tr><td>Typical growth goal</td><td class="num">${g.typ} <span class="mut">(${g.pctTyp}%)</span></td></tr>` : ''}
+      ${g.str ? `<tr><td>Stretch growth goal 🎯</td><td class="num">${g.str} <span class="mut">(${g.pctStr}%)</span></td></tr>` : ''}</table></div>`;
+}
+
+// ---- a shared question player: single answer, two-part (Part A / Part B), and choose-two ----
+// practice mode shows right/wrong and the proof; test mode just records and moves on, like the real Diagnostic
+const IR_SKILL = {'main idea':'main idea', 'key details':'detail', 'text evidence':'detail', 'vocabulary':'vocabulary', 'inference':'inference', 'character':'character', 'theme':'main idea', 'word parts':'vocabulary'};
+function qOrder(st, key, n){ return st[key] || (st[key] = shuffle([...Array(n).keys()])); }
+function qHtml(it, st, practice, done){
+  const opt = (o, ord, picked, right, onPick, multi) => `<div class="opts">${ord.map(i => { const isR = multi ? i < it.n : i === 0, sel = multi ? picked.includes(i) : picked === i;
+    const cls = right == null ? (sel ? 'sel' : '') : (practice ? (isR ? 'right' : sel ? 'wrong' : '') : (sel ? 'sel' : ''));
+    return `<button class="opt ${cls}" ${right != null ? 'disabled' : ''} data-a="${A(() => onPick(i))}">${esc(o[i])}</button>`; }).join('')}</div>`;
+  if (it.t === 'two'){
+    const oa = qOrder(st, 'oa', it.a.o.length), ob = qOrder(st, 'ob', it.b.o.length);
+    return `<p class="irpart">Part A</p><p class="q">${esc(it.a.q)}</p>${opt(it.a.o, oa, st.a, st.a == null ? null : st.a === 0, i => { st.a = i; render(); })}
+      ${st.a != null ? `<p class="irpart">Part B</p><p class="q">${esc(it.b.q)}</p>${opt(it.b.o, ob, st.b, st.b == null ? null : st.b === 0, i => { st.b = i; st.ok = st.a === 0 && st.b === 0; render(); })}` : ''}
+      ${st.b != null ? done() : ''}`;
+  }
+  if (it.t === 'multi'){
+    const ord = qOrder(st, 'o', it.o.length), pk = st.pk || (st.pk = []);
+    return `<p class="q">${esc(it.q)}</p>${opt(it.o, ord, pk, st.checked ? true : null, i => { if (pk.includes(i)) pk.splice(pk.indexOf(i), 1); else if (pk.length < it.n) pk.push(i); render(); }, true)}
+      ${st.checked ? done() : `<button class="btn" ${pk.length === it.n ? '' : 'disabled'} data-a="${A(() => { st.checked = true; st.ok = pk.length === it.n && pk.every(i => i < it.n); render(); })}">Check (${pk.length} of ${it.n} chosen)</button>`}`;
+  }
+  const ord = qOrder(st, 'o', it.o.length);
+  return `<p class="q">${esc(it.q)}</p>${opt(it.o, ord, st.pick, st.pick == null ? null : st.pick === 0, i => { st.pick = i; st.ok = i === 0; render(); })}${st.pick != null ? done() : ''}`;
+}
+// a passage with "## Heading" lines, numbered or bulleted lists and paragraphs
+function articleHtml(title, text){
+  const parts = String(text).split(/\n\n+/).map(b => {
+    if (/^## /.test(b)) { const [h, ...rest] = b.split('\n'); return `<h3>${esc(h.slice(3))}</h3>${rest.length ? `<p>${esc(rest.join(' '))}</p>` : ''}`; }
+    const lines = b.split('\n'); if (lines.length > 1 && lines.every(l => /^(\d+\.|[-•*])\s/.test(l))) return `<ul class="artlist">${lines.map(l => `<li>${esc(l.replace(/^(\d+\.|[-•*])\s/, ''))}</li>`).join('')}</ul>`;
+    return `<p>${esc(b.replace(/\n/g, ' '))}</p>`;
+  }).join('');
+  return `<article class="article">${title ? `<h2>${esc(title)}</h2>` : ''}${parts}</article>`;
+}
+
+// ---- Info Lab: grade-level nonfiction with i-Ready style questions ----
+function infoSet(p){ return (p.grade >= 5 ? (typeof INFO5 !== 'undefined' ? INFO5 : []) : (typeof INFO3 !== 'undefined' ? INFO3 : [])); }
+function vInfoLab(){
+  const p = me(), set = infoSet(p), done = p.infoDone || {};
+  const next = set.find(x => !done[x.id]) || set[0];
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <div class="row spread"><h1>🔬 Info Lab</h1><span class="chip">${Object.keys(done).filter(k => set.some(x => x.id === k)).length} of ${set.length} done</span></div>
+  <p class="mut">Real-world articles with test-style questions: two-part questions, "choose two", and word meanings. You can look back at the article any time.</p>
+  ${next ? `<button class="btn sun" data-a="${A(()=>go({name:'info', id:next.id}))}">▶ ${done[next.id] ? 'Read again' : 'Next article'}: ${esc(next.title)}</button>` : ''}
+  <div class="ilist">${set.map(x => { const d = done[x.id]; return `<button class="ilitem ${d ? 'done' : ''}" data-a="${A(()=>go({name:'info', id:x.id}))}"><span class="ic">${x.icon}</span><span><b>${esc(x.title)}</b><span class="mut">${esc(x.topic)}${x.text2 ? ' · two articles' : ''}</span></span>${d ? `<span class="chip">✓ ${d.r}/${d.t}</span>` : ''}</button>`; }).join('')}</div>`;
+}
+function vInfo(){
+  const p = me(), v = view, a = infoSet(p).find(x => x.id === v.id); if (!a){ go({name:'infolab'}); return; }
+  v.phase = v.phase || 'read'; v.st = v.st || a.qs.map(() => ({})); v.i = v.i || 0; v.t0 = v.t0 || Date.now();
+  const art = articleHtml(a.title, a.text) + (a.text2 ? articleHtml(a.title2, a.text2) : '');
+  const words = `<div class="iwords">${a.words.map(w => `<span><b>${esc(w[0])}</b> ${esc(w[1])}</span>`).join('')}</div>`;
+  if (v.phase === 'read'){
+    app.innerHTML = `${topbar(()=>go({name:'infolab'}))}
+    <div class="card"><p class="mut">Words to know</p>${words}</div>
+    <div class="card iart">${art}</div>
+    <div class="row"><button class="btn sun" data-a="${A(()=>{ v.phase = 'q'; v.mins = Math.min(20, (Date.now() - v.t0) / 60000); addMinutes(v.mins); render(); window.scrollTo({top:0}); })}">I'm done reading → Questions</button></div>`;
+    return;
+  }
+  if (v.phase === 'q'){
+    const it = a.qs[v.i], st = v.st[v.i];
+    const next = () => `<div class="result ${st.ok ? '' : 'miss'}">${st.ok ? '✓ Correct!' : 'Not quite.'} ${it.e && !st.ok ? `The article says: “${esc(it.e)}”` : ''}</div>
+      <button class="btn" data-a="${A(()=>{ if (v.i < a.qs.length - 1){ v.i++; render(); } else { infoFinish(a); } })}">${v.i < a.qs.length - 1 ? 'Next question →' : 'See my score'}</button>`;
+    app.innerHTML = `${topbar(()=>go({name:'infolab'}))}
+    <div class="iqlay"><div class="card iart">${art}</div>
+      <aside class="card iq"><div class="row spread"><span class="skill">${esc(it.k)}</span><span class="mut">Question ${v.i+1} of ${a.qs.length}</span></div>${qHtml(it, st, true, next)}</aside></div>`;
+    return;
+  }
+  const r = a.qs.filter((q, i) => v.st[i].ok).length;
+  app.innerHTML = `${topbar(()=>go({name:'infolab'}))}
+  <div class="card" style="display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center"><span class="big-emoji">${a.icon}</span><h1>${r} of ${a.qs.length} right</h1>
+    <p>${r === a.qs.length ? 'Perfect! You found every answer in the text.' : r >= a.qs.length - 1 ? 'Great reading!' : 'Good effort. Looking back at the article is the secret: the answer is always in the text.'}</p>
+    <table class="daytab" style="max-width:420px">${a.qs.map((q, i) => `<tr><td>${esc(q.k)}</td><td class="num">${v.st[i].ok ? '✅' : '❌'}</td></tr>`).join('')}</table>
+    <div class="row"><button class="btn" data-a="${A(()=>go({name:'infolab'}))}">More articles</button><button class="btn ghost" data-a="${A(()=>go({name:'hub'}))}">Home</button></div></div>`;
+}
+function infoFinish(a){
+  const p = me(), v = view, r = a.qs.filter((q, i) => v.st[i].ok).length;
+  a.qs.forEach((q, i) => { if (IR_SKILL[q.k]) skillMark(IR_SKILL[q.k], !!v.st[i].ok); });
+  p.infoDone = p.infoDone || {}; const prev = p.infoDone[a.id]; if (!prev || r >= prev.r) p.infoDone[a.id] = {d:today(), r, t:a.qs.length};
+  logEvent('story', a.title, {id:a.id, right:r, total:a.qs.length, mins:v.mins || 0});
+  addCoins(r * 4 + 5, 'Info Lab'); if (r === a.qs.length) confetti(60);
+  questMark('info'); save(); v.phase = 'done'; render(); window.scrollTo({top:0});
+}
+
+// ---- the monthly checkpoint: 14 questions across the five i-Ready domains, no help, scored by domain ----
+function cpForm(p){ const forms = (typeof CHECKS !== 'undefined' && CHECKS[p.grade >= 5 ? 5 : 3]) || []; return forms[(p.cps || []).length % Math.max(1, forms.length)]; }
+function cpDue(p){ const m = today().slice(0, 7); return !(p.cps || []).some(c => c.d.slice(0, 7) === m); }
+function cpPct(x){ return x && x[1] ? Math.round(x[0] / x[1] * 100) : null; }
+function vCheckpoint(){
+  const p = me(), v = view, f = v.form || (v.form = cpForm(p)); if (!f){ app.innerHTML = '<p>No checkpoint is available.</p>'; return; }
+  v.st = v.st || f.items.map(() => ({})); v.i = v.i == null ? -1 : v.i;
+  if (v.i < 0){
+    app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="display:flex;flex-direction:column;gap:12px">
+      <h1>🎯 Monthly checkpoint</h1><p>${f.items.length} questions, like the i-Ready test. It takes about 15 minutes.</p>
+      <ul class="plist"><li>Do it on your own, no help.</li><li>Read every passage carefully. You can look back at it.</li><li>There is no going back to change an answer, just like the real test.</li></ul>
+      <div><button class="btn sun" data-a="${A(()=>{ v.i = 0; v.t0 = Date.now(); render(); })}">▶ Start</button></div></div>`;
+    return;
+  }
+  if (v.i >= f.items.length){
+    const c = (p.cps || []).slice(-1)[0];
+    app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center">
+      <span class="big-emoji">🎯</span><h1>Checkpoint done!</h1><p>${Object.values(c.dom).reduce((a, x) => a + x[0], 0)} of ${f.items.length} right. Your grown-up will see how each part went.</p>
+      <table class="daytab" style="max-width:440px">${IR_DOMS.filter(([k]) => c.dom[k]).map(([k, l]) => `<tr><td>${l}</td><td class="num"><b>${c.dom[k][0]} of ${c.dom[k][1]}</b></td></tr>`).join('')}</table>
+      <button class="btn" data-a="${A(()=>go({name:'hub'}))}">Home</button></div>`;
+    return;
+  }
+  const it = f.items[v.i], st = v.st[v.i];
+  const nextBtn = () => `<button class="btn" data-a="${A(()=>{ v.i++; if (v.i >= f.items.length) cpFinish(f); render(); window.scrollTo({top:0}); })}">${v.i < f.items.length - 1 ? 'Next →' : 'Finish'}</button>`;
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <div class="row spread"><b>🎯 Checkpoint</b><span class="mut">Question ${v.i+1} of ${f.items.length}</span></div><div class="abar"><i style="width:${v.i / f.items.length * 100}%"></i></div>
+  ${it.p ? `<div class="iqlay"><div class="card iart">${articleHtml('', it.p)}</div><aside class="card iq">${qHtml(it, st, false, nextBtn)}</aside></div>` : `<div class="card iq" style="max-width:720px">${qHtml(it, st, false, nextBtn)}</div>`}`;
+}
+function cpFinish(f){
+  const p = me(), v = view, dom = {};
+  f.items.forEach((it, i) => { const d = dom[it.dom] || (dom[it.dom] = [0, 0]); d[1]++; if (v.st[i].ok) d[0]++; });
+  p.cps = p.cps || []; p.cps.push({d:today(), id:f.id, dom, mins: Math.round((Date.now() - (v.t0 || Date.now())) / 60000)});
+  addMinutes(Math.min(30, (Date.now() - (v.t0 || Date.now())) / 60000));
+  logEvent('checkin', 'Monthly checkpoint', {w:0}); addCoins(30, 'checkpoint'); confetti(50); questMark('check'); save();
+}
+function cpTableHtml(cps){
+  if (!cps.length) return '<p class="mut">No checkpoints yet. One is ready on the child\'s home screen each month.</p>';
+  const doms = IR_DOMS.filter(([k]) => cps.some(c => c.dom[k]));
+  return `<div class="tablewrap"><table class="daytab"><tr><th>Month</th>${doms.map(([k, l]) => `<th class="num">${l.split(' ')[0]}</th>`).join('')}</tr>
+    ${cps.slice().reverse().map(c => `<tr><td>${new Date(c.d+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td>${doms.map(([k]) => { const v = cpPct(c.dom[k]); return `<td class="num">${v == null ? '–' : `<b style="color:${v >= 80 ? 'var(--good)' : v >= 60 ? 'var(--ink)' : 'var(--oops)'}">${v}%</b>`}</td>`; }).join('')}</tr>`).join('')}</table></div>
+    <p class="mut" style="font-size:.85rem">Share of questions right in each part. Green 80%+, red under 60%. Watch the red parts move up month to month.</p>`;
+}
+// grown-ups: enter a Diagnostic, see the domains, the goal and the checkpoints
+function irCardHtml(p){
+  const L = irList(p), l = L[L.length-1], ed = view.irEdit === p.id, w = irWeak(p);
+  const sel = (id, val, opts) => `<select id="${id}"><option value="">–</option>${opts.map((o, i) => `<option value="${i}" ${irHas(val) && +val === i ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+  const form = () => `<div class="irform">
+      <label>Test date<input type="date" id="ir_d" value="${today()}"></label>
+      <label>Overall scale score<input type="number" id="ir_s" inputmode="numeric" placeholder="e.g. 512"></label>
+      <label>Overall placement${sel('ir_pl', '', IR_LEVELS)}</label>
+      ${IR_DOMS.map(([k, lab]) => `<label>${lab}${sel('ir_' + k, '', IR_LEVELS)}</label>`).join('')}
+      <label>Typical growth (points)<input type="number" id="ir_typ" inputmode="numeric" placeholder="e.g. 21"></label>
+      <label>Stretch growth (points)<input type="number" id="ir_str" inputmode="numeric" placeholder="e.g. 41"></label>
+      <div class="row"><button class="btn sun small" data-a="${A(()=>{ const g = id => document.getElementById(id).value; const r = {d: g('ir_d') || today(), s: g('ir_s'), pl: g('ir_pl'), typ: g('ir_typ'), str: g('ir_str'), dom:{}};
+        IR_DOMS.forEach(([k]) => { if (g('ir_' + k) !== '') r.dom[k] = +g('ir_' + k); }); ['s','pl','typ','str'].forEach(k => { r[k] = r[k] === '' ? '' : +r[k]; });
+        p.iready = (p.iready || []).filter(x => x.d !== r.d); p.iready.push(r); save(); view.irEdit = null; render(); })}">Save results</button>
+      <button class="btn ghost small" data-a="${A(()=>{ view.irEdit = null; render(); })}">Cancel</button></div></div>`;
+  return `<div><h3>🎯 i-Ready</h3>
+    ${ed ? form() : l ? `<div class="tablewrap"><table class="daytab"><tr><th>Diagnostic ${niceDate(l.d)}</th><th class="num">Level</th></tr>
+        ${irHas(l.pl) ? `<tr><td><b>Overall${irHas(l.s) ? ` (score ${l.s})` : ''}</b></td><td class="num"><b>${irTier(l.pl).ic} ${IR_LEVELS[l.pl]}</b></td></tr>` : ''}
+        ${IR_DOMS.filter(([k]) => irHas(l.dom[k])).map(([k, lab]) => `<tr><td>${lab}</td><td class="num">${irTier(l.dom[k]).ic} ${IR_LEVELS[l.dom[k]]}</td></tr>`).join('')}</table></div>
+      ${w.length ? `<p class="notice" style="margin-top:8px">Today's quest now works on: <b>${w.map(k => IR_DOMS.find(x => x[0] === k)[1]).join(', ')}</b>.</p>` : ''}
+      <h3 style="margin-top:10px">Growth goal</h3>${irGoalHtml(irGoal(p))}` : `<p class="mut">Enter ${esc(p.name)}'s latest i-Ready Diagnostic from the family report. The daily quest will then practise the weakest areas first.</p>`}
+    ${ed ? '' : `<div class="row" style="margin-top:8px"><button class="btn small" data-a="${A(()=>{ view.irEdit = p.id; render(); })}">＋ Enter a Diagnostic</button></div>`}
+    ${L.length > 1 && !ed ? `<div class="tablewrap" style="margin-top:8px"><table class="daytab"><tr><th>All Diagnostics</th><th class="num">Score</th><th class="num">Overall</th></tr>${L.slice().reverse().map(r => `<tr><td>${niceDate(r.d)}</td><td class="num">${irHas(r.s) ? r.s : '–'}</td><td class="num">${irHas(r.pl) ? irTier(r.pl).ic + ' ' + IR_LEVELS[r.pl] : '–'}</td></tr>`).join('')}</table></div>` : ''}
+    <h3 style="margin-top:12px">Monthly checkpoints</h3>${cpTableHtml(p.cps || [])}</div>`;
+}
 
 // ---------- Start ----------
 if (S.cur && me()) view = {name:'hub'};
