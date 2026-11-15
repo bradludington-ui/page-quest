@@ -356,7 +356,7 @@ a{color:var(--accent)}
 .daytab{width:100%;border-collapse:collapse;font-size:1rem}
 .daytab th{text-align:left;font-size:.8rem;color:var(--mut);padding:6px 8px;border-bottom:2px solid var(--line)}
 .daytab td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:break-word}
-.daytab .num{text-align:right;white-space:nowrap;width:1%}
+.daytab .num{text-align:right;white-space:nowrap;width:1%}.daytab td.num{white-space:normal;overflow-wrap:break-word}.daytab{max-width:100%}.card{min-width:0}
 .daytab tr.kidhead td{font-family:var(--display);font-weight:800;font-size:1.05rem;padding-top:16px;border-bottom:2px solid var(--line)}
 .daytab tr.daytot td{background:var(--soft,rgba(100,116,139,.1));font-weight:700}
 .article{display:flex;flex-direction:column;gap:12px;font-size:calc(1.12rem * var(--fs,1));line-height:1.7}.article h2{font-family:var(--display)}.article h3{font-family:var(--display);font-size:1.15rem;margin-top:4px}
@@ -5215,8 +5215,8 @@ function vKidLog(){
     const pct = v => Math.round(v[0] / v[1] * 100), col = q => q >= 80 ? 'var(--good)' : q >= 60 ? 'var(--ink)' : 'var(--oops)';
     const names = (window.MathSkills ? null : null), nm = k => { const M = window.MathSkills || {}, full = Object.keys(M).find(x => x.endsWith('.' + k)); return full ? M[full].name : k.replace(/([a-z])([0-9])/g, '$1 $2').replace(/^./, c => c.toUpperCase()); };
     const sk = ms ? Object.entries(ms.s).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1]) : [], solved = sk.reduce((a, x) => a + x[1][1], 0), right = sk.reduce((a, x) => a + x[1][0], 0);
-    body = ms || mrows.length ? `<table class="daytab"><tr><th>Math</th><th class="num"></th></tr>
-        ${ms ? `<tr><td>Unit this week</td><td class="num"><b>${esc(ms.u)}</b></td></tr>` : ''}
+    body = ms || mrows.length ? `${ms ? `<p>Unit this week: <b>${esc(ms.u)}</b></p>` : ''}<table class="daytab"><tr><th>Math</th><th class="num"></th></tr>
+
         <tr><td>Math minutes, last 7 days</td><td class="num"><b>${mine.filter(r => r.d >= addDays(-6)).reduce((a, r) => a + (r.mm || 0), 0)}</b></td></tr>
         ${solved ? `<tr><td>Problems solved</td><td class="num"><b>${solved}</b></td></tr><tr><td>Right on the first try</td><td class="num"><b style="color:${col(right / solved * 100)}">${Math.round(right / solved * 100)}%</b></td></tr>` : ''}</table>
       ${sk.length ? `<h3>Skills, weakest first</h3><table class="daytab"><tr><th>Skill</th><th class="num">First try</th><th class="num">Level</th></tr>${sk.map(([k, v]) => `<tr><td>${esc(nm(k))}</td><td class="num"><b style="color:${col(pct(v))}">${pct(v)}%</b> <span class="mut">(${v[1]})</span></td><td class="num">${v[2]} of 3</td></tr>`).join('')}</table>
