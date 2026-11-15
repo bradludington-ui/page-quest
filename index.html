@@ -329,6 +329,7 @@ a{color:var(--accent)}
   .readside{position:sticky;bottom:10px;z-index:5;box-shadow:0 -6px 24px -8px rgba(15,23,42,.35)}
   .readside .ctrl .btn{min-height:54px;font-size:1.1rem}
 }
+.myqrtile{width:100%}
 </style>
 
 </head>
@@ -955,7 +956,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR})[view.name]();
 }
 function topbar(back){
   const p = me(), L = level(p);
@@ -1101,7 +1102,8 @@ function vHub(){
     <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">Build trophies, buy sports gear</span></span></button>
     <button class="tile" data-a="${A(()=>{S.cur=null; save(); go({name:'profiles'});})}"><span class="ic">👋</span><span><b>Switch reader</b><span class="mut">Back to the start</span></span></button>
   </div>
-  ${checkDue(p) ? `<p class="mut">📏 This month's reading check-in is ready. Ask a grown-up to start it from the Grown-ups page.</p>` : ''}`;
+  ${checkDue(p) ? `<p class="mut">📏 This month's reading check-in is ready. Ask a grown-up to start it from the Grown-ups page.</p>` : ''}
+  ${isParent(p) ? '' : `<button class="tile myqrtile" data-a="${A(()=>go({name:'myqr'}))}"><span class="ic">📱</span><span><b>Show my reading report code</b><span class="mut">Your grown-up scans it with their phone</span></span></button>`}`;
 }
 function mapSvg(p){
   const W = 700, H = 210, pts = [];
@@ -4801,8 +4803,8 @@ async function unpackReport(s){
   return JSON.parse(new TextDecoder().decode(raw));
 }
 // what goes in the code: the same report the page shows, for the day or week on screen
-function reportPack(d, range){
-  return {v:1, d, r:range, k: S.profiles.map(p => {
+function reportPack(d, range, who){
+  return {v:1, d, r:range, k: (who || S.profiles).map(p => {
     const txt = range === 'day' ? journalText(p, d) : weekText(p, d);
     const day = dd => { const x = dayData(p, dd), sp = x.speed, b = sp && bandOf(p.grade, sp.w, dd);
       return {d:dd, m:x.mins, gl:goalOf(p), al:x.aloud, s: sp ? sp.w : null, b: b ? b.k : null, tg: normAt(p.grade, 75, dd),
@@ -4810,6 +4812,24 @@ function reportPack(d, range){
     if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
     return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt}, day(d));
   })};
+}
+// a child's own code, from the bottom of their home screen: just their report, today or this week
+function vMyQR(){
+  const p = me(), v = view; v.range = v.range || 'day';
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <div class="card" style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+    <h1>📱 My reading report</h1>
+    <p>Show this code to your grown-up. They scan it with their phone to see what you read ${v.range === 'day' ? 'today' : 'this week'}.</p>
+    <div class="modes"><button class="${v.range==='day'?'on':''}" data-a="${A(()=>{ v.range='day'; render(); })}">Today</button><button class="${v.range==='week'?'on':''}" data-a="${A(()=>{ v.range='week'; render(); })}">This week</button></div>
+    <div id="myQR"><p class="mut">Making your code…</p></div>
+    <button class="btn" data-a="${A(()=>go({name:'hub'}))}">Done</button>
+  </div>`;
+  const myView = view;
+  packReport(reportPack(today(), v.range, [p])).then(code => {
+    if (view !== myView) return; const el = document.getElementById('myQR'); if (!el) return;
+    const svg = QR.svg(location.href.split('#')[0] + '#r=' + code);
+    el.innerHTML = svg ? `<div class="qrwrap">${svg}</div>` : '<p class="notice">There is too much in this report for one code. Try Today.</p>';
+  });
 }
 async function showReportQR(){
   const v = view, box = document.getElementById('qrBox'); if (!box) return;
