@@ -278,6 +278,7 @@ a{color:var(--accent)}
 .speedgoal .sflag,.speedgoal .sme{position:absolute;bottom:12px;transform:translateX(-50%);font-size:1.5rem;line-height:1}
 .speedgoal .sflag{transform:translateX(-15%)}
 .qrwrap{background:#fff;padding:10px;border-radius:14px;width:min(86vw,460px)}.qrwrap svg{width:100%;height:auto;display:block}
+.scanbox{position:relative;width:min(88vw,420px);aspect-ratio:1;border-radius:18px;overflow:hidden;background:#000}.scanbox video{width:100%;height:100%;object-fit:cover}.scanframe{position:absolute;inset:14%;border:4px solid #fff;border-radius:16px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
 </style>
 
 </head>
@@ -904,7 +905,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan})[view.name]();
 }
 function topbar(back){
   const p = me(), L = level(p);
@@ -1028,6 +1029,7 @@ function vHub(){
   const p = me(), qi = questItems(p), ch = nextChapter(p), qdone = qi.filter(i => i.done).length;
   app.innerHTML = `${topbar(null)}
   ${installBanner(false)}
+  ${isParent(p) ? parentCard() : ''}
   <div class="card quest">
     <div class="row spread"><div style="min-width:0"><h2>Today's quest</h2><p class="mut">${qdone === qi.length ? '🎉 All done today! Bonus ticket and 20 coins earned.' : `Finish all ${qi.length} for a bonus ticket and 20 coins.`}</p></div>
       <div class="ring" title="Minutes read today">${ringSvg(p)}<span class="mut">of ${goalOf(p)} min<br>today</span></div></div>
@@ -1349,7 +1351,7 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
 let micBlocked = false;
 const mic = {on:false, rec:null, ptr:0, seg:0, t0:0, done:false};
 const pace = {timer:null, i:0, run:false};
-function stopAll(){ stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); breakStop(); }
+function stopAll(){ scanStop(); stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); breakStop(); }
 function setupMode(){
   const p = me();
   let mode = p.mode || 'pace'; if (mode === 'mic' && (!SR || micBlocked)) mode = 'pace';
@@ -4724,9 +4726,11 @@ async function unpackReport(s){
 function reportPack(d, range){
   return {v:1, d, r:range, k: S.profiles.map(p => {
     const txt = range === 'day' ? journalText(p, d) : weekText(p, d);
-    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, t:txt};
-    const x = dayData(p, d), sp = x.speed, b = sp && bandOf(p.grade, sp.w, d);
-    return {n:p.name, a:p.av, g:p.grade, t:txt, m:x.mins, gl:goalOf(p), al:x.aloud, s: sp ? sp.w : null, b: b ? b.k : null, tg: normAt(p.grade, 75, d)};
+    const day = dd => { const x = dayData(p, dd), sp = x.speed, b = sp && bandOf(p.grade, sp.w, dd);
+      return {d:dd, m:x.mins, gl:goalOf(p), al:x.aloud, s: sp ? sp.w : null, b: b ? b.k : null, tg: normAt(p.grade, 75, dd),
+        rd: x.reads.map(r => [r.title, Math.round(r.mins||0), r.right||0, r.total||0]), wp: x.practise.map(w => w.k).slice(0, 12), gy: x.gym.map(g => g.w)}; };
+    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
+    return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt}, day(d));
   })};
 }
 async function showReportQR(){
@@ -4741,6 +4745,102 @@ async function showReportQR(){
     : `<p class="notice">There is too much in this report for one code. Try a single day.</p>`;
 }
 
+// ---------- Brad's reading log: scan reports into one log and save it to Files ----------
+// A reader whose name is Brad is a grown-up account: its home screen holds the report scanner and the log.
+function isParent(p){ return !!p && /^brad\b/i.test(String(p.name).trim()); }
+// one row per child per day, from every saved report (a day report wins over the same day inside a week report)
+function logRows(){
+  const rows = new Map();
+  phoneReports().slice().sort((a, b) => a.saved - b.saved).forEach(x => x.k.forEach(k => {
+    const days = x.r === 'day' ? [Object.assign({d:x.d}, k)] : (k.dd || []);
+    days.forEach(dd => { if (dd.m == null) return; const key = k.n + '|' + dd.d, old = rows.get(key);
+      if (old && old.fromDay && x.r !== 'day') return; if (x.r !== 'day' && !dd.m && !(dd.rd||[]).length) return;
+      rows.set(key, Object.assign({}, dd, {n:k.n, g:k.g, fromDay: x.r === 'day'})); });
+  }));
+  return [...rows.values()].sort((a, b) => b.d.localeCompare(a.d) || a.n.localeCompare(b.n));
+}
+function csvCell(v){ v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function logCsv(){
+  const head = ['Date','Child','Grade','Minutes read','Daily goal (min)','Goal met','Minutes out loud','Reading speed (words/min)','Level','Target (top 25%)','Stories and chapters','Minutes on stories','Questions right first try','Fluency Gym (1st -> 3rd read)','Words to practise'];
+  const lines = [head.join(',')];
+  logRows().forEach(r => { const b = r.b && BANDS.find(x => x.k === r.b), rd = r.rd || [];
+    lines.push([r.d, r.n, r.g, r.m, r.gl, r.m >= r.gl ? 'yes' : 'no', r.al, r.s || '', b ? b.lab : '', r.tg || '', rd.map(x => x[0]).join('; '),
+      rd.reduce((a, x) => a + (x[1]||0), 0) || '', rd.some(x => x[3]) ? `${rd.reduce((a, x) => a + x[2], 0)} of ${rd.reduce((a, x) => a + x[3], 0)}` : '',
+      (r.gy || []).map(w => `${w[0]} -> ${w[2]}`).join('; '), (r.wp || []).join('; ')].map(csvCell).join(','));
+  });
+  return lines.join('\r\n');
+}
+function logText(){
+  const seen = new Set(), out = [];
+  phoneReports().forEach(x => x.k.forEach(k => { const key = x.r + '|' + x.d + '|' + k.n; if (seen.has(key)) return; seen.add(key); out.push({d:x.d, r:x.r, t:packText(k, x.d, x.r)}); }));
+  out.sort((a, b) => a.d.localeCompare(b.d));
+  return 'Page Quest reading log\n\n' + out.map(o => o.t).join('\n\n');
+}
+// iPhone: the share sheet's "Save to Files"; elsewhere a download
+async function saveFile(name, text, type, msgId){
+  const say = t => { const el = document.getElementById(msgId); if (el) el.innerHTML = t; };
+  const file = new File([text], name, {type});
+  if (navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file], title:name}); say('✓ Choose "Save to Files" to keep it.'); return; }catch(e){ if (e && e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); say('✓ Saved to Downloads.');
+}
+function parentCard(){
+  const list = phoneReports(), rows = logRows(), kids = [...new Set(rows.map(r => r.n))], last = list.slice().sort((a, b) => b.saved - a.saved)[0];
+  const stamp = today();
+  return `<div class="card" style="display:flex;flex-direction:column;gap:12px;border:3px solid var(--accent)">
+    <div class="row spread"><h2>📒 Kids' reading log</h2><span class="chip">${rows.length} day${rows.length===1?'':'s'} logged</span></div>
+    <p class="mut">${list.length ? `${kids.map(esc).join(', ')} · last scanned ${new Date(last.saved).toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}` : 'Scan the QR code on each child\'s iPad (Grown-ups → Daily reading report → 📱 Send to my phone) to start the log.'}</p>
+    <div class="row"><button class="btn sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button>
+      <button class="btn" ${list.length ? '' : 'disabled'} data-a="${A(()=>go({name:'phonerep'}))}">📖 Open the log</button></div>
+    <div class="row"><button class="btn ghost" ${rows.length ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest reading log ${stamp}.csv`, logCsv(), 'text/csv', 'logMsg'))}">💾 Save stats to Files</button>
+      <button class="btn ghost" ${list.length ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest reading journal ${stamp}.txt`, logText(), 'text/plain', 'logMsg'))}">💾 Save journal to Files</button></div>
+    <span id="logMsg" class="mut"></span>
+    ${rows.length ? `<div class="tablewrap"><table><tr><th>Date</th><th>Child</th><th>Minutes</th><th>Out loud</th><th>Speed</th><th>Read</th></tr>
+      ${rows.slice(0, 9).map(r => { const b = r.b && BANDS.find(x => x.k === r.b); return `<tr><td>${niceDate(r.d)}</td><td>${esc(r.n)}</td><td>${r.m}${r.m >= r.gl ? ' ✓' : ''}</td><td>${r.al}</td><td>${r.s ? `${b ? b.ic : ''} ${r.s}` : '–'}</td><td>${(r.rd||[]).map(x => esc(x[0])).join('<br>') || '<span class="mut">practice</span>'}</td></tr>`; }).join('')}</table></div>` : ''}
+    <p class="mut" style="font-size:.85rem">Each save writes the whole log so far, so the newest file in Files always has everything. The spreadsheet opens in Numbers or Excel.</p>
+  </div>`;
+}
+let scanStop = () => {};
+function loadJsQR(){
+  if (window.jsQR) return Promise.resolve(window.jsQR);
+  return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'lib/jsQR.js?v=1'; s.onload = () => window.jsQR ? ok(window.jsQR) : bad(); s.onerror = bad; document.head.appendChild(s); });
+}
+function vScan(){
+  app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'hub'}))}">← Back</button></div>
+    <h1>Scan a reading report</h1>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;align-items:center">
+      <div class="scanbox"><video id="scanVid" playsinline muted></video><div class="scanframe"></div></div>
+      <p id="scanMsg">Point the camera at the code on the iPad.</p></div>`;
+  const vid = document.getElementById('scanVid'), msg = t => { const el = document.getElementById('scanMsg'); if (el) el.innerHTML = t; };
+  let stream = null, raf = 0, done = false; const myView = view;
+  scanStop = () => { done = true; cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(t => t.stop()); stream = null; scanStop = () => {}; };
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ msg('This browser cannot use the camera. Use the iPhone Camera app instead.'); return; }
+  Promise.all([loadJsQR(), navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:{ideal:1920}, height:{ideal:1080}}, audio:false})]).then(([jsQR, st]) => {
+    if (done || view !== myView){ st.getTracks().forEach(t => t.stop()); return; }
+    stream = st; vid.srcObject = st; vid.play().catch(() => {});
+    const cv = document.createElement('canvas'), cx = cv.getContext('2d', {willReadFrequently:true});
+    const tick = () => {
+      if (done) return;
+      if (vid.readyState >= 2 && vid.videoWidth){
+        // read the middle of the picture (where the frame is) at full detail: a dense code needs every pixel
+        const side = Math.round(Math.min(vid.videoWidth, vid.videoHeight) * 0.9), sx = (vid.videoWidth - side) / 2, sy = (vid.videoHeight - side) / 2, out = Math.min(side, 1000);
+        cv.width = cv.height = out; cx.drawImage(vid, sx, sy, side, side, 0, 0, out, out);
+        const code = jsQR(cx.getImageData(0, 0, cv.width, cv.height).data, cv.width, cv.height, {inversionAttempts:'dontInvert'});
+        const m = code && code.data.match(/#r=([A-Za-z0-9_-]+)/);
+        if (m){ scanStop(); msg('✓ Got it!');
+          unpackReport(m[1]).then(pk => { phoneSave(pk); if (navigator.vibrate) navigator.vibrate(60); go({name:'phonerep', pack:pk}); })
+            .catch(() => msg('That code could not be read. Make a new one on the iPad and try again.'));
+          return; }
+        if (code) msg('That is not a Page Quest report code.');
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+  }).catch(e => msg(e && e.name === 'NotAllowedError' ? 'Camera access was turned off. Allow the camera for Page Quest in Settings, or use the iPhone Camera app.' : 'The camera could not start. You can also scan with the iPhone Camera app.'));
+}
+
 // ---------- The report on a grown-up's phone ----------
 const PHONE_KEY = 'pagequest.reports';
 function phoneReports(){ try{ return JSON.parse(localStorage.getItem(PHONE_KEY)) || []; }catch(e){ return []; } }
@@ -4749,21 +4849,26 @@ function phoneSave(pack){
   list.push(Object.assign({saved: Date.now()}, pack)); list.sort((a, b) => b.d.localeCompare(a.d) || b.saved - a.saved);
   try{ localStorage.setItem(PHONE_KEY, JSON.stringify(list.slice(0, 200))); }catch(e){}
 }
+function packText(k, d, r){
+  if (k.t) return k.t;
+  const days = k.dd || [], tot = days.reduce((a, x) => a + (x.m||0), 0), start = new Date(d + 'T12:00'); start.setDate(start.getDate() - 6);
+  return [`${k.n}: reading log, ${niceDate(today(start))} to ${niceDate(d)}`].concat(days.map(x => `${niceDate(x.d)}: ${x.m} min${x.al ? ` (${x.al} out loud)` : ''}. ${(x.rd||[]).length ? x.rd.map(q => q[0]).join('; ') : 'Practice passages and word games'}${x.s ? `. Speed ${x.s} words/min` : ''}`), [`Total: ${tot} minutes`]).join('\n');
+}
 function phoneCard(k, d, r, n){
   const b = k.b && BANDS.find(x => x.k === k.b);
   return `<div class="card" style="display:flex;flex-direction:column;gap:10px"><h2>${esc(k.a || '')} ${esc(k.n)} <span class="mut" style="font-size:1rem">Grade ${k.g}</span></h2>
     ${r === 'day' ? `<div class="row" style="gap:6px"><span class="chip">${k.m >= k.gl ? '✓ ' : ''}${k.m} of ${k.gl} min</span><span class="chip">🎤 ${k.al} min out loud</span>
       ${k.s ? `<span class="chip">⚡ ${k.s} words/min · ${b ? b.ic + ' ' + b.lab : ''}</span><span class="chip">🚀 target ${k.tg}+</span>` : ''}</div>` : ''}
-    <pre class="journal">${esc(k.t)}</pre>
-    <div class="row"><button class="btn small" data-a="${A(()=>copyText(k.t, 'pm'+n))}">Copy</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(k.t, 'pm'+n))}">Share…</button>` : ''}<span id="pm${n}"></span></div></div>`;
+    <pre class="journal">${esc(packText(k, d, r))}</pre>
+    <div class="row"><button class="btn small" data-a="${A(()=>copyText(packText(k, d, r), 'pm'+n))}">Copy</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(packText(k, d, r), 'pm'+n))}">Share…</button>` : ''}<span id="pm${n}"></span></div></div>`;
 }
 function vPhoneRep(){
   const v = view, list = phoneReports();
   if (v.err){ app.innerHTML = `<h1>Reading report</h1><p class="notice">This code could not be read. Ask for a new one on the iPad.</p><button class="btn" data-a="${A(()=>go({name:'phonerep'}))}">Saved reports</button>`; return; }
   const pk = v.pack, saved = pk && list.some(x => x.d === pk.d && x.r === pk.r && x.saved && JSON.stringify(x.k) === JSON.stringify(pk.k));
-  const head = `<div class="row"><button class="btn ghost small" data-a="${A(()=>{ history.replaceState(null, '', location.pathname); go({name: me() ? 'hub' : 'profiles'}); })}">← Page Quest</button></div>`;
+  const head = `<div class="row"><button class="btn ghost small" data-a="${A(()=>{ if (location.hash) history.replaceState(null, '', location.pathname); go({name: me() ? 'hub' : 'profiles'}); })}">← Page Quest</button>${isParent(me()) ? `<button class="btn small sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan another</button>` : ''}</div>`;
   if (pk){
-    const all = pk.k.map(k => k.t).join('\n\n');
+    const all = pk.k.map(k => packText(k, pk.d, pk.r)).join('\n\n');
     app.innerHTML = `${head}<h1>Reading report</h1>
       <div class="card row spread"><b style="font-family:var(--display);font-size:1.2rem">${pk.r === 'day' ? niceDate(pk.d, true) : `Week ending ${niceDate(pk.d)}`}</b>
         <span class="row">${saved ? '<span class="chip">✓ Saved on this phone</span>' : `<button class="btn small sun" data-a="${A(()=>{ phoneSave(pk); render(); })}">Save to this phone</button>`}
