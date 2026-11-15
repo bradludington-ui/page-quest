@@ -393,6 +393,14 @@ a{color:var(--accent)}
 .msteps{margin:0 0 0 22px;display:flex;flex-direction:column;gap:6px;font-size:1.05rem}.msteps li{padding:6px 10px;background:var(--sun-soft);border-radius:10px}
 .mopts .opt{font-size:1.25rem}.mtopics{display:flex;flex-direction:column;gap:12px}.mtunit{padding:10px 12px;border:2px solid var(--line);border-radius:14px}.mtunit.now{border-color:var(--sun)}
 .mtable td,.mtable th{text-align:center}
+.scratch{position:fixed;inset:0;z-index:2000;background:#fffef8;display:flex;flex-direction:column;color:#1f2937}
+.sctop{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:12px 16px;padding-top:max(12px, env(safe-area-inset-top));border-bottom:2px solid #e5e7eb;background:#fff}
+.scq{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:1.3rem;line-height:1.4}.scq .mut{font-size:.85rem;color:#64748b}.scq .mtable{font-size:1rem}
+.scwrap{flex:1;position:relative;touch-action:none;overflow:hidden}.scwrap canvas{display:block;touch-action:none}
+.sctools{display:flex;gap:10px;justify-content:center;align-items:center;padding:10px;padding-bottom:max(10px, env(safe-area-inset-bottom));border-top:2px solid #e5e7eb;background:#fff}
+.scpen{all:unset;cursor:pointer;width:44px;height:44px;border-radius:50%;background:var(--c);border:4px solid #fff;box-shadow:0 0 0 2px #cbd5e1}.scpen.on{box-shadow:0 0 0 4px #f59e0b}
+.sctool{all:unset;cursor:pointer;width:52px;height:48px;border-radius:12px;display:grid;place-items:center;font-size:1.5rem;background:#f1f5f9;color:#1f2937}.sctool.on{outline:3px solid #f59e0b}
+body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(--ink);border:2px dashed var(--accent)}
 </style>
 
 </head>
@@ -1474,7 +1482,7 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
 let micBlocked = false;
 const mic = {on:false, rec:null, ptr:0, seg:0, t0:0, done:false};
 const pace = {timer:null, i:0, run:false};
-function stopAll(){ scanStop(); stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); breakStop(); }
+function stopAll(){ if (typeof closeScratch === 'function') closeScratch(); scanStop(); stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); breakStop(); }
 function setupMode(){
   const p = me();
   let mode = p.mode || 'pace'; if (mode === 'mic' && (!SR || micBlocked)) mode = 'pace';
@@ -7497,7 +7505,7 @@ function mathNext(v){
   for (let tries = 0; tries < 12; tries++){ pr = M.gen(R, mathLvl(p, k));
     if (v.factsOnly && pr.fact){ const f = mathState(p).facts[pr.fact]; if (f && f.n > (f.ok || 0)) break; if (tries < 11) continue; }
     if (!v.prob || pr.q !== v.prob.q) break; }
-  v.prob = pr; v.k = k; v.tries = 0; v.input = ''; v.state = null; v.showHint = false; v.showSteps = false; v.plot = null;
+  v.prob = pr; v.k = k; v.tries = 0; v.input = ''; v.scratch = null; v.state = null; v.showHint = false; v.showSteps = false; v.plot = null;
   if (pr.kind === 'choice') v.order = R.shuffle(pr.choices.slice());
 }
 function mathCheck(v, given){
@@ -7544,7 +7552,7 @@ function vMathPlay(){
   <div class="abar"><i style="width:${v.i / v.skills.length * 100}%"></i></div>
   <div class="mlay"><div class="card mq"><span class="skill">${esc(window.MathSkills[v.k].name)}</span><p class="q mtext">${esc(pr.q).replace(/\n/g, '<br>')}</p>${pr.model ? `<div class="mpic">${mathModel(pr.model)}</div>` : ''}</div>
     <aside class="card mside">${msg}${answer}
-      ${!done ? `<div class="row">${pr.hint ? `<button class="btn ghost small" data-a="${A(()=>{ v.showHint = true; mathTick(); render(); })}">💡 Hint</button>` : ''}<button class="btn ghost small" data-a="${A(()=>{ v.showSteps = true; mathTick(); render(); })}">🪜 Show me how</button></div>` : ''}
+      ${!done ? `<button class="btn scbtn" data-a="${A(()=>openScratch(v))}">✏️ Scratch pad${v.scratch && v.scratch.strokes.length ? ' (your work)' : ''}</button><div class="row">${pr.hint ? `<button class="btn ghost small" data-a="${A(()=>{ v.showHint = true; mathTick(); render(); })}">💡 Hint</button>` : ''}<button class="btn ghost small" data-a="${A(()=>{ v.showSteps = true; mathTick(); render(); })}">🪜 Show me how</button></div>` : ''}
       ${v.showHint && !done ? `<p class="notice">💡 ${esc(pr.hint)}</p>` : ''}
       ${v.showSteps ? `<ol class="msteps">${(pr.steps || []).map(s => `<li>${esc(s)}</li>`).join('')}</ol>${!done ? '<p class="mut">Now you try: enter the answer.</p>' : ''}` : ''}
       ${done ? `<button class="btn sun" data-a="${A(()=>{ mathTick(); v.i++; v.prob = null; render(); window.scrollTo({top:0}); })}">${v.i < v.skills.length - 1 ? 'Next →' : 'Finish'}</button>` : ''}</aside></div>`;
@@ -7558,6 +7566,44 @@ function vMathPlay(){
   if (v.plot && g){ const W = +g.dataset.w, pad = +g.dataset.pad, N = +g.dataset.n, lo = +g.dataset.lo, cell = (W - 2 * pad) / (N - lo);
     g.querySelector('#plotMark').innerHTML = `<circle cx="${pad + (v.plot[0] - lo) * cell}" cy="${W - pad - (v.plot[1] - lo) * cell}" r="9" fill="var(--good)" stroke="var(--panel)" stroke-width="3"/>`; }
 }
+
+// ---- the scratch pad: a full-screen sheet of graph paper with the problem across the top ----
+// Finger or Apple Pencil; with a Pencil, a resting hand is ignored. The work stays with the problem until the next one.
+function openScratch(v){
+  const pr = v.prob; if (!pr) return; closeScratch();
+  const ov = document.createElement('div'); ov.id = 'scratch'; ov.className = 'scratch';
+  ov.innerHTML = `<div class="sctop"><div class="scq"><span class="mut">✏️ Scratch pad</span><b>${esc(pr.q).replace(/\n/g, '<br>')}</b>${pr.model && pr.model.type === 'table' ? mathModel(pr.model) : ''}</div>
+      <button class="btn sun scdone">Done ✓</button></div>
+    <div class="scwrap"><canvas id="scCanvas"></canvas></div>
+    <div class="sctools">${['#1f2937','#2a5bd7','#d24a2f'].map((c, i) => `<button class="scpen ${i === 0 ? 'on' : ''}" data-c="${c}" style="--c:${c}" aria-label="pen"></button>`).join('')}
+      <button class="sctool" data-t="eraser" aria-label="Eraser">🧽</button><button class="sctool" data-t="undo" aria-label="Undo">↶</button><button class="sctool" data-t="clear" aria-label="Clear">🗑</button></div>`;
+  document.body.appendChild(ov); document.body.classList.add('scopen');
+  const cv = ov.querySelector('canvas'), cx = cv.getContext('2d'), st = v.scratch || (v.scratch = {strokes:[], w:0});
+  let pen = '#1f2937', eraser = false, cur = null, sawPen = false;
+  const fit = () => { const r = cv.parentElement.getBoundingClientRect(), d = window.devicePixelRatio || 1; cv.width = r.width * d; cv.height = r.height * d; cv.style.width = r.width + 'px'; cv.style.height = r.height + 'px'; cx.setTransform(d, 0, 0, d, 0, 0); if (!st.w) st.w = r.width; draw(); };
+  const ink = document.createElement('canvas'), ix = ink.getContext('2d');
+  const draw = () => { const d = window.devicePixelRatio || 1, W = cv.width / d, H = cv.height / d, k = W / (st.w || W);
+    cx.clearRect(0, 0, W, H); cx.strokeStyle = 'rgba(42,91,215,.13)'; cx.lineWidth = 1;
+    for (let x = 0; x < W; x += 28){ cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); } for (let y = 0; y < H; y += 28){ cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
+    // ink lives on its own layer so the eraser removes ink and never the graph paper
+    if (ink.width !== cv.width || ink.height !== cv.height){ ink.width = cv.width; ink.height = cv.height; }
+    ix.setTransform(d, 0, 0, d, 0, 0); ix.clearRect(0, 0, W, H);
+    st.strokes.forEach(s => { ix.globalCompositeOperation = s.er ? 'destination-out' : 'source-over'; ix.strokeStyle = s.er ? '#000' : s.c; ix.lineWidth = (s.er ? 26 : 3.5) * k; ix.lineCap = ix.lineJoin = 'round'; ix.beginPath();
+      s.p.forEach(([x, y], i) => i ? ix.lineTo(x * k, y * k) : ix.moveTo(x * k, y * k)); if (s.p.length === 1) ix.lineTo(s.p[0][0] * k + .1, s.p[0][1] * k); ix.stroke(); });
+    ix.globalCompositeOperation = 'source-over'; cx.setTransform(1, 0, 0, 1, 0, 0); cx.drawImage(ink, 0, 0); cx.setTransform(d, 0, 0, d, 0, 0); };
+  const pos = e => { const r = cv.getBoundingClientRect(), k = (st.w || r.width) / r.width; return [(e.clientX - r.left) * k, (e.clientY - r.top) * k]; };
+  cv.addEventListener('pointerdown', e => { if (e.pointerType === 'pen') sawPen = true; if (sawPen && e.pointerType === 'touch') return; cv.setPointerCapture(e.pointerId); cur = {c:pen, er:eraser, p:[pos(e)], id:e.pointerId}; st.strokes.push(cur); draw(); });
+  cv.addEventListener('pointermove', e => { if (!cur || e.pointerId !== cur.id) return; (e.getCoalescedEvents ? e.getCoalescedEvents() : [e]).forEach(ev => cur.p.push(pos(ev))); draw(); });
+  const end = e => { if (cur && e.pointerId === cur.id){ cur = null; mathTick(); } };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  ov.querySelectorAll('.scpen').forEach(b => b.onclick = () => { pen = b.dataset.c; eraser = false; ov.querySelectorAll('.scpen,.sctool').forEach(x => x.classList.remove('on')); b.classList.add('on'); });
+  ov.querySelector('[data-t="eraser"]').onclick = e2 => { eraser = true; ov.querySelectorAll('.scpen,.sctool').forEach(x => x.classList.remove('on')); e2.currentTarget.classList.add('on'); };
+  ov.querySelector('[data-t="undo"]').onclick = () => { st.strokes.pop(); draw(); };
+  ov.querySelector('[data-t="clear"]').onclick = () => { st.strokes.length = 0; draw(); };
+  ov.querySelector('.scdone').onclick = () => { closeScratch(); render(); };
+  window.addEventListener('resize', fit); ov._fit = fit; requestAnimationFrame(fit);
+}
+function closeScratch(){ const ov = document.getElementById('scratch'); if (ov){ window.removeEventListener('resize', ov._fit); ov.remove(); } document.body.classList.remove('scopen'); }
 function mathFinish(v){
   const p = me(), mins = Math.max(0, mathToday(p) - (v.m0 || 0));
   logEvent('math', v.title, {right:v.right, total:v.skills.length, mins: Math.round(mins * 10) / 10, skills:[...new Set(v.skills)]});
