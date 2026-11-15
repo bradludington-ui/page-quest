@@ -374,6 +374,25 @@ a{color:var(--accent)}
 .irgoal{display:flex;flex-direction:column;gap:10px}.irbar{position:relative;height:18px;border-radius:9px;background:var(--soft,rgba(100,116,139,.15));margin:30px 0 4px}
 .irbar>i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--good))}
 .irmk{position:absolute;top:-30px;transform:translateX(-50%);font-size:.75rem;white-space:nowrap;border-left:2px dashed var(--mut);height:48px;padding-left:4px}.irmk.str{border-color:var(--good);color:var(--good)}
+.subjswitch{display:flex;gap:6px;background:var(--panel);border:2px solid var(--line);border-radius:999px;padding:4px;align-self:center}
+.subjswitch button{all:unset;cursor:pointer;padding:10px 22px;border-radius:999px;font-weight:800;font-family:var(--display);font-size:1.05rem;color:var(--mut)}
+.subjswitch button.on{background:var(--accent);color:var(--accent-ink)}
+.subjpick{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.subjtile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;padding:34px 20px;border-radius:26px;color:#fff;text-align:center;box-shadow:0 14px 28px -14px rgba(15,23,42,.5);transition:transform .15s}
+.subjtile:active{transform:scale(.97)}.subjtile>span:first-child{font-size:4.5rem}.subjtile b{font-family:var(--display);font-size:2rem}.subjtile .mut{color:rgba(255,255,255,.85)}
+.subjtile.read{background:linear-gradient(135deg,#2a5bd7,#7c3aed)}.subjtile.math{background:linear-gradient(135deg,#059669,#0ea5e9)}
+.bbrings{display:flex;gap:10px;flex:none;position:relative;z-index:1}
+.mlay{display:flex;flex-direction:column;gap:14px}#app:has(.mlay){max-width:1180px}
+@media (min-width:900px){.mlay{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:start}.mside{position:sticky;top:12px}}
+.mq,.mside{display:flex;flex-direction:column;gap:12px}.mtext{font-size:1.35rem;line-height:1.45}
+.mpic{display:flex;justify-content:center}.mmodel{width:100%;max-width:640px;height:auto}.mmodel.narrow{max-width:320px}.mmodel.grid{max-width:380px;touch-action:manipulation;cursor:crosshair}
+.mans{display:flex;align-items:center;gap:10px}.mbox{flex:1;min-height:58px;border:3px solid var(--accent);border-radius:14px;font-size:2rem;font-weight:800;font-family:var(--display);display:flex;align-items:center;padding:0 16px;background:var(--bg)}
+.mkeys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.mkey{all:unset;box-sizing:border-box;cursor:pointer;min-height:56px;border-radius:14px;background:var(--panel);border:2px solid var(--line);font-size:1.6rem;font-weight:800;display:grid;place-items:center;color:var(--ink)}
+.mkey:active{transform:scale(.95)}.mkey.wide{grid-column:span 1}.mkey.go{background:var(--good);color:#fff;border-color:var(--good);font-size:1.2rem}.mkey[disabled]{opacity:.45}
+.mkey.go{grid-column:span 2}
+.msteps{margin:0 0 0 22px;display:flex;flex-direction:column;gap:6px;font-size:1.05rem}.msteps li{padding:6px 10px;background:var(--sun-soft);border-radius:10px}
+.mopts .opt{font-size:1.25rem}.mtopics{display:flex;flex-direction:column;gap:12px}.mtunit{padding:10px 12px;border:2px solid var(--line);border-radius:14px}.mtunit.now{border-color:var(--sun)}
+.mtable td,.mtable th{text-align:center}
 </style>
 
 </head>
@@ -1000,7 +1019,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint, subject:vSubject, mathplay:vMathPlay})[view.name]();
   // tables that turn into stacked cards on a phone: each cell is labelled with its column heading
   document.querySelectorAll('table.rtab').forEach(t => { const hs = [...t.rows[0].cells].map(c => c.textContent.trim()); [...t.rows].slice(1).forEach(r => [...r.cells].forEach((c, i) => c.dataset.l = hs[i] || '')); });
 }
@@ -1091,7 +1110,7 @@ function vProfiles(){
   ${installBanner(true)}
   <div class="card"><h2 style="margin-bottom:14px">Who's reading today?</h2>
     <div class="who">
-      ${S.profiles.map(p => `<button data-a="${A(()=>{S.cur=p.id; save(); go({name:'hub'});})}"><span class="big">${p.av}</span><b>${esc(p.name)}</b><span class="mut">Grade ${p.grade} · ${p.coins} coins</span></button>`).join('')}
+      ${S.profiles.map(p => `<button data-a="${A(()=>{S.cur=p.id; save(); go({name: isParent(p) || !MATH_ON ? 'hub' : 'subject'});})}"><span class="big">${p.av}</span><b>${esc(p.name)}</b><span class="mut">Grade ${p.grade} · ${p.coins} coins</span></button>`).join('')}
       <button data-a="${A(()=>go({name:'newProfile'}))}" style="border-style:dashed"><span class="big">＋</span><b>New reader</b><span class="mut">Make a profile</span></button>
     </div></div>
   ${isAppMode() && !S.profiles.length ? `<div class="card" style="display:flex;flex-direction:column;gap:10px"><h3>Moving over from Safari?</h3>
@@ -1123,14 +1142,16 @@ function val(id){ const el = document.getElementById(id); return el ? el.value :
 // ---------- Hub ----------
 function vaultDue(){ const p = me(), t = today(); return p.vault.filter(v => { if (v.due > t) return false; const s = storyById(v.s); return s && (v.w ? !!defOf(v.w, s) : !!s.pages[v.i]); }); }
 function vHub(){
+  if (MATH_ON && me() && me().subject === 'math' && !isParent(me())) return vMathHub();
   const p = me(), qi = questItems(p), ch = nextChapter(p), qdone = qi.filter(i => i.done).length;
   app.innerHTML = `${topbar(null)}
   ${installBanner(false)}
+  ${subjectSwitch(p)}
   ${isParent(p) ? parentCard() : ''}
   <div class="card quest">
     <div class="row spread"><div style="min-width:0"><h2>Today's quest</h2><p class="mut">${qdone === qi.length ? '🎉 All done today! Bonus ticket and 20 coins earned.' : `Finish all ${qi.length} for a bonus ticket and 20 coins.`}</p></div>
       <div class="ring" title="Minutes spent reading today, any way">${ringSvg(p)}<span class="mut">min reading today<br>(goal ${goalOf(p)})</span></div></div>
-    <div class="aloudline ${breakOpen(p) ? 'open' : ''}"><span>🎤 Out loud with the microphone: <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min</b></span>${breakOpen(p) ? '<span>🎉 Brain Break open!</span>' : '<span class="mut">opens Brain Break</span>'}<div class="abar"><i style="width:${Math.min(100, aloudToday(p)/BREAK_ALOUD*100)}%"></i></div></div>
+    <div class="aloudline ${breakOpen(p) ? 'open' : ''}"><span>🎤 Out loud with the microphone: <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min</b></span>${breakOpen(p) ? '<span>🎉 Brain Break open!</span>' : `<span class="mut">${!MATH_ON || mathToday(p) >= MATH_GOAL ? 'opens Brain Break' : 'plus ' + MATH_GOAL + ' min of math opens Brain Break'}</span>`}<div class="abar"><i style="width:${Math.min(100, aloudToday(p)/BREAK_ALOUD*100)}%"></i></div></div>
     <div class="qlist">${qi.map(i => `<button class="qitem ${i.done?'done':''}" ${i.done?'disabled':''} data-a="${A(i.run)}"><span class="qcheck">${i.done?'✓':''}</span><span>${i.icon} ${esc(i.label)}</span></button>`).join('')}</div>
   </div>
   ${ch ? `<div class="card row spread"><div class="row" style="min-width:0"><span class="big-emoji">${ch.se.icon}</span><div style="min-width:0"><h3>${esc(ch.se.title)}</h3><p class="mut">${ch.locked ? `Chapter ${ch.n+1} unlocks tomorrow. What do you think will happen?` : `Chapter ${ch.n+1} of ${ch.se.chapters.length} is ready!`}</p></div></div>
@@ -1143,7 +1164,7 @@ function vHub(){
     <button class="tile" data-a="${A(()=>go({name:'library', tab:'rec'}))}"><span class="ic">📚</span><span><b>Pick a story</b><span class="mut">Read, answer, earn coins</span></span></button>
     ${infoSet(p).length ? `<button class="tile" data-a="${A(()=>go({name:'infolab'}))}"><span class="ic">🔬</span><span><b>Info Lab</b><span class="mut">Real-world articles, test-style questions</span></span></button>` : ''}
     <button class="tile" data-a="${A(()=>go({name:'gym'}))}"><span class="ic">🏋️</span><span><b>Fluency Gym</b><span class="mut">Read it 3 times, get faster</span></span></button>
-    <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Brain Break</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : `🎤 ${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min out loud`}</span></span></button>
+    <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Brain Break</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : breakNeed(p) + ' to go'}</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'wordgame'}))}"><span class="ic">🕵️</span><span><b>Word Detective</b><span class="mut">Guess the secret word · free any time</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'arcade'}))}"><span class="ic">🎮</span><span><b>Game arcade</b><span class="mut">${tix(p)} ticket${tix(p)===1?'':'s'} to play</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">Build trophies, buy sports gear</span></span></button>
@@ -1861,16 +1882,17 @@ function vGrown(){
         <span class="chip">${Object.values(p.games||{}).reduce((a,g)=>a+g.plays,0)} games played</span></div>
 
       ${irCardHtml(p)}
+      ${MATH_ON ? mathCardHtml(p) : ''}
       ${speedCard(p)}
 
       <div><h3>Focus areas</h3><p class="mut" style="font-size:.9rem">Tick the areas where school reports show ${esc(p.name)} below grade level. Each one adds daily practice to Today's Quest and changes which stories come first.</p>
         <div class="pick words" style="margin-top:8px">${FOCUS.map(([k,l]) => `<button class="${f[k]?'on':''}" aria-pressed="${!!f[k]}" data-a="${A(()=>{ p.focus = Object.assign({}, p.focus, {[k]: !f[k]}); save(); render(); })}">${f[k]?'✓ ':''}${l}</button>`).join('')}</div></div>
 
       <div><h3>Brain Break today</h3>
-        <p class="mut" style="font-size:.9rem">${esc(p.name)} has read <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} minutes</b> out loud today. ${breakOpen(p) ? (p.breakDay === today() && aloudToday(p) < BREAK_ALOUD ? 'You opened Brain Break for today.' : 'Brain Break is open.') : 'Brain Break is locked.'}</p>
+        <p class="mut" style="font-size:.9rem">${esc(p.name)} has read <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} minutes</b> out loud${MATH_ON ? ` and done <b>${Math.floor(mathToday(p))} of ${MATH_GOAL} minutes</b> of math` : ''} today. ${breakOpen(p) ? (p.breakDay === today() && aloudToday(p) < BREAK_ALOUD ? 'You opened Brain Break for today.' : 'Brain Break is open.') : 'Brain Break is locked.'}</p>
         <div style="margin-top:8px">${p.breakDay === today()
           ? `<button class="btn ghost small" data-a="${A(()=>{ p.breakDay = ''; save(); render(); })}">Undo: lock it again</button>`
-          : aloudToday(p) < BREAK_ALOUD ? `<button class="btn small sun" data-a="${A(()=>{ p.breakDay = today(); save(); render(); })}">🎉 Open Brain Break for today</button>` : ''}</div></div>
+          : !breakOpen(p) ? `<button class="btn small sun" data-a="${A(()=>{ p.breakDay = today(); save(); render(); })}">🎉 Open Brain Break for today</button>` : ''}</div></div>
 
       <div><h3>Daily reading goal</h3><div class="pick words" style="margin-top:8px">${[10,15,20,30].map(m => `<button class="${goalOf(p)===m?'on':''}" data-a="${A(()=>{ p.goal = m; save(); render(); })}">${m} min</button>`).join('')}</div>
         <div class="week">${week.map(d => { const m = Math.floor((p.daily||{})[d]||0); return `<div class="wday"><i style="height:${Math.round(m/maxDay*100)}%" class="${m>=goalOf(p)?'met':''}"></i><b>${m}</b><span>${new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'short'})}</span></div>`; }).join('')}</div></div>
@@ -4047,7 +4069,7 @@ function addAloud(secs){
   for (const d of Object.keys(p.aloud)) if (d < addDays(-60)) delete p.aloud[d];
   const was = aloudToday(p);
   p.aloud[t] = (p.aloud[t]||0) + Math.min(secs, 900)/60; save();
-  if (was < BREAK_ALOUD && aloudToday(p) >= BREAK_ALOUD){ floatText('🎉 Brain Break open!'); confetti(100); }
+  if (was < BREAK_ALOUD && aloudToday(p) >= BREAK_ALOUD){ floatText(breakOpen(p) ? '🎉 Brain Break open!' : '🎤 20 reading minutes done!'); confetti(100); }
 }
 function aloudToday(p){ return ((p.aloud||{})[today()]) || 0; }
 
@@ -4487,7 +4509,7 @@ function dayData(p, d){
   for (const r of reads){ const s = storyById(r.id); if (s) for (const t of s.tricky){ const def = defOf(t[0], s); if (!words.some(w => w[0] === t[0])) words.push([t[0], def]); } }
   const practise = Object.entries(p.bank||{}).filter(([,b]) => b.d === d).sort((a,b) => b[1].n - a[1].n).map(([k,b]) => ({k, focus: b.n >= FOCUS_N}));
   return {d, practise, aloud: Math.floor(((p.aloud||{})[d]) || 0), mins: Math.floor(((p.daily||{})[d]) || 0), reads, gym: log.filter(e => e.type === 'gym'), vault: log.filter(e => e.type === 'vault'),
-    games: log.filter(e => e.type === 'game'), breaks: log.filter(e => e.type === 'break'), checks: log.filter(e => e.type === 'checkin'), words, speed: (r => r.length ? {w: median(r), n: r.length} : null)(speedReads(p, d, d))};
+    games: log.filter(e => e.type === 'game'), breaks: log.filter(e => e.type === 'break'), checks: log.filter(e => e.type === 'checkin'), words, math: log.filter(e => e.type === 'math'), mm: Math.round(mathToday(p, d)), speed: (r => r.length ? {w: median(r), n: r.length} : null)(speedReads(p, d, d))};
 }
 function readLine(r){
   const s = storyById(r.id);
@@ -4688,7 +4710,7 @@ window.BreakGames = window.BreakGames || {};
 let breakCleanup = null;
 function breakStop(){ if (breakCleanup){ try{ breakCleanup(); }catch(e){} breakCleanup = null; } }
 const BREAK_OPEN_DAYS = ['2026-11-14']; // days a grown-up opened the Brain Break for every child, on every iPad
-function breakOpen(p){ return isParent(p) || aloudToday(p) >= BREAK_ALOUD || p.breakDay === today() || BREAK_OPEN_DAYS.includes(today()); } // breakDay: a grown-up opened it for today
+function breakOpen(p){ return isParent(p) || (aloudToday(p) >= BREAK_ALOUD && (!MATH_ON || mathToday(p) >= MATH_GOAL)) || p.breakDay === today() || BREAK_OPEN_DAYS.includes(today()); } // breakDay: a grown-up opened it for today
 function breakApi(p, g){
   p.breakScores = p.breakScores || {}; p.breakStore = p.breakStore || {};
   const css = getComputedStyle(document.documentElement), c = n => css.getPropertyValue(n).trim();
@@ -4719,20 +4741,24 @@ function loadBreakGame(id){
     document.head.appendChild(s);
   });
 }
+function breakRing(v, goal, col, lab){ const pct = Math.min(100, v / goal * 100);
+  return `<svg viewBox="0 0 120 120" class="bbring"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="12"/>
+    <circle cx="60" cy="60" r="50" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${(pct/100*314).toFixed(1)} 314" transform="rotate(-90 60 60)"/>
+    <text x="60" y="58" text-anchor="middle" font-size="30" font-weight="800" fill="#fff" font-family="Baloo 2, system-ui">${Math.floor(v)}</text><text x="60" y="80" text-anchor="middle" font-size="13" fill="#e0e7ff">${lab}</text></svg>`; }
 function vBreak(){
   const p = me(), open = breakOpen(p), mins = Math.floor(aloudToday(p)), need = Math.max(1, Math.ceil(BREAK_ALOUD - aloudToday(p))), pct = Math.min(100, aloudToday(p)/BREAK_ALOUD*100);
   const ring = `<svg viewBox="0 0 120 120" class="bbring"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="12"/>
     <circle cx="60" cy="60" r="50" fill="none" stroke="#fde047" stroke-width="12" stroke-linecap="round" stroke-dasharray="${(pct/100*314).toFixed(1)} 314" transform="rotate(-90 60 60)"/>
-    <text x="60" y="58" text-anchor="middle" font-size="30" font-weight="800" fill="#fff" font-family="Baloo 2, system-ui">${mins}</text><text x="60" y="80" text-anchor="middle" font-size="13" fill="#e0e7ff">of ${BREAK_ALOUD} min</text></svg>`;
+    <text x="60" y="58" text-anchor="middle" font-size="30" font-weight="800" fill="#fff" font-family="Baloo 2, system-ui">${mins}</text><text x="60" y="80" text-anchor="middle" font-size="13" fill="#e0e7ff">reading</text></svg>`;
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}
   <div class="bbhero ${open ? 'open' : ''}">
     <div class="bbsparks" aria-hidden="true">${'✦✧✦✧✦✧'.split('').map((c,i) => `<i style="left:${8+i*16}%;animation-delay:${i*.7}s">${c}</i>`).join('')}</div>
     <div class="bbtext"><h1>🧠 Brain Break</h1>
-      <p>${open ? `${isParent(p) ? 'Grown-up account: <b>every game is always open</b> so you can try them out.' : `You read out loud for ${BREAK_ALOUD} minutes today. <b>Every game is open, play as much as you like!</b>`}` : `Read out loud for <b>${BREAK_ALOUD} minutes</b> to unlock every game today. About <b>${need} more minute${need===1?'':'s'}</b> to go!`}</p>
-      ${open ? '<span class="bbopen">🔓 Open all day today</span>' : `<div class="row"><button class="btn sun" data-a="${A(()=>go({name:'library', tab:'rec'}))}">🎤 Read a story out loud</button><button class="btn ghost bbghost" data-a="${A(()=>go({name:'gym', mode:'mic'}))}">🏋️ Fluency Gym</button></div>`}</div>
-    ${open ? '<div class="bbbig" aria-hidden="true">🎮</div>' : ring}
+      <p>${open ? `${isParent(p) ? 'Grown-up account: <b>every game is always open</b> so you can try them out.' : `You read out loud for ${BREAK_ALOUD} minutes today. <b>Every game is open, play as much as you like!</b>`}` : `Unlock every game today with <b>${BREAK_ALOUD} minutes of reading out loud</b>${MATH_ON ? ` and <b>${MATH_GOAL} minutes of math</b>` : ''}. Still to go: <b>${breakNeed(p)}</b>.`}</p>
+      ${open ? '<span class="bbopen">🔓 Open all day today</span>' : `<div class="row">${aloudToday(p) < BREAK_ALOUD ? `<button class="btn sun" data-a="${A(()=>{ p.subject = 'read'; save(); go({name:'library', tab:'rec'}); })}">🎤 Read out loud</button>` : ''}${MATH_ON && mathToday(p) < MATH_GOAL ? `<button class="btn ${aloudToday(p) < BREAK_ALOUD ? 'ghost bbghost' : 'sun'}" data-a="${A(()=>{ p.subject = 'math'; save(); go({name:'hub'}); })}">🔢 Do math</button>` : ''}</div>`}</div>
+    ${open ? '<div class="bbbig" aria-hidden="true">🎮</div>' : `<div class="bbrings">${ring}${MATH_ON ? breakRing(mathToday(p), MATH_GOAL, '#67e8f9', 'math') : ''}</div>`}
   </div>
-  ${open ? '' : '<p class="mut" style="margin:-4px 4px 0">Only reading the microphone hears counts: choose 🎤 <b>Read out loud</b> on a story, or the Fluency Gym with the microphone.</p>'}
+  ${open ? '' : `<p class="mut" style="margin:-4px 4px 0">Reading counts when the microphone hears you read out loud (${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min). ${MATH_ON ? `Math counts while you are solving problems (${Math.floor(mathToday(p))} of ${MATH_GOAL} min).` : ''}</p>`}
   <div class="bbgrid ${open ? '' : 'locked'}">${BREAK_LIST.map(g => { const best = (p.breakScores||{})[g.id], c = BREAK_LOOK[g.id] || ['#334155','#64748b'];
     return `<button class="bbtile" style="--c1:${c[0]};--c2:${c[1]}" ${open ? '' : 'disabled'} data-a="${A(()=>go({name:'breakgame', id:g.id}))}">
       <span class="bbart" aria-hidden="true"><span>${g.icon}</span></span>
@@ -4858,12 +4884,12 @@ function reportPack(d, range, who){
     const txt = range === 'day' ? journalText(p, d) : weekText(p, d);
     const day = dd => { const x = dayData(p, dd), sp = x.speed, b = sp && bandOf(p.grade, sp.w, dd);
       return {d:dd, m:x.mins, gl:goalOf(p), al:x.aloud, s: sp ? sp.w : null, b: b ? b.k : null, tg: normAt(p.grade, 75, dd),
-        rd: x.reads.map(r => [r.title, Math.round(r.mins||0), r.right||0, r.total||0]), wp: x.practise.map(w => w.k).slice(0, 12), gy: x.gym.map(g => g.w)}; };
+        rd: x.reads.map(r => [r.title, Math.round(r.mins||0), r.right||0, r.total||0]), wp: x.practise.map(w => w.k).slice(0, 12), gy: x.gym.map(g => g.w), mm: x.mm, mt: mathTopics(x.math)}; };
     const inPack = new Set(range === 'day' ? [d] : [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return today(t); }));
     const h = [...Array(28)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 1 - i); return today(t); }).filter(dd => !inPack.has(dd))
-      .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), x.reads.map(r => [String(r.title).slice(0, 70), Math.round(r.mins||0)])] : null; }).filter(Boolean);
-    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, ir:(p.iready||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
-    return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h, ir:(p.iready||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom}))}, day(d));
+      .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length || x.mm) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), x.reads.map(r => [String(r.title).slice(0, 70), Math.round(r.mins||0)]), x.mm, mathTopics(x.math)] : null; }).filter(Boolean);
+    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
+    return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom}))}, day(d));
   })};
 }
 // a child's own code, from the bottom of their home screen: just their report, today or this week
@@ -4910,7 +4936,7 @@ function logStore(){
 }
 function logSaveStore(L){ try{ localStorage.setItem(LOG_KEY, JSON.stringify(L)); return true; }catch(e){ return false; } }
 function logPut(kid, row, src, at){
-  if (row.m == null && !(row.rd||[]).length) return;
+  if (row.m == null && !(row.rd||[]).length && !row.mm) return;
   const old = kid.days[row.d];
   if (old && (LOG_RANK[old.src] > LOG_RANK[src] || (LOG_RANK[old.src] === LOG_RANK[src] && old.at > at))) return;
   kid.days[row.d] = Object.assign({}, row, {src, at});
@@ -4920,10 +4946,10 @@ function logMergeInto(L, pack, at){
   (pack.k || []).forEach(k => {
     const kid = L.kids[k.n] || (L.kids[k.n] = {g:k.g, a:k.a, days:{}}); kid.g = k.g; if (k.a) kid.a = k.a;
     const byD = (old, add) => { const m = {}; (old || []).concat(add || []).forEach(x => m[x.d] = x); return Object.values(m).sort((a, b) => a.d.localeCompare(b.d)); };
-    if (k.ir) kid.ir = byD(kid.ir, k.ir); if (k.cp) kid.cp = byD(kid.cp, k.cp);
-    (k.h || []).forEach(([d, m, al, sp, gl, rd]) => { const b = sp ? bandOf(k.g, sp, d) : null;
-      logPut(kid, {d, m, al, s: sp || null, gl, b: b ? b.k : null, tg: normAt(k.g, 75, d), rd: (rd||[]).map(t => Array.isArray(t) ? [t[0], t[1]||0, 0, 0] : [t, 0, 0, 0]), wp: [], gy: []}, 'hist', at); });
-    if (pack.r === 'day') logPut(kid, {d: pack.d, m:k.m, al:k.al, s:k.s, gl:k.gl, b:k.b, tg:k.tg, rd:k.rd||[], wp:k.wp||[], gy:k.gy||[], t:k.t}, 'day', at);
+    if (k.ir) kid.ir = byD(kid.ir, k.ir); if (k.cp) kid.cp = byD(kid.cp, k.cp); if (k.map) kid.map = byD(kid.map, k.map);
+    (k.h || []).forEach(([d, m, al, sp, gl, rd, mm, mt]) => { const b = sp ? bandOf(k.g, sp, d) : null;
+      logPut(kid, {d, m, al, s: sp || null, gl, b: b ? b.k : null, tg: normAt(k.g, 75, d), rd: (rd||[]).map(t => Array.isArray(t) ? [t[0], t[1]||0, 0, 0] : [t, 0, 0, 0]), wp: [], gy: [], mm: mm || 0, mt: mt || []}, 'hist', at); });
+    if (pack.r === 'day') logPut(kid, {d: pack.d, m:k.m, al:k.al, s:k.s, gl:k.gl, b:k.b, tg:k.tg, rd:k.rd||[], wp:k.wp||[], gy:k.gy||[], t:k.t, mm:k.mm||0, mt:k.mt||[]}, 'day', at);
     else (k.dd || []).forEach(dd => logPut(kid, dd, 'week', at));
   });
 }
@@ -5117,7 +5143,8 @@ function dayLogHtml(rows, withChild){
       ${on.map(r => { const bs = schoolDay(r);
         return (withChild ? `<tr class="kidhead"><td colspan="2">${esc(r.a || '')} ${esc(r.n)}</td></tr>` : '') +
           bs.map(b => `<tr><td>${esc(b.book)}${b.parts.length ? ` <span class="mut">(${esc(b.parts.map(q => q.replace('Chapter', 'Ch')).join(', '))})</span>` : ''}</td><td class="num">${b.mins ? b.mins : '–'}</td></tr>`).join('') +
-          `<tr class="daytot"><td>Total minutes read</td><td class="num"><b>${r.m || 0}</b></td></tr>`; }).join('')}
+          `<tr class="daytot"><td>Total minutes read</td><td class="num"><b>${r.m || 0}</b></td></tr>` +
+          (r.mm ? (r.mt || []).map(t => `<tr><td>🔢 ${esc(t[0])}</td><td class="num">${t[1] || '–'}</td></tr>`).join('') + `<tr class="daytot"><td>Math minutes</td><td class="num"><b>${r.mm}</b></td></tr>` : ''); }).join('')}
     </table>
     <p class="mut" style="font-size:.85rem">The total also counts reading practice, so it can be more than the titles add up to.</p></div>`;
 }
@@ -5135,7 +5162,8 @@ function vKidLog(){
       ${irHas(l.pl) ? `<tr><td><b>Overall${irHas(l.s) ? ` (score ${l.s})` : ''}</b></td><td class="num"><b>${irTier(l.pl).ic} ${IR_LEVELS[l.pl]}</b></td></tr>` : ''}
       ${IR_DOMS.filter(([k]) => irHas((l.dom||{})[k])).map(([k, lab]) => `<tr><td>${lab}</td><td class="num">${irTier(l.dom[k]).ic} ${IR_LEVELS[l.dom[k]]}</td></tr>`).join('')}</table>
       <h3>Growth goal</h3>${irGoalHtml(irGoal(fake))}` : '<p class="mut">No i-Ready results yet. Enter them on the child\'s iPad under Grown-ups, then scan their code.</p>'}
-      <h3>Monthly checkpoints</h3>${cpTableHtml(fake.cps)}`; }
+      <h3>Monthly checkpoints</h3>${cpTableHtml(fake.cps)}
+      <h3>MAP math</h3>${(kid.map || []).length ? `<table class="daytab"><tr><th>Test</th><th class="num">RIT</th><th class="num">Percentile</th></tr>${kid.map.slice().reverse().map(r => `<tr><td>${niceDate(r.d)}</td><td class="num"><b>${r.rit}</b></td><td class="num">${r.pct ? r.pct + '%' : '–'}</td></tr>`).join('')}</table>` : '<p class="mut">No MAP math scores yet.</p>'}`; }
   else if (tab === 'week') body = `<table class="daytab"><tr><th>Week of</th><th class="num">Minutes</th><th class="num">Days</th><th class="num">Speed</th></tr>
     ${logWeeks(mine).map(w => `<tr><td>${dt(w.ws)}</td><td class="num"><b>${w.m}</b></td><td class="num">${w.days}</td><td class="num">${speedCell(w.s, w.g, w.ws)}</td></tr>`).join('')}</table>
     <p class="mut" style="font-size:.85rem">Speed is words per minute, out loud. ✅ on grade level · 🚀 top 25% · 🟠 some risk · 🔴 high risk.</p>`;
@@ -5152,7 +5180,7 @@ function vKidLog(){
   ${names.length ? `<div class="tabs">${names.map(nm => `<button class="${nm===who && !v.speed?'on':''}" data-a="${A(()=>{ v.who = nm; v.speed = false; v.logDay = null; render(); })}">${esc(nm)}</button>`).join('')}<button class="${v.speed?'on':''}" data-a="${A(()=>{ v.speed = true; render(); })}">⚡ Speed</button></div>` : '<p class="mut">No days logged yet.</p>'}
   ${v.speed && names.length ? speedHtml(rows) : who ? `<div class="card" style="display:flex;flex-direction:column;gap:12px">
     <h2>${esc((mine[0]||{}).a || '')} ${esc(who)} <span class="mut" style="font-size:1rem">Grade ${g}</span></h2>
-    <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">Day log</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">By week</button><button class="${tab==='all'?'on':''}" data-a="${A(()=>{ v.tab='all'; render(); })}">All time</button><button class="${tab==='ir'?'on':''}" data-a="${A(()=>{ v.tab='ir'; render(); })}">🎯 i-Ready</button></div>
+    <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">Day log</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">By week</button><button class="${tab==='all'?'on':''}" data-a="${A(()=>{ v.tab='all'; render(); })}">All time</button><button class="${tab==='ir'?'on':''}" data-a="${A(()=>{ v.tab='ir'; render(); })}">🎯 Scores</button></div>
     ${body}</div>` : ''}
   <div class="card">${logFilesHtml(today(), rows.length)}</div>`;
 }
@@ -7235,6 +7263,320 @@ function irCardHtml(p){
     ${L.length > 1 && !ed ? `<div class="tablewrap" style="margin-top:8px"><table class="daytab"><tr><th>All Diagnostics</th><th class="num">Score</th><th class="num">Overall</th></tr>${L.slice().reverse().map(r => `<tr><td>${niceDate(r.d)}</td><td class="num">${irHas(r.s) ? r.s : '–'}</td><td class="num">${irHas(r.pl) ? irTier(r.pl).ic + ' ' + IR_LEVELS[r.pl] : '–'}</td></tr>`).join('')}</table></div>` : ''}
     <h3 style="margin-top:12px">Monthly checkpoints</h3>${cpTableHtml(p.cps || [])}</div>`;
 }
+
+// ---------- Math: the second subject ----------
+function mathTopics(list){ const T = {}; (list || []).forEach(e => { T[e.title] = (T[e.title] || 0) + (e.mins || 0); }); return Object.entries(T).map(([t, m]) => [t, Math.round(m)]); }
+// Brain Break needs 20 minutes of out-loud reading AND 10 minutes of math, each counted only while actually working.
+// Problems come from generators in math/g3.js and math/g5.js (window.MathSkills), loaded when a child opens Math.
+const MATH_GOAL = 10;
+const MATH_ON = false; // switched on once the problem sets (math/g3.js, math/g5.js) are in place
+// the class units, in the order school teaches them (from the teachers' newsletters); "exp" = expected, not yet announced
+const MATH_UNITS = {
+  3: [{id:'g3u1', name:'The data cycle', from:'08-15'}, {id:'g3u2', name:'Place value, adding and subtracting', from:'09-04'},
+      {id:'g3u3', name:'Multiplication and division, part 1', from:'10-05'}, {id:'g3u4', name:'Geometry: polygons', from:'11-02'},
+      {id:'g3u5', name:'Multiplication and division, part 2', from:'12-07', exp:true}, {id:'g3u6', name:'Fractions', from:'01-19', exp:true},
+      {id:'g3u8', name:'Time, money and measurement', from:'04-12', exp:true}],
+  5: [{id:'g5u1', name:'Data and statistics', from:'08-15'}, {id:'g5u2', name:'Integers and inequalities', from:'09-09'},
+      {id:'g5u3', name:'Ratios and rational numbers', from:'09-28'}, {id:'g5u4', name:'Coordinate plane and congruence', from:'10-14'},
+      {id:'g5u5', name:'Integers, exponents and square roots', from:'10-30'}, {id:'g5u6', name:'Expressions and equations', from:'12-07', exp:true},
+      {id:'g5u7', name:'Area and circles', from:'02-01', exp:true}, {id:'g5u8', name:'Probability', from:'04-12', exp:true}]};
+function mathBand(p){ return p.grade >= 5 ? 5 : 3; }
+function mathUnits(p){ return MATH_UNITS[mathBand(p)]; }
+// a unit's start date in the current school year (August to July)
+function unitDate(md, d){ const y0 = +schoolYearStart(d).slice(0, 4), m = +md.slice(0, 2); return `${m >= 8 ? y0 : y0 + 1}-${md}`; }
+function mathUnitNow(p){
+  const U = mathUnits(p); if (p.mathUnit && U.some(u => u.id === p.mathUnit)) return U.find(u => u.id === p.mathUnit);
+  const t = today(); let cur = U[0]; U.forEach(u => { if (unitDate(u.from, t) <= t) cur = u; }); return cur;
+}
+function mathState(p){ const m = p.math || (p.math = {}); ['lvl','stat','facts','min','streak','miss'].forEach(k => m[k] = m[k] || {}); return m; }
+function mathToday(p, d){ return ((p.math || {}).min || {})[d || today()] || 0; }
+let _mathLoad = null;
+function loadMath(p){
+  const f = `math/g${mathBand(p)}.js?v=1`;
+  if (window.MathSkills && Object.keys(window.MathSkills).some(k => k.startsWith('g' + mathBand(p) + '.'))) return Promise.resolve(window.MathSkills);
+  return _mathLoad || (_mathLoad = new Promise((ok, bad) => { const s = document.createElement('script'); s.src = f; s.onload = () => { _mathLoad = null; ok(window.MathSkills || {}); }; s.onerror = () => { _mathLoad = null; bad(); }; document.head.appendChild(s); }));
+}
+function mathSkillsOf(p, unit){ const M = window.MathSkills || {}, pre = 'g' + mathBand(p) + '.'; return Object.keys(M).filter(k => k.startsWith(pre) && (!unit || M[k].unit === unit)); }
+function mkR(seed){ let a = seed >>> 0 || 1; const r = () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  return {rand:r, int:(x, y) => x + Math.floor(r() * (y - x + 1)), pick:a2 => a2[Math.floor(r() * a2.length)], shuffle:a2 => { a2 = a2.slice(); for (let i = a2.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [a2[i], a2[j]] = [a2[j], a2[i]]; } return a2; }, chance:q => r() < q}; }
+// time that counts: only the time between taps, and never more than 30 seconds of it, so a dropped iPad does not count
+const MTIME = {last:0};
+function mathTick(){ const p = me(); if (!p) return; const now = Date.now(), m = mathState(p), t = today(), was = mathToday(p);
+  if (MTIME.last){ const gap = Math.min(30000, now - MTIME.last) / 60000; m.min[t] = (m.min[t] || 0) + gap; }
+  MTIME.last = now; save();
+  if (was < MATH_GOAL && mathToday(p) >= MATH_GOAL){ floatText('🔢 10 math minutes done!'); confetti(60); if (breakOpen(p)) setTimeout(() => floatText('🎉 Brain Break open!'), 900); }
+}
+function breakNeed(p){
+  const r = Math.max(0, Math.ceil(BREAK_ALOUD - aloudToday(p))), m = MATH_ON ? Math.max(0, Math.ceil(MATH_GOAL - mathToday(p))) : 0, out = [];
+  if (r) out.push(`${r} min reading out loud`); if (m) out.push(`${m} min of math`); return out.join(' and ');
+}
+
+// ---- pictures for problems ----
+function mathModel(m){
+  if (!m || !m.type) return '';
+  const svg = (w, h, body, cls) => `<svg class="mmodel ${cls || ''}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${m.type}">${body}</svg>`;
+  const T = (x, y, s, o) => `<text x="${x}" y="${y}" text-anchor="${(o && o.a) || 'middle'}" font-size="${(o && o.fs) || 16}" font-weight="${(o && o.fw) || 700}" fill="${(o && o.c) || 'var(--ink)'}">${esc(String(s))}</text>`;
+  const fmt = v => String(v).replace(/^-/, '−');
+  if (m.type === 'numberline'){
+    const W = 640, L = 30, R = 30, y = 60, span = (m.max - m.min) || 1, X = v => L + (v - m.min) / span * (W - L - R);
+    let b = `<line x1="${L-14}" x2="${W-R+14}" y1="${y}" y2="${y}" stroke="var(--ink)" stroke-width="3"/><path d="M${L-20} ${y}l10-7v14zM${W-R+20} ${y}l-10-7v14z" fill="var(--ink)"/>`;
+    const st = m.step || 1, lab = m.label || st, n = Math.round(span / st);
+    for (let i = 0; i <= n && n <= 60; i++){ const v = +(m.min + i * st).toFixed(6), on = Math.abs((v - m.min) / lab - Math.round((v - m.min) / lab)) < 1e-6;
+      b += `<line x1="${X(v)}" x2="${X(v)}" y1="${y - (on ? 10 : 6)}" y2="${y + (on ? 10 : 6)}" stroke="var(--ink)" stroke-width="2"/>` + (on ? T(X(v), y + 32, fmt(v), {fs:14, fw:600}) : ''); }
+    if (m.ray){ const x0 = X(m.ray.from), x1 = m.ray.dir === 'left' ? L - 14 : W - R + 14;
+      b += `<line x1="${x0}" x2="${x1}" y1="${y}" y2="${y}" stroke="var(--accent)" stroke-width="7"/><path d="${m.ray.dir === 'left' ? `M${L-24} ${y}l14-10v20z` : `M${W-R+24} ${y}l-14-10v20z`}" fill="var(--accent)"/>
+        <circle cx="${x0}" cy="${y}" r="9" fill="${m.ray.open ? 'var(--panel)' : 'var(--accent)'}" stroke="var(--accent)" stroke-width="4"/>`; }
+    (m.points || []).forEach(pt => { b += `<circle cx="${X(pt.x)}" cy="${y}" r="9" fill="${pt.open ? 'var(--panel)' : 'var(--oops)'}" stroke="var(--oops)" stroke-width="4"/>` + (pt.label ? T(X(pt.x), y - 20, pt.label, {fs:15}) : ''); });
+    return svg(W, 104, b);
+  }
+  if (m.type === 'array' || m.type === 'groups'){
+    if (m.type === 'array'){ const s = Math.min(30, 300 / Math.max(m.cols, m.rows)), W = m.cols * s + 20, H = m.rows * s + 20; let b = '';
+      for (let r = 0; r < m.rows; r++) for (let c = 0; c < m.cols; c++) b += `<circle cx="${10 + s/2 + c*s}" cy="${10 + s/2 + r*s}" r="${s*0.34}" fill="var(--accent)"/>`; return svg(W, H, b, 'narrow'); }
+    const per = Math.ceil(Math.sqrt(m.each)), s = 16, gw = per * s + 22, cols = Math.min(m.groups, 5), W = cols * (gw + 10) + 10, rows = Math.ceil(m.groups / cols), gh = Math.ceil(m.each / per) * s + 22, H = rows * (gh + 10) + 10; let b = '';
+    for (let g = 0; g < m.groups; g++){ const gx = 10 + (g % cols) * (gw + 10), gy = 10 + Math.floor(g / cols) * (gh + 10); b += `<rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="14" fill="none" stroke="var(--line)" stroke-width="3"/>`;
+      for (let i = 0; i < m.each; i++) b += `<circle cx="${gx + 11 + s/2 + (i % per) * s}" cy="${gy + 11 + s/2 + Math.floor(i / per) * s}" r="6" fill="var(--accent)"/>`; }
+    return svg(W, H, b, 'narrow');
+  }
+  if (m.type === 'blocks'){
+    let x = 10, b = ''; const H = 150, u = 11;
+    for (let i = 0; i < (m.th || 0); i++){ b += `<path d="M${x} ${40}h${u*6}l${u*3} -${u*3}h-${u*6}z" fill="var(--sun)" stroke="var(--ink)" stroke-width="1.5"/><rect x="${x}" y="40" width="${u*6}" height="${u*6}" fill="var(--sun)" stroke="var(--ink)" stroke-width="1.5"/><path d="M${x + u*6} 40l${u*3} -${u*3}v${u*6}l-${u*3} ${u*3}z" fill="var(--sun)" stroke="var(--ink)" stroke-width="1.5" opacity=".8"/>`; x += u * 9 + 10; }
+    for (let i = 0; i < (m.h || 0); i++){ b += `<rect x="${x}" y="20" width="${u*10}" height="${u*10}" fill="var(--accent)" opacity=".85" stroke="var(--ink)" stroke-width="1.5"/>`; for (let k = 1; k < 10; k++) b += `<line x1="${x + k*u}" x2="${x + k*u}" y1="20" y2="${20 + u*10}" stroke="var(--panel)" stroke-width="1"/><line x1="${x}" x2="${x + u*10}" y1="${20 + k*u}" y2="${20 + k*u}" stroke="var(--panel)" stroke-width="1"/>`; x += Math.max(14, u * 10 * 0.35) + (i === m.h - 1 ? u * 6.5 + 12 : 0); }
+    for (let i = 0; i < (m.t || 0); i++){ b += `<rect x="${x}" y="20" width="${u}" height="${u*10}" fill="var(--good)" stroke="var(--ink)" stroke-width="1.5"/>`; x += u + 5; }
+    x += 8; for (let i = 0; i < (m.o || 0); i++){ b += `<rect x="${x + (i % 3) * (u + 4)}" y="${20 + Math.floor(i / 3) * (u + 4)}" width="${u}" height="${u}" fill="var(--oops)" stroke="var(--ink)" stroke-width="1.5"/>`; } x += 3 * (u + 4);
+    return svg(Math.max(x + 10, 120), H, b);
+  }
+  if (m.type === 'polygon'){
+    const P = {triangle:[[100,20],[180,170],[20,170]], 'right-triangle':[[30,20],[30,170],[180,170]], square:[[35,25],[165,25],[165,155],[35,155]], rectangle:[[10,45],[190,45],[190,145],[10,145]],
+      rhombus:[[100,15],[175,95],[100,175],[25,95]], parallelogram:[[55,40],[195,40],[145,150],[5,150]], trapezoid:[[60,40],[140,40],[190,150],[10,150]], 'irregular-quad':[[30,40],[160,20],[185,160],[50,140]],
+      'irregular-pentagon':[[40,30],[150,20],[190,110],[110,175],[15,130]], 'irregular-hexagon':[[30,50],[110,15],[180,60],[170,150],[90,175],[20,130]]};
+    const reg = {pentagon:5, hexagon:6, heptagon:7, octagon:8}[m.shape]; let pts = P[m.shape];
+    if (reg) pts = [...Array(reg)].map((_, i) => [100 + 82 * Math.cos(-Math.PI/2 + i * 2 * Math.PI / reg), 98 + 82 * Math.sin(-Math.PI/2 + i * 2 * Math.PI / reg)]);
+    if (!pts) return '';
+    return svg(200, 195, `<polygon points="${pts.map(p2 => p2.join(',')).join(' ')}" fill="color-mix(in srgb, var(--accent) 22%, transparent)" stroke="var(--accent)" stroke-width="4" stroke-linejoin="round"/>${pts.map(p2 => `<circle cx="${p2[0]}" cy="${p2[1]}" r="4.5" fill="var(--ink)"/>`).join('')}`, 'narrow');
+  }
+  if (m.type === 'grid'){
+    const N = m.range || 5, q1 = !!m.quad1, lo = q1 ? 0 : -N, W = 360, pad = 22, cell = (W - 2 * pad) / (N - lo), X = v => pad + (v - lo) * cell, Y = v => W - pad - (v - lo) * cell;
+    let b = '';
+    for (let v = lo; v <= N; v++){ b += `<line x1="${X(v)}" x2="${X(v)}" y1="${Y(lo)}" y2="${Y(N)}" stroke="var(--line)" stroke-width="1"/><line x1="${X(lo)}" x2="${X(N)}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/>`;
+      if (v && (N - lo <= 12 || v % 2 === 0)) b += T(X(v), Y(0) + 15, fmt(v), {fs:10, fw:500, c:'var(--mut)'}) + T(X(0) - 8, Y(v) + 4, fmt(v), {fs:10, fw:500, c:'var(--mut)', a:'end'}); }
+    b += `<line x1="${X(lo)}" x2="${X(N)}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--ink)" stroke-width="2.5"/><line x1="${X(0)}" x2="${X(0)}" y1="${Y(lo)}" y2="${Y(N)}" stroke="var(--ink)" stroke-width="2.5"/>`;
+    (m.segs || []).forEach(s2 => { b += `<line x1="${X(s2[0])}" y1="${Y(s2[1])}" x2="${X(s2[2])}" y2="${Y(s2[3])}" stroke="var(--accent)" stroke-width="4"/>`; });
+    (m.points || []).forEach(pt => { b += `<circle cx="${X(pt.x)}" cy="${Y(pt.y)}" r="6" fill="var(--oops)"/>` + (pt.label ? T(X(pt.x) + 9, Y(pt.y) - 8, pt.label, {fs:13, a:'start'}) : ''); });
+    b += `<g id="plotMark"></g>`;
+    return `<svg class="mmodel grid" id="mgrid" data-n="${N}" data-lo="${lo}" data-pad="${pad}" data-w="${W}" viewBox="0 0 ${W} ${W}" role="img" aria-label="coordinate grid">${b}</svg>`;
+  }
+  if (m.type === 'bars' || m.type === 'picto'){
+    const n = m.cats.length, mx = Math.max(...m.vals, 1);
+    if (m.type === 'picto'){ const key = m.key || 1; let b = T(10, 24, m.title || '', {a:'start', fs:15}); m.cats.forEach((c, i) => { const y = 50 + i * 38, k = m.vals[i] / key; b += T(10, y + 6, c, {a:'start', fs:14, fw:600});
+        for (let j = 0; j < Math.ceil(k); j++) b += j + 1 > k ? `<text x="${110 + j * 30}" y="${y + 8}" font-size="22" clip-path="inset(0 50% 0 0)">⭐</text>` : `<text x="${110 + j * 30}" y="${y + 8}" font-size="22">⭐</text>`; });
+      b += T(10, 60 + n * 38, `Key: ⭐ = ${key}`, {a:'start', fs:13, fw:600, c:'var(--mut)'}); return svg(520, 72 + n * 38, b); }
+    const W = 520, H = 260, L = 44, B = 40, bw = (W - L - 20) / n, top = Math.ceil(mx / 5) * 5 || 5, Y = v => H - B - v / top * (H - B - 34);
+    let b = T(W / 2, 20, m.title || '', {fs:15});
+    for (let v = 0; v <= top; v += Math.max(1, top / 5)) b += `<line x1="${L}" x2="${W - 10}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/>` + T(L - 8, Y(v) + 4, v, {a:'end', fs:11, fw:500, c:'var(--mut)'});
+    m.cats.forEach((c, i) => { b += `<rect x="${L + i * bw + bw * .2}" y="${Y(m.vals[i])}" width="${bw * .6}" height="${H - B - Y(m.vals[i])}" rx="4" fill="var(--accent)"/>` + T(L + i * bw + bw / 2, H - B + 18, c, {fs:12, fw:600}); });
+    return svg(W, H, b);
+  }
+  if (m.type === 'fraction'){
+    if (m.shape === 'circle'){ let b = ''; const cx = 100, cy = 100, r = 85;
+      for (let i = 0; i < m.parts; i++){ const a0 = -Math.PI/2 + i * 2 * Math.PI / m.parts, a1 = a0 + 2 * Math.PI / m.parts;
+        b += m.parts === 1 ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${i < m.shaded ? 'var(--accent)' : 'var(--panel)'}" stroke="var(--ink)" stroke-width="3"/>`
+          : `<path d="M${cx} ${cy}L${cx + r * Math.cos(a0)} ${cy + r * Math.sin(a0)}A${r} ${r} 0 0 1 ${cx + r * Math.cos(a1)} ${cy + r * Math.sin(a1)}Z" fill="${i < m.shaded ? 'var(--accent)' : 'var(--panel)'}" stroke="var(--ink)" stroke-width="3"/>`; }
+      return svg(200, 200, b, 'narrow'); }
+    const W = 480, w = (W - 20) / m.parts; let b = ''; for (let i = 0; i < m.parts; i++) b += `<rect x="${10 + i * w}" y="10" width="${w}" height="70" fill="${i < m.shaded ? 'var(--accent)' : 'var(--panel)'}" stroke="var(--ink)" stroke-width="3"/>`;
+    return svg(W, 90, b);
+  }
+  if (m.type === 'clock'){
+    let b = `<circle cx="100" cy="100" r="90" fill="var(--panel)" stroke="var(--ink)" stroke-width="5"/>`;
+    for (let i = 1; i <= 12; i++){ const a = i * Math.PI / 6 - Math.PI / 2; b += T(100 + 70 * Math.cos(a), 106 + 70 * Math.sin(a), i, {fs:17}); }
+    for (let i = 0; i < 60; i++){ const a = i * Math.PI / 30, r1 = i % 5 ? 84 : 80; b += `<line x1="${100 + r1 * Math.cos(a)}" y1="${100 + r1 * Math.sin(a)}" x2="${100 + 88 * Math.cos(a)}" y2="${100 + 88 * Math.sin(a)}" stroke="var(--ink)" stroke-width="${i % 5 ? 1 : 2.5}"/>`; }
+    const ma = m.m * Math.PI / 30 - Math.PI / 2, ha = ((m.h % 12) + m.m / 60) * Math.PI / 6 - Math.PI / 2;
+    b += `<line x1="100" y1="100" x2="${100 + 45 * Math.cos(ha)}" y2="${100 + 45 * Math.sin(ha)}" stroke="var(--ink)" stroke-width="7" stroke-linecap="round"/><line x1="100" y1="100" x2="${100 + 70 * Math.cos(ma)}" y2="${100 + 70 * Math.sin(ma)}" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="var(--ink)"/>`;
+    return svg(200, 200, b, 'narrow');
+  }
+  if (m.type === 'coins'){
+    const C = {q:['25¢', 30, '#c9ced6'], d:['10¢', 22, '#d9dde3'], n:['5¢', 26, '#b8bec7'], p:['1¢', 23, '#c98a4b'], h:['50¢', 34, '#c9ced6'], b:['$1', 0, '#8fd18a']};
+    let x = 12, b = ''; (m.coins || []).forEach(k => { const c = C[k]; if (!c) return;
+      if (k === 'b'){ b += `<rect x="${x}" y="22" width="110" height="52" rx="6" fill="${c[2]}" stroke="#2e6b2a" stroke-width="2"/>` + T(x + 55, 54, '$1', {fs:18, c:'#1d4a1a'}); x += 120; return; }
+      b += `<circle cx="${x + c[1]}" cy="48" r="${c[1]}" fill="${c[2]}" stroke="#555" stroke-width="2"/>` + T(x + c[1], 53, c[0], {fs:13, c:'#222'}); x += c[1] * 2 + 8; });
+    return svg(Math.max(x + 8, 120), 96, b);
+  }
+  if (m.type === 'rect'){
+    const mx = Math.max(m.w, m.h), s = Math.min(36, 300 / mx), W = m.w * s + 90, H = m.h * s + 70, x0 = 50, y0 = 20;
+    let b = `<rect x="${x0}" y="${y0}" width="${m.w * s}" height="${m.h * s}" fill="color-mix(in srgb, var(--good) 18%, transparent)" stroke="var(--good)" stroke-width="3"/>`;
+    if (m.grid) for (let i = 1; i < m.w; i++) b += `<line x1="${x0 + i * s}" x2="${x0 + i * s}" y1="${y0}" y2="${y0 + m.h * s}" stroke="var(--good)" stroke-width="1"/>`;
+    if (m.grid) for (let i = 1; i < m.h; i++) b += `<line x1="${x0}" x2="${x0 + m.w * s}" y1="${y0 + i * s}" y2="${y0 + i * s}" stroke="var(--good)" stroke-width="1"/>`;
+    const u = m.unit ? ' ' + m.unit : '';
+    if (!m.grid || m.labels) b += T(x0 + m.w * s / 2, y0 + m.h * s + 24, m.w + u, {fs:15}) + T(x0 - 8, y0 + m.h * s / 2 + 5, m.h + u, {fs:15, a:'end'});
+    return svg(W, H, b, 'narrow');
+  }
+  if (m.type === 'table'){
+    return `<div class="tablewrap"><table class="daytab mtable"><tr>${(m.head || []).map(h => `<th>${esc(String(h))}</th>`).join('')}</tr>${(m.rows || []).map(r => `<tr>${r.map(c => `<td>${esc(String(c))}</td>`).join('')}</tr>`).join('')}</table></div>`;
+  }
+  return '';
+}
+
+// ---- choosing what to practise ----
+function mathLvl(p, k){ return mathState(p).lvl[k] || 1; }
+// weakest skills first: lowest accuracy, with at least a few tries
+function mathPlan(p, kind){
+  const M = window.MathSkills || {}, u = mathUnitNow(p), U = mathUnits(p), ui = U.indexOf(u), st = mathState(p).stat;
+  const acc = k => { const s = st[k]; return s && s[1] ? s[0] / s[1] : 0.5; };
+  const R = mkR(Date.now() % 1e9);
+  if (kind === 'warm'){ const ws = mathSkillsOf(p).filter(k => M[k].warm); return [...Array(8)].map((_, i) => ws[i % ws.length]).filter(Boolean); }
+  if (kind === 'lesson'){ const ks = mathSkillsOf(p, u.id).sort((a, b) => acc(a) - acc(b)); return ks.length ? [...Array(8)].map((_, i) => ks[i % ks.length]) : []; }
+  if (kind === 'spiral'){ const past = U.slice(0, Math.max(0, ui)).flatMap(x => mathSkillsOf(p, x.id)); return past.length ? R.shuffle(past).slice(0, 5).concat(past.length < 5 ? R.shuffle(past).slice(0, 5 - past.length) : []).slice(0, 5) : []; }
+  if (kind === 'focus'){ const f = mathState(p).facts; return Object.keys(f).filter(k => f[k].n > (f[k].ok || 0)).length ? [...Array(6)].map(() => mathSkillsOf(p).find(k => M[k].warm)) : []; }
+  return [kind];
+}
+// ---- the math home screen ----
+function vMathHub(){
+  const p = me(), mins = mathToday(p), u = mathUnitNow(p);
+  const q = questToday(p), items = mathQuest(p);
+  app.innerHTML = `${topbar(null)}
+  ${subjectSwitch(p)}
+  <div class="card quest">
+    <div class="row spread"><div style="min-width:0"><h2>Today's math</h2><p class="mut">This week at school: <b>${esc(u.name)}</b></p></div>
+      <div class="ring" title="Minutes of math today">${ringFor(mins, MATH_GOAL)}<span class="mut">min of math<br>(goal ${MATH_GOAL})</span></div></div>
+    <div class="aloudline ${mins >= MATH_GOAL ? 'open' : ''}"><span>⏱ Math time counts while you are working</span><span class="mut">${breakOpen(p) ? '🎉 Brain Break open!' : 'Brain Break needs ' + breakNeed(p)}</span></div>
+    <div class="qlist">${items.map(i => `<button class="qitem ${i.done?'done':''}" data-a="${A(i.run)}"><span class="qcheck">${i.done?'✓':''}</span><span>${i.icon} ${esc(i.label)}</span></button>`).join('')}</div>
+  </div>
+  <div class="card"><h2>Practise a topic</h2><div class="mtopics">${mathUnits(p).map(un => `<div class="mtunit ${un.id === u.id ? 'now' : ''}"><b>${un.id === u.id ? '⭐ ' : ''}${esc(un.name)}</b>${un.exp ? ' <span class="mut">(coming later)</span>' : ''}
+      <div class="row" style="gap:6px;margin-top:6px">${mathSkillsOf(p, un.id).map(k => { const s = mathState(p).stat[k]; return `<button class="btn small ghost" data-a="${A(()=>mathStart(p, [k], window.MathSkills[k].name, 'topic'))}">${esc(window.MathSkills[k].name)}${s && s[1] ? ` · ${Math.round(s[0]/s[1]*100)}%` : ''}</button>`; }).join('') || '<span class="mut">Loading…</span>'}</div></div>`).join('')}</div></div>
+  <div class="tiles">
+    <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Brain Break</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : breakNeed(p) + ' to go'}</span></span></button>
+    <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">Build trophies, buy sports gear</span></span></button>
+    <button class="tile" data-a="${A(()=>{S.cur=null; save(); go({name:'profiles'});})}"><span class="ic">👋</span><span><b>Switch reader</b><span class="mut">Back to the start</span></span></button>
+  </div>
+  <button class="tile myqrtile" data-a="${A(()=>go({name:'myqr'}))}"><span class="ic">📱</span><span><b>Show my report code</b><span class="mut">Your grown-up scans it with their phone</span></span></button>`;
+  if (!mathSkillsOf(p).length){ const myView = view; loadMath(p).then(() => { if (view === myView) render(); }).catch(() => {}); }
+}
+function mathQuest(p){
+  const q = questToday(p), M = window.MathSkills || {}, f = mathState(p).facts, missFacts = Object.keys(f).filter(k => f[k].n > (f[k].ok || 0)).length;
+  const it = [{k:'mwarm', icon:'⚡', label: mathBand(p) >= 5 ? 'Warm-up: quick number skills' : 'Warm-up: multiplication and division facts', run:()=>mathStart(p, mathPlan(p, 'warm'), 'Warm-up', 'mwarm')},
+    {k:'mlesson', icon:'⭐', label:`This week: ${mathUnitNow(p).name}`, run:()=>mathStart(p, mathPlan(p, 'lesson'), mathUnitNow(p).name, 'mlesson')}];
+  if (mathUnits(p).indexOf(mathUnitNow(p)) > 0) it.push({k:'mspiral', icon:'🌀', label:'Spiral review: a mix from earlier units', run:()=>mathStart(p, mathPlan(p, 'spiral'), 'Spiral review', 'mspiral')});
+  if (missFacts) it.push({k:'mfacts', icon:'🎯', label:`Focus facts: ${missFacts} to master`, run:()=>mathStart(p, mathPlan(p, 'focus'), 'Focus facts', 'mfacts', true)});
+  return it.map(i => Object.assign(i, {done: !!q[i.k]}));
+}
+function ringFor(v, goal){ const pc = Math.min(1, v / goal), r = 34, c = 2 * Math.PI * r;
+  return `<svg viewBox="0 0 84 84" width="84" height="84"><circle cx="42" cy="42" r="${r}" fill="none" stroke="var(--line)" stroke-width="9"/><circle cx="42" cy="42" r="${r}" fill="none" stroke="${pc >= 1 ? 'var(--good)' : 'var(--accent)'}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(pc*c).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 42 42)"/><text x="42" y="49" text-anchor="middle" font-size="22" font-weight="800" fill="var(--ink)">${Math.floor(v)}</text></svg>`; }
+function subjectSwitch(p){
+  if (isParent(p) || !MATH_ON) return '';
+  const s = p.subject || 'read';
+  return `<div class="subjswitch"><button class="${s==='read'?'on':''}" data-a="${A(()=>{ p.subject = 'read'; save(); go({name:'hub'}); })}">📚 Reading</button><button class="${s==='math'?'on':''}" data-a="${A(()=>{ p.subject = 'math'; save(); go({name:'hub'}); })}">🔢 Math</button></div>`;
+}
+function vSubject(){
+  const p = me();
+  app.innerHTML = `${topbar(null)}<h1 style="text-align:center">What do you want to work on, ${esc(p.name)}?</h1>
+  <div class="subjpick"><button class="subjtile read" data-a="${A(()=>{ p.subject = 'read'; save(); go({name:'hub'}); })}"><span>📚</span><b>Reading</b><span class="mut">🎤 ${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min out loud today</span></button>
+    <button class="subjtile math" data-a="${A(()=>{ p.subject = 'math'; save(); go({name:'hub'}); })}"><span>🔢</span><b>Math</b><span class="mut">⏱ ${Math.floor(mathToday(p))} of ${MATH_GOAL} min today</span></button></div>
+  <p class="mut" style="text-align:center">Brain Break opens after ${BREAK_ALOUD} minutes of reading out loud and ${MATH_GOAL} minutes of math.</p>`;
+}
+
+// ---- the problem player ----
+function mathStart(p, skills, title, questKey, factsOnly){
+  skills = (skills || []).filter(Boolean);
+  loadMath(p).then(() => { skills = skills.filter(k => window.MathSkills[k]); if (!skills.length){ alertBox('Nothing to practise here yet.'); return; }
+    MTIME.last = Date.now(); go({name:'mathplay', skills, title, questKey, factsOnly, i:0, right:0, t0:Date.now(), m0:mathToday(p), prob:null}); })
+   .catch(() => alertBox('Math could not load. Check the internet connection and try again.'));
+}
+function mathNext(v){
+  const p = me(), k = v.skills[v.i], M = window.MathSkills[k], R = mkR((Date.now() ^ (v.i * 7919)) % 1e9);
+  let pr = null;
+  for (let tries = 0; tries < 12; tries++){ pr = M.gen(R, mathLvl(p, k));
+    if (v.factsOnly && pr.fact){ const f = mathState(p).facts[pr.fact]; if (f && f.n > (f.ok || 0)) break; if (tries < 11) continue; }
+    if (!v.prob || pr.q !== v.prob.q) break; }
+  v.prob = pr; v.k = k; v.tries = 0; v.input = ''; v.state = null; v.showHint = false; v.showSteps = false; v.plot = null;
+  if (pr.kind === 'choice') v.order = R.shuffle(pr.choices.slice());
+}
+function mathCheck(v, given){
+  const p = me(), pr = v.prob, k = v.k, m = mathState(p); mathTick();
+  let ok;
+  if (pr.kind === 'num'){ const g = parseFloat(String(given).replace('−', '-')); ok = !isNaN(g) && Math.abs(g - pr.a) < 1e-6; }
+  else if (pr.kind === 'plot') ok = given && given[0] === pr.a[0] && given[1] === pr.a[1];
+  else ok = String(given) === String(pr.a);
+  v.tries++;
+  if (ok){
+    const first = v.tries === 1 && !v.showSteps;
+    const s = m.stat[k] || (m.stat[k] = [0, 0]); s[1]++; if (first) s[0]++;
+    if (first){ v.right++; m.streak[k] = (m.streak[k] || 0) + 1; m.miss[k] = 0; if (m.streak[k] >= 3 && (m.lvl[k] || 1) < 3){ m.lvl[k] = (m.lvl[k] || 1) + 1; m.streak[k] = 0; } }
+    if (pr.fact){ const f = m.facts[pr.fact]; if (f) f.ok = Math.min(f.n, (f.ok || 0) + (first ? 1 : 0)); }
+    v.state = first ? 'right' : 'rightAfter'; addCoins(first ? 2 : 1, ''); save(); render(); return;
+  }
+  m.streak[k] = 0;
+  if (v.tries === 1){ v.state = 'again'; save(); render(); return; }
+  const s = m.stat[k] || (m.stat[k] = [0, 0]); s[1]++;
+  m.miss[k] = (m.miss[k] || 0) + 1; if (m.miss[k] >= 2 && (m.lvl[k] || 1) > 1){ m.lvl[k]--; m.miss[k] = 0; }
+  if (pr.fact){ const f = m.facts[pr.fact] || (m.facts[pr.fact] = {n:0, ok:0}); f.n = Math.max(f.n, (f.ok || 0) + 3); }
+  v.state = 'shown'; v.showSteps = true; save(); render();
+}
+function fmtAns(pr){ if (pr.kind === 'plot') return `(${pr.a[0]}, ${pr.a[1]})`.replace(/-/g, '−'); return String(pr.a).replace(/^-/, '−') + (pr.unit ? ' ' + pr.unit : ''); }
+function vMathPlay(){
+  const p = me(), v = view;
+  if (!window.MathSkills){ go({name:'hub'}); return; }
+  if (v.i >= v.skills.length){ mathFinish(v); return; }
+  if (!v.prob) mathNext(v);
+  const pr = v.prob, done = v.state === 'right' || v.state === 'rightAfter' || v.state === 'shown';
+  const keypad = () => `<div class="mkeys">${['7','8','9','4','5','6','1','2','3','−','0','.'].map(k => `<button class="mkey" data-a="${A(()=>{ mathTick(); if (k === '−'){ v.input = v.input.startsWith('−') ? v.input.slice(1) : '−' + v.input; } else if (v.input.length < 9) v.input += k; render(); })}">${k}</button>`).join('')}
+      <button class="mkey wide" data-a="${A(()=>{ v.input = v.input.slice(0, -1); render(); })}">⌫</button><button class="mkey wide go" ${v.input && v.input !== '−' ? '' : 'disabled'} data-a="${A(()=>mathCheck(v, v.input))}">Check ✓</button></div>`;
+  let answer = '';
+  if (!done){
+    if (pr.kind === 'choice') answer = `<div class="opts mopts">${v.order.map(c => `<button class="opt" data-a="${A(()=>mathCheck(v, c))}">${esc(c)}</button>`).join('')}</div>`;
+    else if (pr.kind === 'plot') answer = `<p class="mut">Tap the grid to place your point${v.plot ? `: <b>(${v.plot.join(', ').replace(/-/g, '−')})</b>` : ''}.</p><button class="btn" ${v.plot ? '' : 'disabled'} data-a="${A(()=>mathCheck(v, v.plot))}">Check ✓</button>`;
+    else answer = `<div class="mans"><span class="mbox">${esc(v.input) || '&nbsp;'}</span>${pr.unit ? `<span class="mut">${esc(pr.unit)}</span>` : ''}</div>${keypad()}`;
+  }
+  const msg = v.state === 'again' ? `<div class="result miss">Not quite. Try once more! ${pr.hint && !v.showHint ? 'Tap 💡 for a hint.' : ''}</div>`
+    : v.state === 'right' ? `<div class="result">✓ Yes! ${fmtAns(pr)}</div>` : v.state === 'rightAfter' ? `<div class="result">✓ You got it: ${fmtAns(pr)}</div>`
+    : v.state === 'shown' ? `<div class="result miss">The answer is <b>${fmtAns(pr)}</b>. Here's how:</div>` : '';
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <div class="row spread"><b>${esc(v.title)}</b><span class="mut">${v.i + 1} of ${v.skills.length} · ⏱ ${Math.floor(mathToday(p))} min today</span></div>
+  <div class="abar"><i style="width:${v.i / v.skills.length * 100}%"></i></div>
+  <div class="mlay"><div class="card mq"><span class="skill">${esc(window.MathSkills[v.k].name)}</span><p class="q mtext">${esc(pr.q).replace(/\n/g, '<br>')}</p>${pr.model ? `<div class="mpic">${mathModel(pr.model)}</div>` : ''}</div>
+    <aside class="card mside">${msg}${answer}
+      ${!done ? `<div class="row">${pr.hint ? `<button class="btn ghost small" data-a="${A(()=>{ v.showHint = true; mathTick(); render(); })}">💡 Hint</button>` : ''}<button class="btn ghost small" data-a="${A(()=>{ v.showSteps = true; mathTick(); render(); })}">🪜 Show me how</button></div>` : ''}
+      ${v.showHint && !done ? `<p class="notice">💡 ${esc(pr.hint)}</p>` : ''}
+      ${v.showSteps ? `<ol class="msteps">${(pr.steps || []).map(s => `<li>${esc(s)}</li>`).join('')}</ol>${!done ? '<p class="mut">Now you try: enter the answer.</p>' : ''}` : ''}
+      ${done ? `<button class="btn sun" data-a="${A(()=>{ mathTick(); v.i++; v.prob = null; render(); window.scrollTo({top:0}); })}">${v.i < v.skills.length - 1 ? 'Next →' : 'Finish'}</button>` : ''}</aside></div>`;
+  const g = document.getElementById('mgrid');
+  if (g && pr.kind === 'plot' && !done) g.addEventListener('click', e => {
+    const r = g.getBoundingClientRect(), W = +g.dataset.w, pad = +g.dataset.pad, N = +g.dataset.n, lo = +g.dataset.lo, cell = (W - 2 * pad) / (N - lo);
+    const sx = (e.clientX - r.left) / r.width * W, sy = (e.clientY - r.top) / r.height * W;
+    const x = Math.round((sx - pad) / cell + lo), y = Math.round((W - pad - sy) / cell + lo);
+    if (x < lo || x > N || y < lo || y > N) return; v.plot = [x, y]; mathTick(); render();
+  });
+  if (v.plot && g){ const W = +g.dataset.w, pad = +g.dataset.pad, N = +g.dataset.n, lo = +g.dataset.lo, cell = (W - 2 * pad) / (N - lo);
+    g.querySelector('#plotMark').innerHTML = `<circle cx="${pad + (v.plot[0] - lo) * cell}" cy="${W - pad - (v.plot[1] - lo) * cell}" r="9" fill="var(--good)" stroke="var(--panel)" stroke-width="3"/>`; }
+}
+function mathFinish(v){
+  const p = me(), mins = Math.max(0, mathToday(p) - (v.m0 || 0));
+  logEvent('math', v.title, {right:v.right, total:v.skills.length, mins: Math.round(mins * 10) / 10, skills:[...new Set(v.skills)]});
+  if (v.questKey && v.questKey !== 'topic') questMark(v.questKey);
+  addCoins(5, 'math'); if (v.right === v.skills.length) confetti(50); save();
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center">
+    <span class="big-emoji">${v.right === v.skills.length ? '🏆' : '⭐'}</span><h1>${v.right} of ${v.skills.length} on the first try</h1>
+    <p>${v.right === v.skills.length ? 'Perfect!' : v.right >= v.skills.length * 0.7 ? 'Great work!' : 'Nice effort. Every mistake you fix makes your brain stronger.'}</p>
+    <p class="mut">⏱ ${Math.floor(mathToday(p))} of ${MATH_GOAL} math minutes today</p>
+    <div class="row"><button class="btn" data-a="${A(()=>go({name:'hub'}))}">Back to math</button></div></div>`;
+}
+// grown-ups: the math unit, minutes, skills and MAP scores
+function mathCardHtml(p){
+  const m = mathState(p), u = mathUnitNow(p), M = window.MathSkills || {}, stats = Object.entries(m.stat).filter(([k, s]) => s[1]).sort((a, b) => a[1][0]/a[1][1] - b[1][0]/b[1][1]);
+  const fx = Object.keys(m.facts).filter(k => m.facts[k].n > (m.facts[k].ok || 0));
+  const maps = (p.map || []).slice().sort((a, b) => a.d.localeCompare(b.d)), ed = view.mapEdit === p.id;
+  return `<div><h3>🔢 Math</h3>
+    <table class="daytab"><tr><td>Math today</td><td class="num"><b>${Math.floor(mathToday(p))} of ${MATH_GOAL} min</b></td></tr>
+      <tr><td>Unit${p.mathUnit ? ' (set by you)' : ' (from the school calendar)'}</td><td class="num"><select data-a2="unit" onchange="mathSetUnit('${p.id}', this.value)"><option value="">Follow the calendar</option>${mathUnits(p).map(x => `<option value="${x.id}" ${p.mathUnit === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></td></tr></table>
+    <p class="mut" style="font-size:.85rem">Now practising: <b>${esc(u.name)}</b>. Pick a unit to override the school calendar.</p>
+    ${stats.length ? `<table class="daytab"><tr><th>Skill</th><th class="num">First try</th><th class="num">Level</th></tr>${stats.map(([k, s]) => `<tr><td>${esc(M[k] ? M[k].name : k)}</td><td class="num"><b style="color:${s[0]/s[1] >= .8 ? 'var(--good)' : s[0]/s[1] >= .6 ? 'var(--ink)' : 'var(--oops)'}">${Math.round(s[0]/s[1]*100)}%</b> <span class="mut">(${s[1]})</span></td><td class="num">${m.lvl[k] || 1}</td></tr>`).join('')}</table>` : '<p class="mut">No math practice yet.</p>'}
+    ${fx.length ? `<p style="margin-top:6px">🎯 Focus facts: ${fx.slice(0, 20).map(k => `<span class="chip">${esc(k.replace('x', ' × ').replace('/', ' ÷ ').replace(/^sq/, '√'))}</span>`).join(' ')}</p>` : ''}
+    <h3 style="margin-top:12px">MAP math scores</h3>
+    ${maps.length ? `<table class="daytab"><tr><th>Test</th><th class="num">RIT</th><th class="num">Percentile</th></tr>${maps.slice().reverse().map(r => `<tr><td>${niceDate(r.d)}${r.goal ? ` <span class="mut">(goal ${r.goal})</span>` : ''}</td><td class="num"><b>${r.rit}</b></td><td class="num">${r.pct ? r.pct + '%' : '–'}</td></tr>`).join('')}</table>` : '<p class="mut">No MAP scores yet.</p>'}
+    ${ed ? `<div class="irform"><label>Test date<input type="date" id="map_d" value="${today()}"></label><label>RIT score<input type="number" id="map_rit" inputmode="numeric" placeholder="e.g. 205"></label>
+        <label>Percentile<input type="number" id="map_pct" inputmode="numeric" placeholder="e.g. 62"></label><label>Growth goal (RIT, optional)<input type="number" id="map_goal" inputmode="numeric"></label>
+        <div class="row"><button class="btn sun small" data-a="${A(()=>{ const g = id => document.getElementById(id).value; if (!g('map_rit')) return; p.map = (p.map || []).filter(x => x.d !== g('map_d')); p.map.push({d:g('map_d') || today(), rit:+g('map_rit'), pct:g('map_pct') ? +g('map_pct') : '', goal:g('map_goal') ? +g('map_goal') : ''}); save(); view.mapEdit = null; render(); })}">Save</button><button class="btn ghost small" data-a="${A(()=>{ view.mapEdit = null; render(); })}">Cancel</button></div></div>`
+      : `<div class="row" style="margin-top:6px"><button class="btn small" data-a="${A(()=>{ view.mapEdit = p.id; render(); })}">＋ Enter a MAP score</button></div>`}</div>`;
+}
+function mathSetUnit(id, u){ const p = S.profiles.find(x => x.id === id); if (!p) return; p.mathUnit = u || ''; save(); render(); }
 
 // ---------- Start ----------
 if (S.cur && me()) view = {name:'hub'};
