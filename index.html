@@ -4524,10 +4524,21 @@ function dayData(p, d){
     games: log.filter(e => e.type === 'game'), breaks: log.filter(e => e.type === 'break'), checks: log.filter(e => e.type === 'checkin'), words, math: log.filter(e => e.type === 'math'), mm: Math.round(mathToday(p, d)), speed: (r => r.length ? {w: median(r), n: r.length} : null)(speedReads(p, d, d))};
 }
 function readTitles(p, d, x){
-  const T = (p.readT || {})[d];
-  if (!T) return x.reads.map(r => [r.title, Math.round(r.mins||0), r.right||0, r.total||0]);
-  const fin = {}; x.reads.forEach(r => { fin[r.title] = r; });
-  return Object.entries(T).filter(([, m]) => m >= 0.5).sort((a, b) => b[1] - a[1]).map(([t, m]) => [t + (fin[t] || /^(Fluency Gym|Monthly)/.test(t) || t === 'Reading practice' ? '' : ' (still reading)'), Math.max(1, Math.round(m)), (fin[t] || {}).right || 0, (fin[t] || {}).total || 0]);
+  const T = Object.assign({}, (p.readT || {})[d] || {}), fin = {}; x.reads.forEach(r => { fin[r.title] = r; });
+  // minutes from before titles were tracked (or otherwise unfiled) are shared out over what the iPad remembers
+  // reading that day: pages read with the microphone, Fluency Gym passages and finished stories. Marked as estimates.
+  const known = Object.values(T).reduce((a, m) => a + m, 0), rest = (x.mins || 0) - known, est = new Set();
+  if (rest >= 1){
+    const W = {};
+    (p.wpm || []).filter(e => e.d === d && e.how === 'mic' && e.s).forEach(e => { const st = storyById(e.s); if (st) W[st.title] = (W[st.title] || 0) + 1; });
+    x.gym.forEach(g => { W['Fluency Gym: ' + g.title] = (W['Fluency Gym: ' + g.title] || 0) + 3; });
+    x.reads.forEach(r => { if (!W[r.title]) W[r.title] = 2; });
+    Object.keys(W).forEach(t => { if (T[t]) delete W[t]; });
+    const tot = Object.values(W).reduce((a, v) => a + v, 0);
+    if (tot) Object.entries(W).forEach(([t, w]) => { T[t] = (T[t] || 0) + rest * w / tot; est.add(t); });
+    else if (!Object.keys(T).length) return x.reads.map(r => [r.title, Math.round(r.mins||0), r.right||0, r.total||0]);
+  }
+  return Object.entries(T).filter(([, m]) => m >= 0.5).sort((a, b) => b[1] - a[1]).map(([t, m]) => [t, Math.max(1, Math.round(m)), (fin[t] || {}).right || 0, (fin[t] || {}).total || 0, est.has(t) ? 1 : 0]);
 }
 function readLine(r){
   const s = storyById(r.id);
@@ -4906,7 +4917,7 @@ function reportPack(d, range, who){
         rd: readTitles(p, dd, x), wp: x.practise.map(w => w.k).slice(0, 12), gy: x.gym.map(g => g.w), mm: x.mm, mt: mathTopics(x.math)}; };
     const inPack = new Set(range === 'day' ? [d] : [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return today(t); }));
     const h = [...Array(28)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 1 - i); return today(t); }).filter(dd => !inPack.has(dd))
-      .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length || x.mm) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), readTitles(p, dd, x).map(r => [String(r[0]).slice(0, 70), r[1]]), x.mm, mathTopics(x.math)] : null; }).filter(Boolean);
+      .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length || x.mm) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), readTitles(p, dd, x).map(r => [String(r[0]).slice(0, 70), r[1], r[4] || 0]), x.mm, mathTopics(x.math)] : null; }).filter(Boolean);
     if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
     return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom}))}, day(d));
   })};
@@ -4967,7 +4978,7 @@ function logMergeInto(L, pack, at){
     const byD = (old, add) => { const m = {}; (old || []).concat(add || []).forEach(x => m[x.d] = x); return Object.values(m).sort((a, b) => a.d.localeCompare(b.d)); };
     if (k.ir) kid.ir = byD(kid.ir, k.ir); if (k.cp) kid.cp = byD(kid.cp, k.cp); if (k.map) kid.map = byD(kid.map, k.map);
     (k.h || []).forEach(([d, m, al, sp, gl, rd, mm, mt]) => { const b = sp ? bandOf(k.g, sp, d) : null;
-      logPut(kid, {d, m, al, s: sp || null, gl, b: b ? b.k : null, tg: normAt(k.g, 75, d), rd: (rd||[]).map(t => Array.isArray(t) ? [t[0], t[1]||0, 0, 0] : [t, 0, 0, 0]), wp: [], gy: [], mm: mm || 0, mt: mt || []}, 'hist', at); });
+      logPut(kid, {d, m, al, s: sp || null, gl, b: b ? b.k : null, tg: normAt(k.g, 75, d), rd: (rd||[]).map(t => Array.isArray(t) ? [t[0], t[1]||0, 0, 0, t[2]||0] : [t, 0, 0, 0]), wp: [], gy: [], mm: mm || 0, mt: mt || []}, 'hist', at); });
     if (pack.r === 'day') logPut(kid, {d: pack.d, m:k.m, al:k.al, s:k.s, gl:k.gl, b:k.b, tg:k.tg, rd:k.rd||[], wp:k.wp||[], gy:k.gy||[], t:k.t, mm:k.mm||0, mt:k.mt||[]}, 'day', at);
     else (k.dd || []).forEach(dd => logPut(kid, dd, 'week', at));
   });
@@ -5003,7 +5014,7 @@ function bookOf(t){ const m = String(t).match(/^(.*?), (Chapter \d+(?::.*)?)$/);
 // one entry per book per day: its chapters, and the minutes spent reading them
 function schoolDay(r){
   const B = new Map();
-  (r.rd || []).forEach(x => { const b = bookOf(x[0]), e = B.get(b.book) || {book: b.book, parts: [], mins: 0}; if (b.part) e.parts.push(b.part.split(':')[0]); e.mins += x[1] || 0; B.set(b.book, e); });
+  (r.rd || []).forEach(x => { const b = bookOf(x[0]), e = B.get(b.book) || {book: b.book, parts: [], mins: 0}; if (b.part && !e.parts.includes(b.part.split(':')[0])) e.parts.push(b.part.split(':')[0]); e.mins += x[1] || 0; if (x[4]) e.est = true; B.set(b.book, e); });
   return [...B.values()];
 }
 function schoolText(rows, name){
@@ -5161,11 +5172,11 @@ function dayLogHtml(rows, withChild){
     <table class="daytab"><tr><th>Title</th><th class="num">Minutes</th></tr>
       ${on.map(r => { const bs = schoolDay(r);
         return (withChild ? `<tr class="kidhead"><td colspan="2">${esc(r.a || '')} ${esc(r.n)}</td></tr>` : '') +
-          bs.map(b => `<tr><td>${esc(b.book)}${b.parts.length ? ` <span class="mut">(${esc(b.parts.map(q => q.replace('Chapter', 'Ch')).join(', '))})</span>` : ''}</td><td class="num">${b.mins ? b.mins : '–'}</td></tr>`).join('') +
+          bs.map(b => `<tr><td>${esc(b.book)}${b.parts.length ? ` <span class="mut">(${esc(b.parts.map(q => q.replace('Chapter', 'Ch')).join(', '))})</span>` : ''}</td><td class="num">${b.mins ? (b.est ? '~' : '') + b.mins : '–'}</td></tr>`).join('') +
           `<tr class="daytot"><td>Total minutes read</td><td class="num"><b>${r.m || 0}</b></td></tr>` +
           (r.mm ? (r.mt || []).map(t => `<tr><td>🔢 ${esc(t[0])}</td><td class="num">${t[1] || '–'}</td></tr>`).join('') + `<tr class="daytot"><td>Math minutes</td><td class="num"><b>${r.mm}</b></td></tr>` : ''); }).join('')}
     </table>
-    <p class="mut" style="font-size:.85rem">The total also counts reading practice, so it can be more than the titles add up to.</p></div>`;
+    <p class="mut" style="font-size:.85rem">The total also counts reading practice, so it can be more than the titles add up to. ~ = estimated from the pages read (reading from before titles were timed).</p></div>`;
 }
 // Brad's full log: each child's all-time totals, every week and every day
 function vKidLog(){
