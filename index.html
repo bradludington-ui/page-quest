@@ -333,6 +333,24 @@ a{color:var(--accent)}
 .logtab{font-size:.9rem}.logtab td,.logtab th{padding:8px 6px}.logtab td:first-child{white-space:nowrap}
 .schoolwk{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
 .kdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dcards{display:flex;flex-direction:column;gap:10px}
+.dcard{border:1px solid var(--line);border-radius:16px;padding:12px 14px;background:var(--bg);display:flex;flex-direction:column;gap:6px;min-width:0}
+.dhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dhead b{font-family:var(--display);font-size:1.05rem}
+.dname{color:var(--mut);font-weight:700}.dmin{margin-left:auto;font-weight:800;background:var(--soft,rgba(100,116,139,.14));border-radius:999px;padding:2px 10px}
+.dmin.met{background:var(--good-soft);color:var(--good)}
+.dstats{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--mut);font-size:.9rem}
+.dbooks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.dbooks li{display:flex;flex-direction:column;border-left:4px solid var(--accent);padding:2px 0 2px 10px;overflow-wrap:anywhere}
+.dbooks li span{color:var(--mut);font-size:.9rem}
+.dwords{font-size:.85rem;color:var(--mut);overflow-wrap:anywhere}
+@media (max-width:640px){
+  .rtab,.rtab tbody{display:block}.rtab tr:first-child{display:none}
+  .rtab tr{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px}
+  .rtab td{display:block;padding:0!important;border:0!important;font-size:.95rem;min-width:0}
+  .rtab td::before{content:attr(data-l);display:block;font-size:.75rem;color:var(--mut);font-weight:700}
+  .rtab td:first-child{grid-column:1/-1;font-weight:800}.rtab td:first-child::before{display:none}
+  .tablewrap:has(.rtab){overflow:visible}
+}
 </style>
 
 </head>
@@ -960,6 +978,8 @@ function render(){
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
     gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog})[view.name]();
+  // tables that turn into stacked cards on a phone: each cell is labelled with its column heading
+  document.querySelectorAll('table.rtab').forEach(t => { const hs = [...t.rows[0].cells].map(c => c.textContent.trim()); [...t.rows].slice(1).forEach(r => [...r.cells].forEach((c, i) => c.dataset.l = hs[i] || '')); });
 }
 function topbar(back){
   const p = me(), L = level(p);
@@ -4970,8 +4990,7 @@ function parentCard(){
     <p class="mut">${rows.length ? `${kids.map(esc).join(', ')}${last ? ` · last scanned ${new Date(last.saved).toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}` : ''}` : 'Scan the code from each child\'s iPad (📱 Show my reading report code, at the bottom of their home screen) to start the log. Every scan adds that day, and the last 4 weeks, to the log for good.'}</p>
     <div class="row"><button class="btn sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button>
       <button class="btn" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog'}))}">📖 Open the log</button></div>
-    ${rows.length ? `<div class="tablewrap"><table><tr><th>Date</th><th>Child</th><th>Minutes</th><th>Out loud</th><th>Speed</th><th>Read</th></tr>
-      ${rows.slice(0, 6).map(r => { const b = r.b && BANDS.find(x => x.k === r.b); return `<tr><td>${niceDate(r.d)}</td><td>${esc(r.n)}</td><td>${r.m}${r.m >= r.gl ? ' ✓' : ''}</td><td>${r.al}</td><td>${r.s ? `${b ? b.ic : ''} ${r.s}` : '–'}</td><td>${(r.rd||[]).map(x => esc(x[0])).join('<br>') || '<span class="mut">practice</span>'}</td></tr>`; }).join('')}</table></div>` : ''}
+    ${rows.length ? `<div class="dcards">${rows.slice(0, 4).map(r => logDayCard(r, true)).join('')}</div>` : ''}
     ${logFilesHtml(stamp, rows.length)}
   </div>`;
 }
@@ -5037,15 +5056,23 @@ function speedHtml(rows){
   const names = [...new Set(rows.map(r => r.n))].sort(), byKid = {}; names.forEach(nm => byKid[nm] = speedWeeksOf(rows.filter(r => r.n === nm)));
   const latest = nm => byKid[nm][byKid[nm].length - 1], arrow = c => c == null ? '<span class="mut">–</span>' : c > 0 ? `<b style="color:var(--good)">▲ +${c}</b>` : c < 0 ? `<b style="color:var(--oops)">▼ ${c}</b>` : '<span class="mut">no change</span>';
   return `<div class="card" style="display:flex;flex-direction:column;gap:12px"><h2>⚡ Reading speed, week over week</h2>
-    <div class="tablewrap"><table class="logtab"><tr><th>Child</th><th>This week</th><th>vs last week</th><th>Level</th><th>Target</th><th>Since first week</th></tr>
+    <div class="tablewrap"><table class="logtab rtab"><tr><th>Child</th><th>This week</th><th>vs last week</th><th>Level</th><th>Target</th><th>Since first week</th></tr>
       ${names.map((nm, k) => { const w = latest(nm), f = byKid[nm][0]; return w ? `<tr><td><span class="kdot" style="background:${KID_COLS[k % KID_COLS.length]}"></span><b>${esc(nm)}</b> <span class="mut">gr ${w.g}</span></td><td><b>${w.s}</b> wpm</td><td>${arrow(w.chg)}</td><td>${w.band.ic} ${w.band.lab}</td><td>${w.tg}+ <span class="mut">(${w.s >= w.tg ? 'reached!' : (w.tg - w.s) + ' to go'})</span></td><td>${byKid[nm].length > 1 ? arrow(w.s - f.s) : '<span class="mut">–</span>'}</td></tr>` : `<tr><td><b>${esc(nm)}</b></td><td colspan="5" class="mut">No microphone reads logged yet</td></tr>`; }).join('')}
     </table></div>
     ${names.length > 1 ? `<h3>Compared with each other</h3><p class="mut" style="font-size:.9rem">Each line is a child's weekly speed as a share of their own grade's target, so the twins and Charlee compare fairly. 100% = reached the top-25% target.</p>${speedCompareSvg(byKid)}` : ''}
     ${names.map(nm => { const ws = byKid[nm]; return `<div class="schoolwk"><h3>${esc(nm)}</h3>${speedTrendSvg(ws)}
-      ${ws.length ? `<div class="tablewrap"><table class="logtab"><tr><th>Week of</th><th>Speed</th><th>Change</th><th>Level</th><th>Target</th><th>Reads</th></tr>
+      ${ws.length ? `<div class="tablewrap"><table class="logtab rtab"><tr><th>Week of</th><th>Speed</th><th>Change</th><th>Level</th><th>Target</th><th>Reads</th></tr>
         ${ws.slice().reverse().map(w => `<tr><td>${new Date(w.ws+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td><td><b>${w.s}</b></td><td>${arrow(w.chg)}</td><td>${w.band.ic} ${w.band.lab}</td><td>${w.tg}+</td><td>${w.sp.length}</td></tr>`).join('')}</table></div>` : ''}</div>`; }).join('')}
     <p class="mut" style="font-size:.85rem">This week is still in progress, so it can move until Saturday. Speed is the middle of all microphone reads that week, so one fast or slow page cannot swing it. Benchmarks: Hasbrouck & Tindal (2017); targets rise through the school year.</p>
   </div>`;
+}
+// one day as a card: date, child, minutes, out loud, speed, then each book with its chapters and minutes
+function logDayCard(r, withName){
+  const b = r.b && BANDS.find(x => x.k === r.b), bs = schoolDay(r);
+  return `<div class="dcard"><div class="dhead"><b>${new Date(r.d+'T12:00').toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'})}</b>${withName ? `<span class="dname">${esc(r.a || '')} ${esc(r.n)}</span>` : ''}<span class="dmin ${(r.m||0) >= (r.gl||20) ? 'met' : ''}">${r.m || 0} min${(r.m||0) >= (r.gl||20) ? ' ✓' : ''}</span></div>
+    <div class="dstats"><span>🎤 ${r.al || 0} min out loud</span>${r.s ? `<span>⚡ ${r.s} words/min ${b ? b.ic : ''}</span>` : ''}</div>
+    ${bs.length ? `<ul class="dbooks">${bs.map(x => `<li><b>${esc(x.book)}</b><span>${[x.parts.length ? x.parts.map(q => q.replace('Chapter', 'Ch')).join(', ') : '', x.mins ? x.mins + ' min' : ''].filter(Boolean).join(' · ')}</span></li>`).join('')}</ul>` : '<p class="mut dbooks">Practice passages and word games</p>'}
+    ${(r.wp||[]).length ? `<p class="dwords">Practise: ${r.wp.map(esc).join(', ')}</p>` : ''}</div>`;
 }
 // the school view: week by week, each day's books and minutes, with Copy for the reading journal
 function schoolHtml(mine, who){
@@ -5053,10 +5080,7 @@ function schoolHtml(mine, who){
   return [...weeks.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([ws, rows], i) => {
     const txt = schoolText(rows, who), tot = rows.reduce((a, r) => a + (r.m||0), 0);
     return `<div class="schoolwk"><div class="row spread"><h3>Week of ${new Date(ws+'T12:00').toLocaleDateString(undefined,{month:'long', day:'numeric'})}</h3><span class="chip">${tot} min</span></div>
-      <div class="tablewrap"><table class="logtab"><tr><th>Day</th><th>Book</th><th>Min on book</th><th>Total</th></tr>
-      ${rows.slice().sort((a, b) => a.d.localeCompare(b.d)).map(r => { const bs = schoolDay(r), day = new Date(r.d+'T12:00').toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
-        return (bs.length ? bs : [{book:'Practice and word games', parts:[], mins:0, practice:true}]).map((b, j) => `<tr>${j ? '<td></td>' : `<td>${day}</td>`}<td>${b.practice ? `<span class="mut">${b.book}</span>` : `<b>${esc(b.book)}</b>${b.parts.length ? `<br><span class="mut">${esc(b.parts.join(', '))}</span>` : ''}`}</td><td>${b.mins ? b.mins + ' min' : '–'}</td>${j ? '<td></td>' : `<td><b>${r.m}</b> min</td>`}</tr>`).join(''); }).join('')}
-      </table></div>
+      <div class="dcards">${rows.slice().sort((a, b) => a.d.localeCompare(b.d)).map(r => logDayCard(r, false)).join('')}</div>
       <div class="row"><button class="btn small" data-a="${A(()=>copyText(txt, 'sw'+i))}">Copy this week</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(txt, 'sw'+i))}">Share…</button>` : ''}<span id="sw${i}"></span></div></div>`;
   }).join('');
 }
@@ -5077,10 +5101,9 @@ function vKidLog(){
       <span class="chip">📚 ${stories} stories and chapters</span><span class="chip">✓ goal met ${mine.filter(r => (r.m||0) >= (r.gl||20)).length} days</span>
       ${lastS ? `<span class="chip">⚡ ${first.s} → ${lastS.s} words/min · ${bNow.ic} ${bNow.lab}</span>` : ''}</div>
     <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">📚 For school</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">Weekly</button><button class="${tab==='day'?'on':''}" data-a="${A(()=>{ v.tab='day'; render(); })}">Daily</button></div>
-    ${tab === 'school' ? schoolHtml(mine, who) : tab === 'week' ? `<div class="tablewrap"><table class="logtab"><tr><th>Week of</th><th>Days</th><th>Min</th><th>🎤 Min</th><th>✓ Goal</th><th>📚</th><th>⚡</th></tr>
+    ${tab === 'school' ? schoolHtml(mine, who) : tab === 'week' ? `<div class="tablewrap"><table class="logtab rtab"><tr><th>Week of</th><th>Days</th><th>Min</th><th>🎤 Min</th><th>✓ Goal</th><th>📚</th><th>⚡</th></tr>
       ${weeks.map(w => { const b = w.s && bandOf(w.g, w.s, w.ws); return `<tr><td>${new Date(w.ws+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td><td>${w.days}</td><td>${w.m}</td><td>${w.al}</td><td>${w.met}</td><td title="${esc(w.titles.join('; '))}">${w.stories}</td><td>${w.s ? `${b.ic} ${w.s}` : '–'}</td></tr>`; }).join('')}</table></div>`
-    : `<div class="tablewrap"><table class="logtab"><tr><th>Date</th><th>Min</th><th>🎤 Min</th><th>⚡</th><th>Read</th><th>Practise</th></tr>
-      ${mine.map(r => { const b = r.b && BANDS.find(x => x.k === r.b); return `<tr><td>${new Date(r.d+'T12:00').toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'})}</td><td>${r.m}${r.m >= r.gl ? ' ✓' : ''}</td><td>${r.al}</td><td>${r.s ? `${b ? b.ic : ''} ${r.s}` : '–'}</td><td>${(r.rd||[]).map(x => esc(x[0]) + (x[1] ? ` <span class="mut">(${x[1]} min${x[3] ? `, ${x[2]}/${x[3]} right` : ''})</span>` : '')).join('<br>') || '<span class="mut">practice</span>'}</td><td>${(r.wp||[]).map(esc).join(', ')}</td></tr>`; }).join('')}</table></div>`}
+    : `<div class="dcards">${mine.map(r => logDayCard(r, false)).join('')}</div>`}
   </div>` : ''}
   <div class="card">${logFilesHtml(today(), rows.length)}</div>
   ${phoneReports().length ? `<p><button class="btn ghost small" data-a="${A(()=>go({name:'phonerep'}))}">Scanned reports, as they arrived (${phoneReports().length})</button></p>` : ''}`;
