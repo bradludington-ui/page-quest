@@ -1513,7 +1513,7 @@ function readDone(){
   stopAll();
   if (mode === 'solo' && secs > 8){ logWpm(view.words.length, secs, 'solo'); }
   if (mode !== 'solo' && !view.readPaid){ view.readPaid = true; R.coins += 3; addCoins(3, 'read aloud'); }
-  addMinutes(secs/60); if (R) R.mins = (R.mins||0) + Math.min(secs/60, 15);
+  addMinutes(secs/60, R && R.s ? R.s.title : ''); if (R) R.mins = (R.mins||0) + Math.min(secs/60, 15);
   view.phase = 'q'; view.q = null; render();
 }
 function logWpm(n, secs, how){
@@ -4084,11 +4084,15 @@ function aloudToday(p){ return ((p.aloud||{})[today()]) || 0; }
 // ---------- Daily reading minutes (matches the class reading logs) ----------
 function goalOf(p){ return p.goal || (p.grade >= 5 ? 20 : 15); }
 function minsToday(p){ return Math.floor(((p.daily||{})[today()]||0)); }
-function addMinutes(m){
+function addMinutes(m, title){
   const p = me(); if (!p || !(m > 0)) return;
   m = Math.min(m, 15); // one sitting never counts more than 15 minutes (a page left open is not reading)
   p.minutes = (p.minutes||0) + m; p.daily = p.daily || {};
-  const t = today(); p.daily[t] = (p.daily[t]||0) + m; save();
+  const t = today(); p.daily[t] = (p.daily[t]||0) + m;
+  // every minute is filed under what was being read, finished or not, for the school reading log
+  p.readT = p.readT || {}; const day = p.readT[t] || (p.readT[t] = {}), k = title || 'Reading practice'; day[k] = (day[k] || 0) + m;
+  Object.keys(p.readT).forEach(d => { if (d < addDays(-60)) delete p.readT[d]; });
+  save();
   if (p.goalPaid !== t && minsToday(p) >= goalOf(p)){ p.goalPaid = t; save(); giveTickets(1); addCoins(10, 'daily goal!'); confetti(50); }
 }
 function ringSvg(p){
@@ -4248,7 +4252,7 @@ function gymDone(secsIn){
   }
   v.note = '';
   v.errs.forEach(i => bankAdd(v.words[i].raw));
-  v.reads.push(w); addMinutes(secs/60);
+  v.reads.push(w); addMinutes(secs/60, 'Fluency Gym: ' + (v.psg && v.psg.title || 'practice passage'));
   addCoins(5, 'read ' + v.reads.length);
   if (v.reads.length === 3){
     p.gym = p.gym || []; p.gym.push({d:today(), w:v.reads.slice(), m:v.mode, s:v.psg.s}); if (p.gym.length > 60) p.gym.shift();
@@ -4519,14 +4523,21 @@ function dayData(p, d){
   return {d, practise, aloud: Math.floor(((p.aloud||{})[d]) || 0), mins: Math.floor(((p.daily||{})[d]) || 0), reads, gym: log.filter(e => e.type === 'gym'), vault: log.filter(e => e.type === 'vault'),
     games: log.filter(e => e.type === 'game'), breaks: log.filter(e => e.type === 'break'), checks: log.filter(e => e.type === 'checkin'), words, math: log.filter(e => e.type === 'math'), mm: Math.round(mathToday(p, d)), speed: (r => r.length ? {w: median(r), n: r.length} : null)(speedReads(p, d, d))};
 }
+function readTitles(p, d, x){
+  const T = (p.readT || {})[d];
+  if (!T) return x.reads.map(r => [r.title, Math.round(r.mins||0), r.right||0, r.total||0]);
+  const fin = {}; x.reads.forEach(r => { fin[r.title] = r; });
+  return Object.entries(T).filter(([, m]) => m >= 0.5).sort((a, b) => b[1] - a[1]).map(([t, m]) => [t + (fin[t] || /^(Fluency Gym|Monthly)/.test(t) || t === 'Reading practice' ? '' : ' (still reading)'), Math.max(1, Math.round(m)), (fin[t] || {}).right || 0, (fin[t] || {}).total || 0]);
+}
 function readLine(r){
   const s = storyById(r.id);
   return `${r.title} (${kindOf(s)}${s ? `, ${s.pages.length} pages` : ''})`;
 }
 function journalText(p, d){
   const x = dayData(p, d), lines = [`${p.name}: ${niceDate(d, true)}`, `Minutes read: ${x.mins}` + (x.aloud ? ` (${x.aloud} out loud)` : '')];
+  const rt = readTitles(p, d, x).filter(r => !/^(Fluency Gym|Monthly|Reading practice)/.test(r[0]));
+  if (rt.length) lines.push('Read: ' + rt.map(r => `${r[0]} (${r[1]} min)`).join('; '));
   if (x.reads.length){
-    lines.push('Read: ' + x.reads.map(readLine).join('; '));
     x.reads.forEach(r => { const s = storyById(r.id), sum = s && sumOf(s); if (sum) lines.push(`About ${s.series ? 'chapter ' + (s.chap+1) : r.title.split(':')[0]}: ${sum[0]}`); });
   } else lines.push('Read: practice passages and word games');
   if (x.speed) lines.push(`Reading speed: ${x.speed.w} words per minute (grade ${p.grade} target ${normAt(p.grade, 75, d)}+)`);
@@ -4892,10 +4903,10 @@ function reportPack(d, range, who){
     const txt = range === 'day' ? journalText(p, d) : weekText(p, d);
     const day = dd => { const x = dayData(p, dd), sp = x.speed, b = sp && bandOf(p.grade, sp.w, dd);
       return {d:dd, m:x.mins, gl:goalOf(p), al:x.aloud, s: sp ? sp.w : null, b: b ? b.k : null, tg: normAt(p.grade, 75, dd),
-        rd: x.reads.map(r => [r.title, Math.round(r.mins||0), r.right||0, r.total||0]), wp: x.practise.map(w => w.k).slice(0, 12), gy: x.gym.map(g => g.w), mm: x.mm, mt: mathTopics(x.math)}; };
+        rd: readTitles(p, dd, x), wp: x.practise.map(w => w.k).slice(0, 12), gy: x.gym.map(g => g.w), mm: x.mm, mt: mathTopics(x.math)}; };
     const inPack = new Set(range === 'day' ? [d] : [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return today(t); }));
     const h = [...Array(28)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 1 - i); return today(t); }).filter(dd => !inPack.has(dd))
-      .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length || x.mm) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), x.reads.map(r => [String(r.title).slice(0, 70), Math.round(r.mins||0)]), x.mm, mathTopics(x.math)] : null; }).filter(Boolean);
+      .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length || x.mm) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), readTitles(p, dd, x).map(r => [String(r[0]).slice(0, 70), r[1]]), x.mm, mathTopics(x.math)] : null; }).filter(Boolean);
     if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
     return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom}))}, day(d));
   })};
@@ -7173,7 +7184,7 @@ function vInfo(){
     app.innerHTML = `${topbar(()=>go({name:'infolab'}))}
     <div class="card"><p class="mut">Words to know</p>${words}</div>
     <div class="card iart">${art}</div>
-    <div class="row"><button class="btn sun" data-a="${A(()=>{ v.phase = 'q'; v.mins = Math.min(20, (Date.now() - v.t0) / 60000); addMinutes(v.mins); render(); window.scrollTo({top:0}); })}">I'm done reading → Questions</button></div>`;
+    <div class="row"><button class="btn sun" data-a="${A(()=>{ v.phase = 'q'; v.mins = Math.min(20, (Date.now() - v.t0) / 60000); addMinutes(v.mins, a.title); render(); window.scrollTo({top:0}); })}">I'm done reading → Questions</button></div>`;
     return;
   }
   if (v.phase === 'q'){
@@ -7233,7 +7244,7 @@ function cpFinish(f){
   const p = me(), v = view, dom = {};
   f.items.forEach((it, i) => { const d = dom[it.dom] || (dom[it.dom] = [0, 0]); d[1]++; if (v.st[i].ok) d[0]++; });
   p.cps = p.cps || []; p.cps.push({d:today(), id:f.id, dom, mins: Math.round((Date.now() - (v.t0 || Date.now())) / 60000)});
-  addMinutes(Math.min(30, (Date.now() - (v.t0 || Date.now())) / 60000));
+  addMinutes(Math.min(30, (Date.now() - (v.t0 || Date.now())) / 60000), 'Monthly checkpoint');
   logEvent('checkin', 'Monthly checkpoint', {w:0}); addCoins(30, 'checkpoint'); confetti(50); questMark('check'); save();
 }
 function cpTableHtml(cps){
