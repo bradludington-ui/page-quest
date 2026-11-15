@@ -332,6 +332,7 @@ a{color:var(--accent)}
 .myqrtile{width:100%}
 .logtab{font-size:.9rem}.logtab td,.logtab th{padding:8px 6px}.logtab td:first-child{white-space:nowrap}
 .schoolwk{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.kdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
 </style>
 
 </head>
@@ -4927,9 +4928,10 @@ function schoolCsv(){
   return lines.join('\r\n');
 }
 function logWeekCsv(){
-  const lines = [['Week of (Sunday)','Child','Grade','Days read','Minutes read','Minutes out loud','Days goal met','Stories and chapters','Middle reading speed (words/min)','Level','What they read'].join(',')];
-  logWeeks(logRows()).forEach(w => { const b = w.s ? bandOf(w.g, w.s, w.ws) : null;
-    lines.push([w.ws, w.n, w.g, w.days, w.m, w.al, w.met, w.stories, w.s || '', b ? b.lab : '', w.titles.join('; ')].map(csvCell).join(',')); });
+  const lines = [['Week of (Sunday)','Child','Grade','Days read','Minutes read','Minutes out loud','Days goal met','Stories and chapters','Middle reading speed (words/min)','Change from last week','Target (top 25%)','Level','What they read'].join(',')];
+  const rows = logRows(), chg = {}; [...new Set(rows.map(r => r.n))].forEach(nm => speedWeeksOf(rows.filter(r => r.n === nm)).forEach(w => chg[nm + '|' + w.ws] = w));
+  logWeeks(rows).forEach(w => { const sw = chg[w.n + '|' + w.ws];
+    lines.push([w.ws, w.n, w.g, w.days, w.m, w.al, w.met, w.stories, w.s || '', sw && sw.chg != null ? (sw.chg > 0 ? '+' : '') + sw.chg : '', sw ? sw.tg : '', sw ? sw.band.lab : '', w.titles.join('; ')].map(csvCell).join(',')); });
   return lines.join('\r\n');
 }
 function logBackup(){ return JSON.stringify({app:'Page Quest reading log', saved: new Date().toISOString(), log: logStore()}); }
@@ -4984,6 +4986,67 @@ function logFilesHtml(stamp, n){
     <p id="logMsg" class="mut" style="margin-top:4px"></p>
     <p class="mut" style="font-size:.85rem">Every file holds the whole log from the first scan, so the newest one always has everything. Back up now and then: if this phone's storage is ever cleared, ♻️ Restore puts every day back.</p></div>`;
 }
+// ---- reading speed, week over week ----
+// each week's middle (median) speed from every microphone read that week, the change from the week before,
+// and how it sits against the grade benchmarks for that week of the school year
+function speedWeeksOf(rows){
+  return logWeeks(rows).filter(w => w.s).sort((a, b) => a.ws.localeCompare(b.ws)).map((w, i, A) => {
+    const prev = A[i-1], mid = today(new Date(new Date(w.ws+'T12:00').getTime() + 3*864e5));
+    return Object.assign(w, {chg: prev ? w.s - prev.s : null, tg: normAt(w.g, 75, mid), typ: normAt(w.g, 50, mid), lo: normAt(w.g, 25, mid), band: bandOf(w.g, w.s, mid)});
+  });
+}
+const KID_COLS = ['#2a5bd7', '#e0671b', '#1c8f5a', '#a43fd1', '#d24a2f'];
+// one child: their weekly speed over the grade's benchmark zones (the zones rise through the year)
+function speedTrendSvg(ws){
+  if (!ws.length) return '<p class="mut">No microphone reads logged yet. Speed comes from pages read with 🎤 Read out loud and the Fluency Gym.</p>';
+  const W = 640, H = 230, L = 40, R = 16, T = 14, B = 30, n = ws.length;
+  const top = Math.max(...ws.map(w => Math.max(w.s, w.tg))) + 15, bot = Math.max(0, Math.floor((Math.min(...ws.map(w => Math.min(w.s, w.lo))) - 25) / 10) * 10);
+  const x = i => n === 1 ? (L + W - R) / 2 : L + i * (W - L - R) / (n - 1), y = v => T + (H - T - B) * (1 - (v - bot) / (top - bot));
+  const band = (k, col) => `<polygon points="${ws.map((w, i) => x(i) + ',' + y(k === 'top' ? top : w[k])).join(' ')} ${ws.map((w, i) => x(n-1-i) + ',' + y(k === 'lo' ? bot : k === 'typ' ? ws[n-1-i].lo : k === 'tg' ? ws[n-1-i].typ : ws[n-1-i].tg)).join(' ')}" fill="${col}" opacity=".13"/>`;
+  const step = Math.max(1, Math.ceil(n / 8));
+  return `<svg class="speedchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Reading speed week by week">
+    ${band('lo', 'var(--oops)')}${band('typ', 'var(--sun)')}${band('tg', 'var(--accent)')}${band('top', 'var(--good)')}
+    <polyline points="${ws.map((w, i) => x(i) + ',' + y(w.tg)).join(' ')}" fill="none" stroke="var(--good)" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="${W-R}" y="${y(ws[n-1].tg) - 6}" text-anchor="end" font-size="11" font-weight="700" fill="var(--good)">🚀 target ${ws[n-1].tg}</text>
+    ${[bot, Math.round((bot+top)/2), Math.round(top)].map(v => `<text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--mut)">${v}</text>`).join('')}
+    ${ws.map((w, i) => i % step && i !== n-1 ? '' : `<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--mut)">${new Date(w.ws+'T12:00').toLocaleDateString(undefined,{month:'numeric', day:'numeric'})}</text>`).join('')}
+    ${n > 1 ? `<polyline points="${ws.map((w, i) => x(i) + ',' + y(w.s)).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>` : ''}
+    ${ws.map((w, i) => `<circle cx="${x(i)}" cy="${y(w.s)}" r="5.5" fill="${w.band.col}" stroke="var(--panel)" stroke-width="2"><title>Week of ${w.ws}: ${w.s} words/min</title></circle>`).join('')}
+  </svg>`;
+}
+// every child on one chart, as a share of their own grade's target, so a 3rd and a 5th grader compare fairly
+function speedCompareSvg(byKid){
+  const all = Object.values(byKid).flat(); if (!all.length) return '';
+  const weeks = [...new Set(all.map(w => w.ws))].sort(), W = 640, H = 220, L = 44, R = 16, T = 14, B = 30, n = weeks.length;
+  const pc = w => Math.round(w.s / w.tg * 100), vals = all.map(pc), top = Math.max(110, ...vals) + 5, bot = Math.min(60, ...vals) - 5;
+  const x = ws => n === 1 ? (L + W - R) / 2 : L + weeks.indexOf(ws) * (W - L - R) / (n - 1), y = v => T + (H - T - B) * (1 - (v - bot) / (top - bot));
+  const step = Math.max(1, Math.ceil(n / 8));
+  return `<svg class="speedchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Each child's reading speed as a share of their grade target">
+    <rect x="${L}" y="${y(top)}" width="${W-L-R}" height="${y(100)-y(top)}" fill="var(--good)" opacity=".12"/>
+    <line x1="${L}" x2="${W-R}" y1="${y(100)}" y2="${y(100)}" stroke="var(--good)" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="${W-R}" y="${y(100)-6}" text-anchor="end" font-size="11" font-weight="700" fill="var(--good)">🚀 target (top 25% for their grade)</text>
+    ${[bot+5, 100, top-5].map(v => `<text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--mut)">${Math.round(v)}%</text>`).join('')}
+    ${weeks.map((w, i) => i % step && i !== n-1 ? '' : `<text x="${x(w)}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--mut)">${new Date(w+'T12:00').toLocaleDateString(undefined,{month:'numeric', day:'numeric'})}</text>`).join('')}
+    ${Object.entries(byKid).map(([nm, ws], k) => { const c = KID_COLS[k % KID_COLS.length];
+      return (ws.length > 1 ? `<polyline points="${ws.map(w => x(w.ws) + ',' + y(pc(w))).join(' ')}" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>` : '') +
+        ws.map(w => `<circle cx="${x(w.ws)}" cy="${y(pc(w))}" r="5" fill="${c}" stroke="var(--panel)" stroke-width="2"><title>${esc(nm)}, week of ${w.ws}: ${w.s} words/min (${pc(w)}% of target ${w.tg})</title></circle>`).join(''); }).join('')}
+    ${Object.keys(byKid).map((nm, k) => `<g transform="translate(${L + 8 + k*110},${T + 4})"><rect width="10" height="10" rx="5" fill="${KID_COLS[k % KID_COLS.length]}"/><text x="15" y="9" font-size="12" font-weight="700" fill="var(--ink)">${esc(nm)}</text></g>`).join('')}
+  </svg>`;
+}
+function speedHtml(rows){
+  const names = [...new Set(rows.map(r => r.n))].sort(), byKid = {}; names.forEach(nm => byKid[nm] = speedWeeksOf(rows.filter(r => r.n === nm)));
+  const latest = nm => byKid[nm][byKid[nm].length - 1], arrow = c => c == null ? '<span class="mut">–</span>' : c > 0 ? `<b style="color:var(--good)">▲ +${c}</b>` : c < 0 ? `<b style="color:var(--oops)">▼ ${c}</b>` : '<span class="mut">no change</span>';
+  return `<div class="card" style="display:flex;flex-direction:column;gap:12px"><h2>⚡ Reading speed, week over week</h2>
+    <div class="tablewrap"><table class="logtab"><tr><th>Child</th><th>This week</th><th>vs last week</th><th>Level</th><th>Target</th><th>Since first week</th></tr>
+      ${names.map((nm, k) => { const w = latest(nm), f = byKid[nm][0]; return w ? `<tr><td><span class="kdot" style="background:${KID_COLS[k % KID_COLS.length]}"></span><b>${esc(nm)}</b> <span class="mut">gr ${w.g}</span></td><td><b>${w.s}</b> wpm</td><td>${arrow(w.chg)}</td><td>${w.band.ic} ${w.band.lab}</td><td>${w.tg}+ <span class="mut">(${w.s >= w.tg ? 'reached!' : (w.tg - w.s) + ' to go'})</span></td><td>${byKid[nm].length > 1 ? arrow(w.s - f.s) : '<span class="mut">–</span>'}</td></tr>` : `<tr><td><b>${esc(nm)}</b></td><td colspan="5" class="mut">No microphone reads logged yet</td></tr>`; }).join('')}
+    </table></div>
+    ${names.length > 1 ? `<h3>Compared with each other</h3><p class="mut" style="font-size:.9rem">Each line is a child's weekly speed as a share of their own grade's target, so the twins and Charlee compare fairly. 100% = reached the top-25% target.</p>${speedCompareSvg(byKid)}` : ''}
+    ${names.map(nm => { const ws = byKid[nm]; return `<div class="schoolwk"><h3>${esc(nm)}</h3>${speedTrendSvg(ws)}
+      ${ws.length ? `<div class="tablewrap"><table class="logtab"><tr><th>Week of</th><th>Speed</th><th>Change</th><th>Level</th><th>Target</th><th>Reads</th></tr>
+        ${ws.slice().reverse().map(w => `<tr><td>${new Date(w.ws+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td><td><b>${w.s}</b></td><td>${arrow(w.chg)}</td><td>${w.band.ic} ${w.band.lab}</td><td>${w.tg}+</td><td>${w.sp.length}</td></tr>`).join('')}</table></div>` : ''}</div>`; }).join('')}
+    <p class="mut" style="font-size:.85rem">This week is still in progress, so it can move until Saturday. Speed is the middle of all microphone reads that week, so one fast or slow page cannot swing it. Benchmarks: Hasbrouck & Tindal (2017); targets rise through the school year.</p>
+  </div>`;
+}
 // the school view: week by week, each day's books and minutes, with Copy for the reading journal
 function schoolHtml(mine, who){
   const weeks = new Map(); mine.forEach(r => { const w = weekStart(r.d); (weeks.get(w) || weeks.set(w, []).get(w)).push(r); });
@@ -5007,8 +5070,8 @@ function vKidLog(){
   const g = mine[0] ? mine[0].g : 3, bNow = lastS && bandOf(g, lastS.s, lastS.d);
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'hub'}))}">← Back</button><button class="btn small sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button></div>
   <h1>📒 Reading log</h1>
-  ${names.length ? `<div class="tabs">${names.map(nm => `<button class="${nm===who?'on':''}" data-a="${A(()=>{ v.who = nm; render(); })}">${esc(nm)}</button>`).join('')}</div>` : '<p class="mut">No days logged yet.</p>'}
-  ${who ? `<div class="card" style="display:flex;flex-direction:column;gap:12px">
+  ${names.length ? `<div class="tabs"><button class="${v.speed?'on':''}" data-a="${A(()=>{ v.speed = true; render(); })}">⚡ Speed trends</button>${names.map(nm => `<button class="${nm===who && !v.speed?'on':''}" data-a="${A(()=>{ v.who = nm; v.speed = false; render(); })}">${esc(nm)}</button>`).join('')}</div>` : '<p class="mut">No days logged yet.</p>'}
+  ${v.speed && names.length ? speedHtml(rows) : who ? `<div class="card" style="display:flex;flex-direction:column;gap:12px">
     <h2>${esc((mine[0]||{}).a || '')} ${esc(who)} <span class="mut" style="font-size:1rem">Grade ${g} · all time since ${niceDate(mine[mine.length-1].d)}</span></h2>
     <div class="row" style="gap:6px"><span class="chip">📅 ${mine.length} days read</span><span class="chip">⏱ ${Math.round(tot('m')/60*10)/10} hours (${tot('m')} min)</span><span class="chip">🎤 ${tot('al')} min out loud</span>
       <span class="chip">📚 ${stories} stories and chapters</span><span class="chip">✓ goal met ${mine.filter(r => (r.m||0) >= (r.gl||20)).length} days</span>
