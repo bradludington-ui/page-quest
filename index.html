@@ -4753,7 +4753,7 @@ const BREAK_LOOK = {bowling:['#4f46e5','#22d3ee'], golf:['#15803d','#84cc16'], h
 window.BreakGames = window.BreakGames || {};
 let breakCleanup = null;
 function breakStop(){ if (breakCleanup){ try{ breakCleanup(); }catch(e){} breakCleanup = null; } }
-const BREAK_OPEN_DAYS = ['2026-11-14']; // days a grown-up opened the Brain Break for every child, on every iPad
+const BREAK_OPEN_DAYS = ['2026-11-14', '2026-11-15']; // days a grown-up opened the Brain Break for every child, on every iPad
 function breakOpen(p){ return isParent(p) || (aloudToday(p) >= BREAK_ALOUD && (!MATH_ON || mathToday(p) >= MATH_GOAL)) || p.breakDay === today() || BREAK_OPEN_DAYS.includes(today()); } // breakDay: a grown-up opened it for today
 function breakApi(p, g){
   p.breakScores = p.breakScores || {}; p.breakStore = p.breakStore || {};
