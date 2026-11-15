@@ -401,6 +401,12 @@ a{color:var(--accent)}
 .scpen{all:unset;cursor:pointer;width:44px;height:44px;border-radius:50%;background:var(--c);border:4px solid #fff;box-shadow:0 0 0 2px #cbd5e1}.scpen.on{box-shadow:0 0 0 4px #f59e0b}
 .sctool{all:unset;cursor:pointer;width:52px;height:48px;border-radius:12px;display:grid;place-items:center;font-size:1.5rem;background:#f1f5f9;color:#1f2937}.sctool.on{outline:3px solid #f59e0b}
 body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(--ink);border:2px dashed var(--accent)}
+.kstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.kstat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 8px;border-radius:16px;background:var(--bg);border:2px solid var(--line);text-align:center}
+.kstat>span:first-child{font-size:1.6rem}.kstat b{font-family:var(--display);font-size:1.8rem;line-height:1.1}.kstat .mut{font-size:.85rem}
+.kwday{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}.kwday.sel b{color:var(--accent)}
+.kbar{display:flex;flex-direction:column-reverse;width:70%;height:90px;border-radius:8px;background:var(--line);overflow:hidden}.kbar i{display:block;width:100%}.kbar i.r{background:var(--accent)}.kbar i.m{background:var(--good)}
+.kweek{height:auto!important;align-items:flex-end}
 </style>
 
 </head>
@@ -1027,7 +1033,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint, subject:vSubject, mathplay:vMathPlay})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint, subject:vSubject, mathplay:vMathPlay, mystats:vMyStats})[view.name]();
   // tables that turn into stacked cards on a phone: each cell is labelled with its column heading
   document.querySelectorAll('table.rtab').forEach(t => { const hs = [...t.rows[0].cells].map(c => c.textContent.trim()); [...t.rows].slice(1).forEach(r => [...r.cells].forEach((c, i) => c.dataset.l = hs[i] || '')); });
 }
@@ -1176,6 +1182,7 @@ function vHub(){
     <button class="tile" data-a="${A(()=>go({name:'wordgame'}))}"><span class="ic">🕵️</span><span><b>Word Detective</b><span class="mut">Guess the secret word · free any time</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'arcade'}))}"><span class="ic">🎮</span><span><b>Game arcade</b><span class="mut">${tix(p)} ticket${tix(p)===1?'':'s'} to play</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">Build trophies, buy sports gear</span></span></button>
+    ${isParent(p) ? '' : `<button class="tile" data-a="${A(()=>go({name:'mystats'}))}"><span class="ic">📊</span><span><b>My stats</b><span class="mut">What I read, minutes, speed</span></span></button>`}
     <button class="tile" data-a="${A(()=>{S.cur=null; save(); go({name:'profiles'});})}"><span class="ic">👋</span><span><b>Switch reader</b><span class="mut">Back to the start</span></span></button>
   </div>
   ${checkDue(p) ? `<p class="mut">📏 This month's reading check-in is ready. Ask a grown-up to start it from the Grown-ups page.</p>` : ''}
@@ -7482,7 +7489,7 @@ function vMathHub(){
       <div class="row" style="gap:6px;margin-top:6px">${mathSkillsOf(p, un.id).map(k => { const s = mathState(p).stat[k]; return `<button class="btn small ghost" data-a="${A(()=>mathStart(p, [k], window.MathSkills[k].name, 'topic'))}">${esc(window.MathSkills[k].name)}${s && s[1] ? ` · ${Math.round(s[0]/s[1]*100)}%` : ''}</button>`; }).join('') || '<span class="mut">Loading…</span>'}</div></div>`).join('')}</div></div>
   <div class="tiles">
     <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Brain Break</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : breakNeed(p) + ' to go'}</span></span></button>
-    <button class="tile" data-a="${A(()=>go({name:'shop'}))}"><span class="ic">🛍️</span><span><b>Treasure shop</b><span class="mut">Build trophies, buy sports gear</span></span></button>
+    <button class="tile" data-a="${A(()=>go({name:'mystats'}))}"><span class="ic">📊</span><span><b>My stats</b><span class="mut">What I did, minutes, speed</span></span></button>
     <button class="tile" data-a="${A(()=>{S.cur=null; save(); go({name:'profiles'});})}"><span class="ic">👋</span><span><b>Switch reader</b><span class="mut">Back to the start</span></span></button>
   </div>
   <button class="tile myqrtile" data-a="${A(()=>go({name:'myqr'}))}"><span class="ic">📱</span><span><b>Show my report code</b><span class="mut">Your grown-up scans it with their phone</span></span></button>`;
@@ -7658,6 +7665,42 @@ function mathCardHtml(p){
       : `<div class="row" style="margin-top:6px"><button class="btn small" data-a="${A(()=>{ view.mapEdit = p.id; render(); })}">＋ Enter a MAP score</button></div>`}</div>`;
 }
 function mathSetUnit(id, u){ const p = S.profiles.find(x => x.id === id); if (!p) return; p.mathUnit = u || ''; save(); render(); }
+
+// ---------- My stats: the kids' own page ----------
+// What they read and for how long (any day), this week's minutes, reading speed, and math, in kid language.
+function vMyStats(){
+  const p = me(), v = view, days = [...new Set(Object.keys(p.daily || {}).concat(Object.keys((p.math || {}).min || {})))].filter(d => d <= today()).sort();
+  if (!days.includes(today())) days.push(today());
+  const d = v.d && days.includes(v.d) ? v.d : today(), i = days.indexOf(d), x = dayData(p, d), titles = readTitles(p, d, x);
+  const mm = Math.floor(mathToday(p, d)), goal = goalOf(p);
+  const week = [...Array(7)].map((_, k) => addDays(k - 6)), maxM = Math.max(goal, ...week.map(w => ((p.daily || {})[w] || 0) + mathToday(p, w)));
+  const sp = speedNow(p), spW = speedWeeks(p, 6).filter(w => w.w != null);
+  const books = (p.series && Object.keys(p.series).filter(id => { const se = SERIES.find(s => s.id === id); return se && chaptersRead(seriesState(p, id)).length >= se.chapters.length; }).length) || 0;
+  const ms = mathState(p), solved = Object.values(ms.stat).reduce((a, s) => a + s[1], 0), right = Object.values(ms.stat).reduce((a, s) => a + s[0], 0);
+  const stat = (ic, n, lab) => `<div class="kstat"><span>${ic}</span><b>${n}</b><span class="mut">${lab}</span></div>`;
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <h1>📊 My stats</h1>
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="daynav"><button class="btn ghost small" aria-label="Earlier day" ${i > 0 ? '' : 'disabled'} data-a="${A(()=>{ v.d = days[i-1]; render(); })}">◀</button>
+      <b>${d === today() ? 'Today' : new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'})}</b>
+      <button class="btn ghost small" aria-label="Later day" ${i < days.length - 1 ? '' : 'disabled'} data-a="${A(()=>{ v.d = days[i+1]; render(); })}">▶</button></div>
+    <div class="kstats">${stat('📖', Math.floor(x.mins || 0), `of ${goal} min reading`)}${stat('🎤', x.aloud, 'min out loud')}${MATH_ON ? stat('🔢', mm, 'min of math') : ''}${x.speed ? stat('⚡', x.speed.w, 'words a minute') : ''}</div>
+    <h3>What I read</h3>
+    ${titles.length ? `<table class="daytab"><tr><th>Title</th><th class="num">Minutes</th></tr>${titles.map(t => `<tr><td>${esc(t[0])}${t[3] ? ` <span class="mut">· ${t[2]} of ${t[3]} right</span>` : ''}</td><td class="num">${t[4] ? '~' : ''}${t[1]}</td></tr>`).join('')}
+      <tr class="daytot"><td>Total</td><td class="num"><b>${Math.floor(x.mins || 0)}</b></td></tr></table>` : `<p class="mut">${d === today() ? 'Nothing yet today. Pick a story and start reading!' : 'No reading this day.'}</p>`}
+    ${(x.math || []).length ? `<h3>My math</h3><table class="daytab"><tr><th>Practice</th><th class="num">Right</th></tr>${x.math.map(e => `<tr><td>${esc(e.title)}</td><td class="num">${e.right} of ${e.total}</td></tr>`).join('')}</table>` : ''}
+  </div>
+  <div class="card"><h3>This week</h3>
+    <p class="mut" style="font-size:.85rem;margin:4px 0 8px"><span class="kdot" style="background:var(--accent)"></span>reading <span class="kdot" style="background:var(--good);margin-left:10px"></span>math · tap a day to see it</p>
+    <div class="week kweek">${week.map(w => { const r = Math.floor((p.daily || {})[w] || 0), m2 = Math.floor(mathToday(p, w)); return `<button class="wday kwday ${w === d ? 'sel' : ''}" data-a="${A(()=>{ v.d = w; render(); window.scrollTo({top:0}); })}"><span class="kbar"><i class="r" style="height:${r / maxM * 100}%"></i><i class="m" style="height:${m2 / maxM * 100}%"></i></span><b>${r + m2}</b><span>${new Date(w+'T12:00').toLocaleDateString(undefined,{weekday:'short'})}</span></button>`; }).join('')}</div>
+</div>
+  ${sp ? `<div class="card" style="display:flex;flex-direction:column;gap:10px"><h3>⚡ My reading speed</h3>${speedGoal(p).replace(/^<div class="card speedgoal">/, '<div class="speedgoal">').replace('<h3>⚡ Reading speed</h3>', '')}
+    ${spW.length > 1 ? `<table class="daytab"><tr><th>Week of</th><th class="num">Words a minute</th></tr>${spW.slice().reverse().map((w, k, A) => `<tr><td>${new Date(w.end+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td><td class="num"><b>${w.w}</b>${A[k+1] ? (w.w > A[k+1].w ? ' <span style="color:var(--good)">▲</span>' : w.w < A[k+1].w ? ' <span style="color:var(--oops)">▼</span>' : '') : ''}</td></tr>`).join('')}</table>` : ''}</div>` : ''}
+  <div class="card"><h3>🏆 All time</h3><div class="kstats">
+    ${stat('📚', p.completed || 0, 'stories and chapters')}${stat('📕', books, 'books finished')}${stat('⏱', Math.round((p.minutes || 0) / 6) / 10, 'hours reading')}
+    ${stat('🔥', (p.streak || {}).n || 0, 'day streak')}${stat('🎯', p.mastered || 0, 'focus words mastered')}${stat('🔬', Object.keys(p.infoDone || {}).length, 'Info Lab articles')}
+    ${MATH_ON ? stat('🔢', solved, 'math problems') + stat('✅', solved ? Math.round(right / solved * 100) + '%' : '–', 'math right first try') : ''}</div></div>`;
+}
 
 // ---------- Start ----------
 if (S.cur && me()) view = {name:'hub'};
