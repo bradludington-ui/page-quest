@@ -4989,21 +4989,17 @@ function parentCard(){
     <div class="row spread"><h2>📒 Kids' reading log</h2><span class="chip">${rows.length} day${rows.length===1?'':'s'} logged</span></div>
     <p class="mut">${rows.length ? `${kids.map(esc).join(', ')}${last ? ` · last scanned ${new Date(last.saved).toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}` : ''}` : 'Scan the code from each child\'s iPad (📱 Show my reading report code, at the bottom of their home screen) to start the log. Every scan adds that day, and the last 4 weeks, to the log for good.'}</p>
     <div class="row"><button class="btn sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button>
-      <button class="btn" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog'}))}">📖 Open the log</button></div>
+      <button class="btn" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog'}))}">📖 Open the log</button>
+      <button class="btn ghost" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog', speed:true}))}">⚡ Speed trends</button></div>
     ${rows.length ? `<div class="dcards">${rows.slice(0, 4).map(r => logDayCard(r, true)).join('')}</div>` : ''}
-    ${logFilesHtml(stamp, rows.length)}
   </div>`;
 }
 function logFilesHtml(stamp, n){
-  return `<div><h3>Save to Files</h3>
-    <div class="row" style="margin-top:6px"><button class="btn ghost small" ${n ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest school reading log ${stamp}.csv`, schoolCsv(), 'text/csv', 'logMsg'))}">📚 School reading log (spreadsheet)</button>
-      <button class="btn ghost small" ${n ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest daily log ${stamp}.csv`, logCsv(), 'text/csv', 'logMsg'))}">📊 Daily stats (spreadsheet)</button>
-      <button class="btn ghost small" ${n ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest weekly log ${stamp}.csv`, logWeekCsv(), 'text/csv', 'logMsg'))}">📅 Weekly stats (spreadsheet)</button>
-      <button class="btn ghost small" ${n ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest reading journal ${stamp}.txt`, logText(), 'text/plain', 'logMsg'))}">📝 Journal (text)</button></div>
-    <div class="row" style="margin-top:6px"><button class="btn ghost small" ${n ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest log backup ${stamp}.json`, logBackup(), 'application/json', 'logMsg'))}">🗄️ Back up the whole log</button>
-      <label class="btn ghost small" style="cursor:pointer">♻️ Restore from a backup<input type="file" accept=".json,application/json" style="display:none" onchange="if(this.files[0]) logRestore(this.files[0], 'logMsg')"></label></div>
+  return `<div><h3>🗄️ Keep the log safe</h3>
+    <div class="row" style="margin-top:6px"><button class="btn ghost small" ${n ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest log backup ${stamp}.json`, logBackup(), 'application/json', 'logMsg'))}">Back up the whole log</button>
+      <label class="btn ghost small" style="cursor:pointer">Restore from a backup<input type="file" accept=".json,application/json" style="display:none" onchange="if(this.files[0]) logRestore(this.files[0], 'logMsg')"></label></div>
     <p id="logMsg" class="mut" style="margin-top:4px"></p>
-    <p class="mut" style="font-size:.85rem">Every file holds the whole log from the first scan, so the newest one always has everything. Back up now and then: if this phone's storage is ever cleared, ♻️ Restore puts every day back.</p></div>`;
+    <p class="mut" style="font-size:.85rem">The log lives on this phone. A backup now and then means that if the phone is ever reset or replaced, Restore puts every day back.</p></div>`;
 }
 // ---- reading speed, week over week ----
 // each week's middle (median) speed from every microphone read that week, the change from the week before,
