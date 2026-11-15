@@ -7269,7 +7269,7 @@ function mathTopics(list){ const T = {}; (list || []).forEach(e => { T[e.title] 
 // Brain Break needs 20 minutes of out-loud reading AND 10 minutes of math, each counted only while actually working.
 // Problems come from generators in math/g3.js and math/g5.js (window.MathSkills), loaded when a child opens Math.
 const MATH_GOAL = 10;
-const MATH_ON = false; // switched on once the problem sets (math/g3.js, math/g5.js) are in place
+const MATH_ON = true;
 // the class units, in the order school teaches them (from the teachers' newsletters); "exp" = expected, not yet announced
 const MATH_UNITS = {
   3: [{id:'g3u1', name:'The data cycle', from:'08-15'}, {id:'g3u2', name:'Place value, adding and subtracting', from:'09-04'},
@@ -7280,6 +7280,14 @@ const MATH_UNITS = {
       {id:'g5u3', name:'Ratios and rational numbers', from:'09-28'}, {id:'g5u4', name:'Coordinate plane and congruence', from:'10-14'},
       {id:'g5u5', name:'Integers, exponents and square roots', from:'10-30'}, {id:'g5u6', name:'Expressions and equations', from:'12-07', exp:true},
       {id:'g5u7', name:'Area and circles', from:'02-01', exp:true}, {id:'g5u8', name:'Probability', from:'04-12', exp:true}]};
+const MAP_DOMS = [['num','Number and number sense'],['comp','Computation and estimation'],['geo','Measurement and geometry'],['alg','Probability, statistics, patterns and algebra']];
+const SKILL_DOM = {'g3.graphs':'alg','g3.placevalue':'num','g3.compare':'num','g3.round':'num','g3.addsub':'comp','g3.estimate':'comp','g3.facts':'comp','g3.arrays':'comp','g3.inverse':'comp','g3.wordmd':'comp',
+  'g3.polygons':'geo','g3.quads':'geo','g3.composepoly':'geo','g3.multiples10':'comp','g3.fractions':'num','g3.time':'geo','g3.money':'comp','g3.perimeter':'geo','g3.area':'geo',
+  'g5.stats':'alg','g5.statq':'alg','g5.intcompare':'num','g5.absval':'num','g5.ineq':'alg','g5.ratio':'num','g5.fdp':'num','g5.order':'num','g5.quadrant':'geo','g5.plot':'geo','g5.distance':'geo','g5.congruent':'geo',
+  'g5.intops':'comp','g5.orderops':'comp','g5.exponents':'num','g5.squares':'num','g5.expr':'alg','g5.onestep':'alg','g5.area':'geo','g5.circle':'geo','g5.prob':'alg'};
+function mapLatest(p){ return (p.map || []).slice().sort((a, b) => a.d.localeCompare(b.d)).pop() || null; }
+// the MAP goal area with the lowest score is the one to build up
+function mapWeak(p){ const m = mapLatest(p); if (!m || !m.dom) return null; const ks = MAP_DOMS.map(x => x[0]).filter(k => m.dom[k]); if (!ks.length) return null; return ks.sort((a, b) => m.dom[a] - m.dom[b])[0]; }
 function mathBand(p){ return p.grade >= 5 ? 5 : 3; }
 function mathUnits(p){ return MATH_UNITS[mathBand(p)]; }
 // a unit's start date in the current school year (August to July)
@@ -7455,6 +7463,9 @@ function mathQuest(p){
   const it = [{k:'mwarm', icon:'⚡', label: mathBand(p) >= 5 ? 'Warm-up: quick number skills' : 'Warm-up: multiplication and division facts', run:()=>mathStart(p, mathPlan(p, 'warm'), 'Warm-up', 'mwarm')},
     {k:'mlesson', icon:'⭐', label:`This week: ${mathUnitNow(p).name}`, run:()=>mathStart(p, mathPlan(p, 'lesson'), mathUnitNow(p).name, 'mlesson')}];
   if (mathUnits(p).indexOf(mathUnitNow(p)) > 0) it.push({k:'mspiral', icon:'🌀', label:'Spiral review: a mix from earlier units', run:()=>mathStart(p, mathPlan(p, 'spiral'), 'Spiral review', 'mspiral')});
+  const wk = mapWeak(p), U = mathUnits(p), ui = U.indexOf(mathUnitNow(p));
+  if (wk){ const ks = U.slice(0, ui + 1).flatMap(x => mathSkillsOf(p, x.id)).filter(k => SKILL_DOM[k] === wk);
+    if (ks.length) it.push({k:'mboost', icon:'🚀', label:`Boost: ${MAP_DOMS.find(x => x[0] === wk)[1]}`, run:()=>mathStart(p, [...Array(6)].map((_, i) => ks[i % ks.length]).sort(() => Math.random() - .5), 'Boost: ' + MAP_DOMS.find(x => x[0] === wk)[1], 'mboost')}); }
   if (missFacts) it.push({k:'mfacts', icon:'🎯', label:`Focus facts: ${missFacts} to master`, run:()=>mathStart(p, mathPlan(p, 'focus'), 'Focus facts', 'mfacts', true)});
   return it.map(i => Object.assign(i, {done: !!q[i.k]}));
 }
@@ -7570,10 +7581,12 @@ function mathCardHtml(p){
     ${stats.length ? `<table class="daytab"><tr><th>Skill</th><th class="num">First try</th><th class="num">Level</th></tr>${stats.map(([k, s]) => `<tr><td>${esc(M[k] ? M[k].name : k)}</td><td class="num"><b style="color:${s[0]/s[1] >= .8 ? 'var(--good)' : s[0]/s[1] >= .6 ? 'var(--ink)' : 'var(--oops)'}">${Math.round(s[0]/s[1]*100)}%</b> <span class="mut">(${s[1]})</span></td><td class="num">${m.lvl[k] || 1}</td></tr>`).join('')}</table>` : '<p class="mut">No math practice yet.</p>'}
     ${fx.length ? `<p style="margin-top:6px">🎯 Focus facts: ${fx.slice(0, 20).map(k => `<span class="chip">${esc(k.replace('x', ' × ').replace('/', ' ÷ ').replace(/^sq/, '√'))}</span>`).join(' ')}</p>` : ''}
     <h3 style="margin-top:12px">MAP math scores</h3>
+    ${(() => { const l = maps[maps.length-1], wk = mapWeak(p); return l && l.dom && Object.keys(l.dom).length ? `<table class="daytab"><tr><th>Goal areas (${niceDate(l.d)})</th><th class="num">RIT</th></tr>${MAP_DOMS.filter(([k]) => l.dom[k]).map(([k, lab]) => `<tr><td>${k === wk ? '🚀 ' : ''}${lab}</td><td class="num"><b>${l.dom[k]}</b></td></tr>`).join('')}</table>${wk ? `<p class="mut" style="font-size:.85rem">🚀 = lowest area: the daily math quest adds a Boost round for it.</p>` : ''}` : ''; })()}
     ${maps.length ? `<table class="daytab"><tr><th>Test</th><th class="num">RIT</th><th class="num">Percentile</th></tr>${maps.slice().reverse().map(r => `<tr><td>${niceDate(r.d)}${r.goal ? ` <span class="mut">(goal ${r.goal})</span>` : ''}</td><td class="num"><b>${r.rit}</b></td><td class="num">${r.pct ? r.pct + '%' : '–'}</td></tr>`).join('')}</table>` : '<p class="mut">No MAP scores yet.</p>'}
     ${ed ? `<div class="irform"><label>Test date<input type="date" id="map_d" value="${today()}"></label><label>RIT score<input type="number" id="map_rit" inputmode="numeric" placeholder="e.g. 205"></label>
         <label>Percentile<input type="number" id="map_pct" inputmode="numeric" placeholder="e.g. 62"></label><label>Growth goal (RIT, optional)<input type="number" id="map_goal" inputmode="numeric"></label>
-        <div class="row"><button class="btn sun small" data-a="${A(()=>{ const g = id => document.getElementById(id).value; if (!g('map_rit')) return; p.map = (p.map || []).filter(x => x.d !== g('map_d')); p.map.push({d:g('map_d') || today(), rit:+g('map_rit'), pct:g('map_pct') ? +g('map_pct') : '', goal:g('map_goal') ? +g('map_goal') : ''}); save(); view.mapEdit = null; render(); })}">Save</button><button class="btn ghost small" data-a="${A(()=>{ view.mapEdit = null; render(); })}">Cancel</button></div></div>`
+        ${MAP_DOMS.map(([k, l]) => `<label>${l} (score)<input type="number" id="map_${k}" inputmode="numeric"></label>`).join('')}
+        <div class="row"><button class="btn sun small" data-a="${A(()=>{ const g = id => document.getElementById(id).value; if (!g('map_rit')) return; p.map = (p.map || []).filter(x => x.d !== g('map_d')); const dom = {}; MAP_DOMS.forEach(([k]) => { if (g('map_' + k)) dom[k] = +g('map_' + k); }); p.map.push({d:g('map_d') || today(), rit:+g('map_rit'), pct:g('map_pct') ? +g('map_pct') : '', goal:g('map_goal') ? +g('map_goal') : '', dom}); save(); view.mapEdit = null; render(); })}">Save</button><button class="btn ghost small" data-a="${A(()=>{ view.mapEdit = null; render(); })}">Cancel</button></div></div>`
       : `<div class="row" style="margin-top:6px"><button class="btn small" data-a="${A(()=>{ view.mapEdit = p.id; render(); })}">＋ Enter a MAP score</button></div>`}</div>`;
 }
 function mathSetUnit(id, u){ const p = S.profiles.find(x => x.id === id); if (!p) return; p.mathUnit = u || ''; save(); render(); }
