@@ -407,6 +407,10 @@ body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(
 .kwday{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}.kwday.sel b{color:var(--accent)}
 .kbar{display:flex;flex-direction:column-reverse;width:70%;height:90px;border-radius:8px;background:var(--line);overflow:hidden}.kbar i{display:block;width:100%}.kbar i.r{background:var(--accent)}.kbar i.m{background:var(--good)}
 .kweek{height:auto!important;align-items:flex-end}
+.exnotes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}.exnotes li{display:flex;gap:8px;padding:8px 10px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.kskills{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}.kskills li{display:flex;flex-direction:column;gap:4px}.kstars{color:var(--sun);letter-spacing:2px}
+.kpbar{display:block;height:10px;border-radius:5px;background:var(--line);overflow:hidden}.kpbar i{display:block;height:100%;background:var(--good);border-radius:5px}
+.extab td:first-child{white-space:nowrap;padding-right:14px}.extab td.num{white-space:normal;text-align:right;width:auto}.extab td:first-child{width:1%}.extab td.num br+*{display:inline}
 </style>
 
 </head>
@@ -1033,7 +1037,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint, subject:vSubject, mathplay:vMathPlay, mystats:vMyStats})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint, subject:vSubject, mathplay:vMathPlay, mystats:vMyStats, execsum:vExecSum})[view.name]();
   // tables that turn into stacked cards on a phone: each cell is labelled with its column heading
   document.querySelectorAll('table.rtab').forEach(t => { const hs = [...t.rows[0].cells].map(c => c.textContent.trim()); [...t.rows].slice(1).forEach(r => [...r.cells].forEach((c, i) => c.dataset.l = hs[i] || '')); });
 }
@@ -5081,7 +5085,8 @@ function parentCard(){
     <div class="row spread"><h2>📒 Kids' reading log</h2><span class="chip">${rows.length} day${rows.length===1?'':'s'} logged</span></div>
     <p class="mut">${rows.length ? `${kids.map(esc).join(', ')}${last ? ` · last scanned ${new Date(last.saved).toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}` : ''}` : 'Scan the code from each child\'s iPad (📱 Show my reading report code, at the bottom of their home screen) to start the log. Every scan adds that day, and the last 4 weeks, to the log for good.'}</p>
     <div class="row"><button class="btn sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button>
-      <button class="btn" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog'}))}">📖 Open the log</button>
+      <button class="btn" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'execsum'}))}">📋 Summary</button>
+      <button class="btn ghost" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog'}))}">📖 Open the log</button>
       <button class="btn ghost" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog', speed:true}))}">⚡ Speed</button></div>
     ${rows.length ? dayLogHtml(rows, true) : ''}
   </div>`;
@@ -5231,7 +5236,7 @@ function vKidLog(){
   }
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'hub'}))}">← Back</button><button class="btn small sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button></div>
   <h1>📒 Reading log</h1>
-  ${names.length ? `<div class="tabs">${names.map(nm => `<button class="${nm===who && !v.speed?'on':''}" data-a="${A(()=>{ v.who = nm; v.speed = false; v.logDay = null; render(); })}">${esc(nm)}</button>`).join('')}<button class="${v.speed?'on':''}" data-a="${A(()=>{ v.speed = true; render(); })}">⚡ Speed</button></div>` : '<p class="mut">No days logged yet.</p>'}
+  ${names.length ? `<div class="tabs"><button data-a="${A(()=>go({name:'execsum'}))}">📋 Summary</button>${names.map(nm => `<button class="${nm===who && !v.speed?'on':''}" data-a="${A(()=>{ v.who = nm; v.speed = false; v.logDay = null; render(); })}">${esc(nm)}</button>`).join('')}<button class="${v.speed?'on':''}" data-a="${A(()=>{ v.speed = true; render(); })}">⚡ Speed</button></div>` : '<p class="mut">No days logged yet.</p>'}
   ${v.speed && names.length ? speedHtml(rows) : who ? `<div class="card" style="display:flex;flex-direction:column;gap:12px">
     <h2>${esc((mine[0]||{}).a || '')} ${esc(who)} <span class="mut" style="font-size:1rem">Grade ${g}</span></h2>
     <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">Day log</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">By week</button><button class="${tab==='all'?'on':''}" data-a="${A(()=>{ v.tab='all'; render(); })}">All time</button><button class="${tab==='ir'?'on':''}" data-a="${A(()=>{ v.tab='ir'; render(); })}">🎯 Scores</button><button class="${tab==='math'?'on':''}" data-a="${A(()=>{ v.tab='math'; render(); })}">🔢 Math</button></div>
@@ -7691,6 +7696,7 @@ function mathSetUnit(id, u){ const p = S.profiles.find(x => x.id === id); if (!p
 // ---------- My stats: the kids' own page ----------
 // What they read and for how long (any day), this week's minutes, reading speed, and math, in kid language.
 function vMyStats(){
+  if (MATH_ON && !Object.keys(window.MathSkills || {}).some(k => k.startsWith('g' + mathBand(me()) + '.'))){ const myView = view; loadMath(me()).then(() => { if (view === myView) render(); }).catch(() => {}); }
   const p = me(), v = view, days = [...new Set(Object.keys(p.daily || {}).concat(Object.keys((p.math || {}).min || {})))].filter(d => d <= today()).sort();
   if (!days.includes(today())) days.push(today());
   const d = v.d && days.includes(v.d) ? v.d : today(), i = days.indexOf(d), x = dayData(p, d), titles = readTitles(p, d, x);
@@ -7718,10 +7724,78 @@ function vMyStats(){
 </div>
   ${sp ? `<div class="card" style="display:flex;flex-direction:column;gap:10px"><h3>⚡ My reading speed</h3>${speedGoal(p).replace(/^<div class="card speedgoal">/, '<div class="speedgoal">').replace('<h3>⚡ Reading speed</h3>', '')}
     ${spW.length > 1 ? `<table class="daytab"><tr><th>Week of</th><th class="num">Words a minute</th></tr>${spW.slice().reverse().map((w, k, A) => `<tr><td>${new Date(w.end+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td><td class="num"><b>${w.w}</b>${A[k+1] ? (w.w > A[k+1].w ? ' <span style="color:var(--good)">▲</span>' : w.w < A[k+1].w ? ' <span style="color:var(--oops)">▼</span>' : '') : ''}</td></tr>`).join('')}</table>` : ''}</div>` : ''}
+  ${myMathCard(p)}
   <div class="card"><h3>🏆 All time</h3><div class="kstats">
     ${stat('📚', p.completed || 0, 'stories and chapters')}${stat('📕', books, 'books finished')}${stat('⏱', Math.round((p.minutes || 0) / 6) / 10, 'hours reading')}
     ${stat('🔥', (p.streak || {}).n || 0, 'day streak')}${stat('🎯', p.mastered || 0, 'focus words mastered')}${stat('🔬', Object.keys(p.infoDone || {}).length, 'Info Lab articles')}
     ${MATH_ON ? stat('🔢', solved, 'math problems') + stat('✅', solved ? Math.round(right / solved * 100) + '%' : '–', 'math right first try') : ''}</div></div>`;
+}
+
+// ---------- Brad's summary: today and the rolling week, for every child, at a glance ----------
+function kidSummary(name){
+  const L = logStore(), kid = L.kids[name] || {}, rows = logRows().filter(r => r.n === name), t = today(), w0 = addDays(-6), p0 = addDays(-13);
+  const td = rows.find(r => r.d === t), wk = rows.filter(r => r.d >= w0), pw = rows.filter(r => r.d >= p0 && r.d < w0);
+  const sum = (a, k) => a.reduce((x, r) => x + (r[k] || 0), 0), g = kid.g || 3;
+  const mright = a => a.reduce((x, r) => x + (r.mt || []).reduce((y, q) => y + (q[2] || 0), 0), 0), mtot = a => a.reduce((x, r) => x + (r.mt || []).reduce((y, q) => y + (q[3] || 0), 0), 0);
+  const sp = a => median(a.filter(r => r.s).map(r => r.s)), bb = r => (r.al || 0) >= BREAK_ALOUD && (r.mm || 0) >= MATH_GOAL;
+  const last = Math.max(0, ...rows.map(r => r.at || 0));
+  return {name, g, a:kid.a, td, wk, last, days: wk.filter(r => (r.m || 0) > 0).length, read: sum(wk, 'm'), aloud: sum(wk, 'al'), math: sum(wk, 'mm'), met: wk.filter(r => (r.m || 0) >= (r.gl || 20)).length,
+    bb: wk.filter(bb).length, titles: [...new Set(wk.flatMap(r => (r.rd || []).map(x => bookOf(x[0]).book)))], mR: mright(wk), mT: mtot(wk), sNow: sp(wk), sPrev: sp(pw), readPrev: sum(pw, 'm'), mathPrev: sum(pw, 'mm'), ms: kid.ms};
+}
+function summaryNotes(k){
+  const n = [], tg = normAt(k.g, 75);
+  if (!k.td) n.push(['⚠️', 'Nothing logged for today yet. Scan their code after they read.']);
+  else { if ((k.td.m || 0) < (k.td.gl || 20)) n.push(['📖', `Reading goal not met today (${k.td.m || 0} of ${k.td.gl || 20} min).`]); if ((k.td.mm || 0) < MATH_GOAL) n.push(['🔢', `Math not done today (${k.td.mm || 0} of ${MATH_GOAL} min).`]); }
+  if (k.days < 5) n.push(['📅', `Read on ${k.days} of the last 7 days.`]);
+  if (k.sNow && k.sPrev && k.sNow < k.sPrev - 3) n.push(['🐢', `Reading speed slipped: ${k.sPrev} → ${k.sNow} words/min.`]);
+  if (k.sNow && k.sPrev && k.sNow > k.sPrev + 3) n.push(['🚀', `Reading speed up: ${k.sPrev} → ${k.sNow} words/min.`]);
+  if (k.sNow && k.sNow >= tg) n.push(['🏆', `At the top-25% speed target (${tg}+).`]);
+  if (k.mT >= 10 && k.mR / k.mT < 0.6) n.push(['🧩', `Math accuracy this week is ${Math.round(k.mR / k.mT * 100)}%. Check the 🔢 Math tab for the weak skills.`]);
+  if (k.ms){ const weak = Object.entries(k.ms.s).filter(([, v]) => v[1] >= 5 && v[0] / v[1] < 0.6).map(([s]) => s); if (weak.length) n.push(['💪', `Math skills to work on: ${weak.slice(0, 3).map(s => { const M = window.MathSkills || {}, f = Object.keys(M).find(x => x.endsWith('.' + s)); return f ? M[f].name : s; }).join(', ')}.`]); }
+  if (k.met >= 6) n.push(['⭐', `Met the reading goal ${k.met} of 7 days.`]);
+  return n;
+}
+function vExecSum(){
+  const names = [...new Set(logRows().map(r => r.n))].sort(), K = names.map(kidSummary);
+  const chg = (a, b) => b == null || a == null ? '' : a > b ? ` <span style="color:var(--good)">▲</span>` : a < b ? ` <span style="color:var(--oops)">▼</span>` : '';
+  const ago = ts => { if (!ts) return 'never'; const m = Math.round((Date.now() - ts) / 60000); return m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`; };
+  const row = (k, v, cls) => `<tr${cls ? ` class="${cls}"` : ''}><td>${k}</td><td class="num">${v}</td></tr>`;
+  app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'hub'}))}">← Back</button><button class="btn small sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button></div>
+  <h1>📋 Summary</h1><p class="mut">${niceDate(today(), true)} · today and the last 7 days</p>
+  ${K.length ? `<div class="card"><h3>At a glance</h3><table class="daytab extab"><tr><th>Child</th><th class="num">Today<br><span class="mut">read · math</span></th><th class="num">7 days<br><span class="mut">read · math</span></th></tr>
+    ${K.map(k => `<tr><td><b>${esc(k.a || '')} ${esc(k.name)}</b></td><td class="num">${k.td ? `${k.td.m || 0} · ${k.td.mm || 0}` : '–'}</td><td class="num">${k.read}${chg(k.read, k.readPrev)} · ${k.math}${chg(k.math, k.mathPrev)}</td></tr>`).join('')}</table>
+    <p class="mut" style="font-size:.85rem">Minutes. ▲▼ compare with the 7 days before.</p></div>` : '<p class="mut">No scans yet. Scan each child\'s code to fill this in.</p>'}
+  ${K.map(k => { const b = k.sNow && bandOf(k.g, k.sNow), notes = summaryNotes(k), td = k.td;
+    return `<div class="card" style="display:flex;flex-direction:column;gap:10px">
+      <div class="row spread"><h2>${esc(k.a || '')} ${esc(k.name)} <span class="mut" style="font-size:1rem">Grade ${k.g}</span></h2><span class="mut" style="font-size:.85rem">scanned ${ago(k.last)}</span></div>
+      ${notes.length ? `<ul class="exnotes">${notes.map(([ic, t]) => `<li><span>${ic}</span>${esc(t)}</li>`).join('')}</ul>` : ''}
+      <table class="daytab extab"><tr><th>Today</th><th class="num"></th></tr>
+        ${td ? row('Reading', `<b>${td.m || 0}</b> of ${td.gl || 20} min${(td.m || 0) >= (td.gl || 20) ? ' ✓' : ''}`) + row('Out loud', `<b>${td.al || 0}</b> of ${BREAK_ALOUD} min`) + row('Math', `<b>${td.mm || 0}</b> of ${MATH_GOAL} min${(td.mt || []).reduce((a, q) => a + (q[3] || 0), 0) ? ` · ${(td.mt || []).reduce((a, q) => a + (q[2] || 0), 0)} of ${(td.mt || []).reduce((a, q) => a + (q[3] || 0), 0)} right` : ''}`)
+          + row('Brain Break', (td.al || 0) >= BREAK_ALOUD && (td.mm || 0) >= MATH_GOAL ? '✅ earned' : '🔒 not yet') + row('Read', (td.rd || []).length ? schoolDay(td).map(x => esc(x.book)).join('<br>') : '<span class="mut">no titles</span>')
+          : row('<span class="mut">Not scanned today</span>', '')}</table>
+      <table class="daytab extab"><tr><th>Last 7 days</th><th class="num"></th></tr>
+        ${row('Days read', `<b>${k.days}</b> of 7`)}${row('Reading', `<b>${k.read}</b> min · ${Math.round(k.read / 7)}/day${chg(k.read, k.readPrev)}`)}${row('Out loud', `<b>${k.aloud}</b> min`)}
+        ${row('Reading goal met', `<b>${k.met}</b> of 7 days`)}${row('Math', `<b>${k.math}</b> min${chg(k.math, k.mathPrev)}${k.mT ? ` · ${Math.round(k.mR / k.mT * 100)}% right` : ''}`)}
+        ${row('Brain Break earned', `<b>${k.bb}</b> of 7 days`)}${row('Reading speed', k.sNow ? `<b>${b.ic} ${k.sNow}</b> wpm${chg(k.sNow, k.sPrev)} <span class="mut">(target ${normAt(k.g, 75)}+)</span>` : '–')}
+        ${row('Books and stories', k.titles.length ? k.titles.map(esc).join('<br>') : '–')}</table>
+      <div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name}))}">Full log →</button><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name, tab:'math'}))}">🔢 Math</button><button class="btn ghost small" data-a="${A(()=>go({name:'kidlog', who:k.name, tab:'ir'}))}">🎯 Scores</button></div></div>`; }).join('')}`;
+  if (K.some(k => k.ms) && !window.MathSkills){ const myView = view; Promise.all([loadMath({grade:3}), loadMath({grade:5})].map(x => x.catch(() => {}))).then(() => { if (view === myView) render(); }); }
+}
+// the kids' own math card: unit, what they are great at and working on, facts to master
+function myMathCard(p){
+  if (!MATH_ON) return '';
+  const m = mathState(p), M = window.MathSkills || {}, sk = Object.entries(m.stat).filter(([k, v]) => v[1] >= 3 && M[k]);
+  if (!sk.length && !Object.keys(m.facts).length) return `<div class="card"><h3>🔢 My math</h3><p class="mut">Do some math and your skills will show up here!</p></div>`;
+  const acc = v => v[0] / v[1], best = sk.slice().sort((a, b) => acc(b[1]) - acc(a[1])).filter(([, v]) => acc(v) >= .8).slice(0, 4), work = sk.slice().sort((a, b) => acc(a[1]) - acc(b[1])).filter(([, v]) => acc(v) < .8).slice(0, 4);
+  const stars = k => '★'.repeat(m.lvl[k] || 1) + '☆'.repeat(3 - (m.lvl[k] || 1));
+  const line = ([k, v]) => `<li><span><b>${esc(M[k].name)}</b> <span class="kstars">${stars(k)}</span></span><span class="kpbar"><i style="width:${Math.round(acc(v) * 100)}%"></i></span></li>`;
+  const fx = Object.keys(m.facts).filter(k => m.facts[k].n > (m.facts[k].ok || 0)), done = Object.keys(m.facts).filter(k => m.facts[k].n <= (m.facts[k].ok || 0));
+  return `<div class="card" style="display:flex;flex-direction:column;gap:10px"><h3>🔢 My math</h3><p class="mut">This week at school: <b>${esc(mathUnitNow(p).name)}</b></p>
+    ${best.length ? `<p><b>⭐ I'm great at</b></p><ul class="kskills">${best.map(line).join('')}</ul>` : ''}
+    ${work.length ? `<p><b>💪 Getting stronger at</b></p><ul class="kskills">${work.map(line).join('')}</ul>` : ''}
+    ${fx.length ? `<p><b>🎯 Facts to master</b> <span class="mut">(get each right 3 times)</span></p><p>${fx.slice(0, 12).map(f => `<span class="chip">${esc(f.replace('x', ' × ').replace('/', ' ÷ ').replace(/^sq/, '√'))} ${'✓'.repeat(m.facts[f].ok || 0)}</span>`).join(' ')}</p>` : ''}
+    ${done.length ? `<p class="mut">✅ Facts mastered: ${done.length}</p>` : ''}
+    <p class="mut" style="font-size:.85rem">★ = your level in that skill. Get 3 right in a row to level up!</p></div>`;
 }
 
 // ---------- Start ----------
