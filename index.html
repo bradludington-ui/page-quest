@@ -425,7 +425,7 @@ body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(
 </head>
 <body>
 <canvas id="fx"></canvas>
-<script src="cheer.js?v=2" defer onload="if (typeof view !== 'undefined' && view && view.name === 'mystats') render()"></script>
+<script src="cheer.js?v=3" defer onload="if (typeof view !== 'undefined' && view && view.name === 'mystats') render()"></script>
 <div id="app"><p class="mut">Loading Page Quest…</p></div>
 
 <script>
@@ -1723,7 +1723,7 @@ function finishStory(){
   questMark('story');
   logEvent(s.series ? 'chapter' : 'story', s.title, {id:s.id, right, total, mins: R.mins || 0});
   if (book === 'done') cheer('trophy', `Book champion, ${fname(p)}!`, `You finished ${((SERIES.find(x => x.id === s.series) || {}).title) || 'the whole book'}!`, 140);
-  else if (stars >= 3) cheer(Math.random() < .7 ? 'goal' : 'swish', `What a read, ${fname(p)}!`, `${s.title}: ${right} of ${total} right.`, 80);
+  else if (stars >= 3) cheer(Math.random() < .8 ? 'soccer' : 'swish', `What a read, ${fname(p)}!`, `${s.title}: ${right} of ${total} right.`, 80);
   else confetti(80);
   go({name:'finish', stars, right, total, chest, coins:R.coins, book, next: view.nextChap});
 }
@@ -4109,7 +4109,7 @@ function addAloud(secs){
   for (const d of Object.keys(p.aloud)) if (d < addDays(-60)) delete p.aloud[d];
   const was = aloudToday(p);
   p.aloud[t] = (p.aloud[t]||0) + Math.min(secs, 900)/60; save();
-  if (was < BREAK_ALOUD && aloudToday(p) >= BREAK_ALOUD) cheer('goal', `GOAL, ${fname(p)}!`, breakOpen(p) ? '20 minutes of reading out loud. Brain Break is open!' : '20 minutes of reading out loud done!', 100);
+  if (was < BREAK_ALOUD && aloudToday(p) >= BREAK_ALOUD) cheer('soccer', `GOAL, ${fname(p)}!`, breakOpen(p) ? '20 minutes of reading out loud. Brain Break is open!' : '20 minutes of reading out loud done!', 100);
 }
 function aloudToday(p){ return ((p.aloud||{})[today()]) || 0; }
 
@@ -4125,7 +4125,7 @@ function addMinutes(m, title){
   p.readT = p.readT || {}; const day = p.readT[t] || (p.readT[t] = {}), k = title || 'Reading practice'; day[k] = (day[k] || 0) + m;
   Object.keys(p.readT).forEach(d => { if (d < addDays(-60)) delete p.readT[d]; });
   save();
-  if (p.goalPaid !== t && minsToday(p) >= goalOf(p)){ p.goalPaid = t; save(); giveTickets(1); addCoins(10, 'daily goal!'); cheer('goal', `GOAL, ${fname(p)}!`, `You read ${goalOf(p)} minutes today. Daily goal done!`, 50); }
+  if (p.goalPaid !== t && minsToday(p) >= goalOf(p)){ p.goalPaid = t; save(); giveTickets(1); addCoins(10, 'daily goal!'); cheer('soccer', `GOAL, ${fname(p)}!`, `You read ${goalOf(p)} minutes today. Daily goal done!`, 50); }
 }
 function ringSvg(p){
   const done = Math.min(1, minsToday(p)/goalOf(p)), r = 26, c = 2*Math.PI*r;
@@ -4183,7 +4183,7 @@ function questMark(k){
   const q = p.quest[t] || (p.quest[t] = {});
   if (q[k]) return; q[k] = true; save();
   const items = questItems(p);
-  if (items.some(i => i.k === k) && items.every(i => i.done) && !q.paid){ q.paid = true; save(); giveTickets(1); addCoins(20, 'quest complete!'); cheer('trophy', `Quest champion, ${fname(p)}!`, "You finished every step of today's quest.", 90); }
+  if (items.some(i => i.k === k) && items.every(i => i.done) && !q.paid){ q.paid = true; save(); giveTickets(1); addCoins(20, 'quest complete!'); cheer('team', `Quest champion, ${fname(p)}!`, "You finished every step of today's quest.", 90); }
 }
 
 // ---------- Chapter books (one chapter a day) ----------
@@ -7397,7 +7397,7 @@ const MTIME = {last:0};
 function mathTick(){ const p = me(); if (!p) return; const now = Date.now(), m = mathState(p), t = today(), was = mathToday(p);
   if (MTIME.last){ const gap = Math.min(30000, now - MTIME.last) / 60000; m.min[t] = (m.min[t] || 0) + gap; }
   MTIME.last = now; save();
-  if (was < MATH_GOAL && mathToday(p) >= MATH_GOAL) cheer('slide', `What a finish, ${fname(p)}!`, breakOpen(p) ? '10 minutes of math done. Brain Break is open!' : '10 minutes of math done!', 60);
+  if (was < MATH_GOAL && mathToday(p) >= MATH_GOAL) cheer(Math.random() < .5 ? 'slide' : 'team', `What a finish, ${fname(p)}!`, breakOpen(p) ? '10 minutes of math done. Brain Break is open!' : '10 minutes of math done!', 60);
 }
 function breakNeed(p){
   const r = Math.max(0, Math.ceil(BREAK_ALOUD - aloudToday(p))), m = MATH_ON ? Math.max(0, Math.ceil(MATH_GOAL - mathToday(p))) : 0, out = [];
@@ -7729,7 +7729,7 @@ function myPlayerCard(p){
       <div><b>Team colors</b><div class="mprow">${Object.keys(Cheer.KITS).map(k => `<button class="pswatch kit ${(pl.kit || 'blue') === k ? 'on' : ''}" style="background:linear-gradient(135deg,${Cheer.KITS[k].kit} 55%,${Cheer.KITS[k].shorts} 55%)" aria-label="${Cheer.KITS[k].name}" data-a="${set('kit', k)}"></button>`).join('')}</div></div>
       <div><b>Number</b><div class="mprow"><button class="btn small ghost" aria-label="Lower number" data-a="${set('num', num > 1 ? num - 1 : 99)}">−</button><b class="mpnum">${num}</b><button class="btn small ghost" aria-label="Higher number" data-a="${set('num', num < 99 ? num + 1 : 1)}">+</button></div></div>
     </div></div>
-    <div><b>Watch one</b><div class="mprow">${[['goal', '⚽ Goal'], ['slide', '🥳 Knee slide'], ['trophy', '🏆 Trophy'], ['swish', '🏀 Swish']].map(([k, t]) => `<button class="btn small" data-a="${A(() => Cheer.play(k, cheerOpts(p, {title: k === 'trophy' ? `Champion, ${fname(p)}!` : `GOAL, ${fname(p)}!`, sub: 'This is how it looks when you finish something big.', button: 'Done'})))}">${t}</button>`).join('')}</div></div>
+    <div><b>Watch one</b><div class="mprow">${[['goal', '⚽ Goal'], ['header', '🤾 Header'], ['bicycle', '🚲 Bicycle kick'], ['freekick', '🧱 Free kick'], ['slide', '🥳 Knee slide'], ['team', '🙌 Teamwork'], ['trophy', '🏆 Trophy'], ['swish', '🏀 Swish']].map(([k, t]) => `<button class="btn small" data-a="${A(() => Cheer.play(k, cheerOpts(p, {title: k === 'trophy' ? `Champion, ${fname(p)}!` : `GOAL, ${fname(p)}!`, sub: 'This is how it looks when you finish something big.', button: 'Done'})))}">${t}</button>`).join('')}</div></div>
     <label class="mpoff"><input type="checkbox" ${pl.quiet ? '' : 'checked'} data-a="${A(() => { p.player = Object.assign({}, p.player, {quiet: !(p.player || {}).quiet}); save(); render(); })}"> Sound</label>
     <label class="mpoff"><input type="checkbox" ${pl.off ? '' : 'checked'} data-a="${A(() => { p.player = Object.assign({}, p.player, {off: !(p.player || {}).off}); save(); render(); })}"> Show celebrations</label>
   </div>`;

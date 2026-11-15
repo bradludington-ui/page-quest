@@ -57,6 +57,8 @@ const SFX = {
   fanfare(c, t){ const N = [[523.3, 0, .18], [659.3, .16, .18], [784, .32, .18], [1046.5, .5, .9]];
     N.forEach(([f, k, d]) => { tone(c, t + k, d + .12, 'sawtooth', f, f, .13, .02, {lp: 2600}); tone(c, t + k, d + .12, 'square', f / 2, f / 2, .05, .02, {lp: 1200}); });
     [523.3, 659.3, 784].forEach(f => tone(c, t + .5, 1.1, 'triangle', f, f, .09, .03)); },
+  head(c, t){ tone(c, t, .14, 'sine', 210, 70, .7, .003); nz(c, t, .05, 'bandpass', 1200, .8, .25, .002, .04); },
+  clap(c, t){ nz(c, t, .12, 'bandpass', 1700, 1.1, .7, .002, .1); nz(c, t + .012, .1, 'highpass', 3000, .7, .3, .002, .08); },
   chime(c, t){ [1318.5, 1568, 2093].forEach((f, i) => tone(c, t + i * .07, .7, 'sine', f, f, .12, .005)); },
 };
 function playSfx(name, at, arg){ if (!SND.on) return; const c = actx(); if (!c || c.state !== 'running') return; try { SFX[name](c, c.currentTime + (at || 0) + .01, arg); } catch (e) {} }
@@ -633,7 +635,250 @@ function sceneSwish(world, ui, look){
   }};
 }
 
-const SCENES = {goal: sceneGoal, slide: sceneSlide, trophy: sceneTrophy, swish: sceneSwish};
+// ================================================================ pieces several soccer scenes share
+const bez2 = (a, c, b, u) => [(1-u)*(1-u)*a[0] + 2*(1-u)*u*c[0] + u*u*b[0], (1-u)*(1-u)*a[1] + 2*(1-u)*u*c[1] + u*u*b[1]];
+const bez3 = (a, c1, c2, b, u) => { const v = 1 - u; return [v*v*v*a[0] + 3*v*v*u*c1[0] + 3*v*u*u*c2[0] + u*u*u*b[0], v*v*v*a[1] + 3*v*v*u*c1[1] + 3*v*u*u*c2[1] + u*u*u*b[1]]; };
+const realOf = (slow, tau) => { let lo = 0, hi = 12; for (let i = 0; i < 40; i++){ const m = (lo + hi) / 2; if (warp(m, slow) < tau) lo = m; else hi = m; } return lo; };
+// the jump-for-joy pose every scorer ends on
+function celeb(k, x, ground, s, dir){ const j = Math.abs(Math.sin(k * 5.4)); return pose({x, y: ground - 74 * s - j * 46, tor:186, aF:126 + Math.sin(k * 10.8) * 12, eF:-20, aB:240 - Math.sin(k * 10.8) * 12, eB:18, lF:14 + j * 16, kF:-28 - j * 46, lB:-10 - j * 10, kB:-36 - j * 44, head:24, face:2, ground}); }
+// a goal seen from the side: back net that ripples, side and roof net, front frame drawn last
+function Goal(world, gx0, gx1, gyT, gyB){
+  const dx = 32, dy = -22; Object.assign(this, {gx0, gx1, gyT, gyB, dx, dy}); this.bulge = null;
+  const goal = el('g', {}, world);
+  el('path', {d:`M${gx0 - 6},${gyB + 6} L${gx1 + dx + 30},${gyB + dy * .2 + 6} L${gx1 + dx + 60},${gyB + 18} L${gx0 + 10},${gyB + 22} Z`, fill:'rgba(0,0,0,.2)'}, goal);
+  el('path', {d:`M${gx0 + dx},${gyB + dy * .2} L${gx0 + dx},${gyT + dy} L${gx1 + dx},${gyT + dy} L${gx1 + dx},${gyB + dy * .2}`, fill:'none', stroke:'#b9c3d6', 'stroke-width':4, 'stroke-linejoin':'round'}, goal);
+  const netG = el('g', {stroke:'#eef3fb', 'stroke-width':1.25, fill:'none', opacity:.9}, goal); this.lines = [];
+  for (let i = 0; i <= 16; i++) this.lines.push({e: el('polyline', {}, netG), v: true, k: i / 16});
+  for (let j = 0; j <= 11; j++) this.lines.push({e: el('polyline', {}, netG), v: false, k: j / 11});
+  for (let i = 0; i <= 7; i++){ const k = i / 7; el('line', {x1: gx1 + dx * k, y1: gyT + dy * k, x2: gx1 + dx * k, y2: gyB + dy * .2 * k, stroke:'#eef3fb', 'stroke-width':1, opacity:.55}, goal);
+    el('line', {x1: lerp(gx0, gx1, k), y1: gyT, x2: lerp(gx0, gx1, k) + dx, y2: gyT + dy, stroke:'#eef3fb', 'stroke-width':1, opacity:.5}, goal); }
+  for (let j = 1; j <= 5; j++){ const k = j / 6; el('line', {x1: gx1, y1: lerp(gyT, gyB, k), x2: gx1 + dx, y2: lerp(gyT + dy, gyB + dy * .2, k), stroke:'#eef3fb', 'stroke-width':1, opacity:.5}, goal); }
+  this.world = world; this.drawNet(0);
+}
+Goal.prototype.impactOf = function(t){ return {x: t.x + this.dx * .75, y: t.y + this.dy * .55}; };
+Goal.prototype.drawNet = function(t){ const g = this, BX = x => lerp(g.gx0 + g.dx, g.gx1 + g.dx, x), BY = y => lerp(g.gyT + g.dy, g.gyB + g.dy * .2, y), b = this.bulge;
+  this.lines.forEach(L => { let pts = ''; for (let q = 0; q <= 20; q++){ const u = q / 20, xk = L.v ? L.k : u, yk = L.v ? u : L.k; let x = BX(xk), y = BY(yk);
+    if (b && t >= b.t){ const ax = x - b.x, ay = y - b.y, dd = Math.hypot(ax, ay) || 1, age = t - b.t, fall = Math.exp(-(dd * dd) / 3200), env = Math.exp(-age * 2.2), wob = Math.cos(age * 12) * env;
+      x += ax / dd * fall * 18 * wob * .6 + fall * 14 * env; y += ay / dd * fall * 18 * wob * .6 - fall * 6 * env; }
+    pts += x.toFixed(1) + ',' + y.toFixed(1) + ' '; } L.e.setAttribute('points', pts); }); };
+Goal.prototype.front = function(){ const {gx0, gx1, gyT, gyB} = this, fr = `M${gx0},${gyB + 3} L${gx0},${gyT} L${gx1},${gyT} L${gx1},${gyB + 3}`;
+  el('path', {d: fr, fill:'none', stroke: OUT, 'stroke-width': 13, 'stroke-linejoin':'round'}, this.world);
+  el('path', {d: fr, fill:'none', stroke:'#ffffff', 'stroke-width': 8.5, 'stroke-linejoin':'round'}, this.world);
+  el('path', {d:`M${gx0 + 2.5},${gyB} L${gx0 + 2.5},${gyT + 2.5} L${gx1 + 2.5},${gyT + 2.5} L${gx1 + 2.5},${gyB}`, fill:'none', stroke:'#c3cbdb', 'stroke-width': 2.6, 'stroke-linejoin':'round'}, this.world); };
+function keeperLook(){ return {kit:'#151827', trim:'#c6ff3d', shorts:'#151827', socks:'#151827', skin: pick(SKINS), hair: pick(HAIRS), style: pick(['short', 'curly', 'spiky']), num:'1', boot:'#c6ff3d'}; }
+function markings(world, gx0, gyB){
+  el('path', {d:`M${-M},${gyB + 2} L${W + M},${gyB + 2}`, stroke:'#fff', 'stroke-width':3, opacity:.85}, world);
+  el('path', {d:`M${gx0 - 140},${gyB + 2} L${gx0 - 230},${H + M}`, stroke:'#fff', 'stroke-width':3.6, opacity:.8}, world);
+  el('path', {d:`M${gx0 - 40},${gyB + 2} L${gx0 - 70},${gyB + 30} L${W + M},${gyB + 30}`, stroke:'#fff', 'stroke-width':3, fill:'none', opacity:.8}, world);
+}
+// everything that happens when the ball hits the net: flash, crowd, boards, rays, the big word, confetti
+function GoalFx(world, ui, S, word, size){ this.S = S; this.flashes = new Flashes(world, 26, 80, 270); this.rays = new Rays(ui, W / 2, 120);
+  this.banner = new Banner(ui, word, 118, size || 104); this.conf = new Confetti(ui, 80); this.flash = el('rect', {x:0, y:0, width:W, height:H, fill:'#fff', opacity:0}, ui); }
+GoalFx.prototype.step = function(rt, t, ti){ const party = t >= ti ? clamp((t - ti) * 3, 0, 1) : 0;
+  cheerCrowd(this.S.all, rt, party); this.flashes.at(rt, party); boardsGoal(this.S, rt, party > 0);
+  this.flash.setAttribute('opacity', (t >= ti ? Math.max(0, .7 - (t - ti) * 2.6) : 0).toFixed(2));
+  this.rays.at(seg(t, ti + .05, ti + .6), rt); this.banner.at(seg(t, ti + .05, ti + .6), rt); this.conf.step(t > ti + .1); };
+// the ball after it hits the net: drops and bounces on the goal floor
+function netDrop(g, target, impact, k){ const drop = clamp(k / .5, 0, 1); let x = lerp(target.x, impact.x, Math.min(1, k * 8)), y = lerp(lerp(target.y, impact.y, Math.min(1, k * 8)), g.gyB - 12, easeI(drop));
+  if (drop >= 1){ const b2 = k - .5; y = g.gyB - 12 - Math.abs(Math.sin(b2 * 7)) * 20 * Math.exp(-b2 * 3); } return [x, y]; }
+
+// ================================================================ scene: a diving header from a cross
+function sceneHeader(world, ui, look){
+  const S = stadium(world), FX = new GoalFx(world, ui, S, 'HEADER!', 110);
+  const G = new Goal(world, 470, 652, 236, 398); markings(world, 470, 398);
+  const top = Math.random() < .5, keeper = new Kid(el('g', {}, world), keeperLook(), -1, .84, true); G.front();
+  const puffs = new Puffs(el('g', {}, world)), s = 1.14, kid = new Kid(el('g', {}, world), look, 1, s);
+  const ballL = el('g', {}, world), trail = new Trail(ballL, '#ffffff', 9), bsh = el('ellipse', {fill:'rgba(0,0,0,.28)'}, ballL), ball = new SoccerBall(ballL, 13);
+  const burst = new Burst(el('g', {}, world));
+  const ground = 484, sg = ground - 8, tc = .95, ti = 1.5;
+  const kStand = pose({x: 562, y: 394 - 62, tor:174, aF:64, eF:24, aB:-58, eB:-24, lF:16, kF:-30, lB:-16, kB:-30, head:8, face:0});
+  const kDive = top ? pose({x: 630, y: 352, tor:262, aF:228, eF:0, aB:214, eB:0, lF:-72, kF:-12, lB:-92, kB:-18, face:2}) : pose({x: 600, y: 268, tor:230, aF:208, eF:0, aB:198, eB:0, lF:-30, kF:-12, lB:-46, kB:-22, head:14, face:2});
+  const runP = t => run(t * 13, {x: lerp(-40, 280, t / .72), y: sg - 74 * s - Math.abs(Math.sin(t * 13)) * 5});
+  const dive = (x, y) => pose({x, y, tor:104, head:16, aF:64, eF:30, aB:40, eB:34, lF:-78, kF:-24, lB:-96, kB:-10, face:0, ground: sg});
+  const flat = (x) => pose({x, y: sg - 22, tor:96, head:30, aF:40, eF:60, aB:20, eB:60, lF:-92, kF:-6, lB:-96, kB:-4, face:2, ground: sg});
+  const kidAt = t => {
+    if (t < .72) return runP(t);
+    if (t < 1.25){ const k = seg(t, .72, 1.25), x = lerp(280, 410, k), y = lerp(sg - 74 * s, sg - 22, k) - Math.sin(k * Math.PI) * 54; const P = dive(x, y); return t < .82 ? mixPose(runP(.72), P, seg(t, .72, .82)) : P; }
+    if (t < 1.9) return flat(410 + easeO(seg(t, 1.25, 1.9)) * 36);
+    if (t < 2.3) return mixPose(flat(446), celeb(0, 450, sg, s), easeIO(seg(t, 1.9, 2.3)));
+    return celeb(t - 2.3, 450 + Math.min(t - 2.3, .5) * 30, sg, s); };
+  kid.set(kidAt(tc)); const hd = kid.headAt, contact = [hd[0] + 24 * s, hd[1] - 4];
+  const target = top ? {x: 504, y: 262} : {x: 512, y: 372}, impact = G.impactOf(target);
+  const cam = new Cam([[0, 250, 320, 1.15], [.8, contact[0] - 20, contact[1] + 40, 1.5], [tc, contact[0], contact[1] + 30, 1.6], [ti, impact.x, impact.y + 20, 1.7], [2.0, 420, 340, 1.35], [3.2, 380, 268, 1.06]]);
+  const slow = [[.78, .3], [1.25, .7], [1.5, 1]];
+  let last = -1;
+  return {dur: 6.6, sounds: [[.25, 'whoosh'], [realOf(slow, tc) - .02, 'head'], [realOf(slow, ti) - .02, 'net'], [realOf(slow, ti), 'roar', 4.4], [realOf(slow, ti) + .15, 'whistle']], frame(rt){
+    const t = warp(rt, slow), dt = last < 0 ? 0 : t - last; last = t;
+    kid.set(kidAt(t));
+    if (dt > 0 && t >= 1.25 && t - dt < 1.25) puffs.emit(420, sg, 14, 4);
+    let b, fl = false, sc = 1, sh;
+    if (t < tc){ const u = seg(t, .1, tc); b = bez2([-80, 150], [160, 40], contact, u); fl = t > .12; sh = [b[0], ground]; }
+    else if (t < ti){ const u = seg(t, tc, ti); b = bez2(contact, [lerp(contact[0], target.x, .5), Math.min(contact[1], target.y) - 30], [target.x, target.y], u); sc = lerp(1, .78, u); fl = true; sh = [b[0], lerp(ground, 398, u)]; }
+    else { b = netDrop(G, target, impact, t - ti); sc = .76; sh = [b[0], 398]; }
+    ball.at(b[0], b[1], t * 900, sc); trail.push(b[0], b[1], fl);
+    bsh.setAttribute('cx', sh[0].toFixed(1)); bsh.setAttribute('cy', (sh[1] + 3).toFixed(1)); bsh.setAttribute('rx', 10); bsh.setAttribute('ry', 3.4);
+    burst.at(contact[0], contact[1], seg(t, tc - .02, tc + .3));
+    let K; if (t < 1.0) K = Object.assign({}, kStand, {x: kStand.x + Math.sin(t * 3) * 8}); else if (t < 1.45){ const k = easeO(seg(t, 1.0, 1.45)); K = mixPose(kStand, kDive, k); K.y -= Math.sin(k * Math.PI) * 40; } else K = mixPose(kDive, Object.assign({}, kDive, {y: 364, tor: 264, lF:-86, lB:-98, face:1}), easeI(seg(t, 1.45, 1.85)));
+    K.ground = 394; keeper.set(K);
+    if (t >= ti && !G.bulge) G.bulge = {x: impact.x, y: impact.y, t: ti};
+    G.drawNet(t); puffs.step(); FX.step(rt, t, ti);
+    let [cx, cy, z] = cam.at(t); const shk = t >= ti ? Math.exp(-(t - ti) * 5) * 9 : 0;
+    return {x: cx + Math.sin(rt * 61) * shk, y: cy + Math.cos(rt * 47) * shk, z};
+  }};
+}
+
+// ================================================================ scene: the bicycle kick
+function sceneBicycle(world, ui, look){
+  const S = stadium(world), FX = new GoalFx(world, ui, S, 'BICYCLE KICK!', 80);
+  const G = new Goal(world, 500, 682, 236, 398); markings(world, 500, 398);
+  const keeper = new Kid(el('g', {}, world), keeperLook(), -1, .84, true); G.front();
+  const puffs = new Puffs(el('g', {}, world)), s = 1.14, kid = new Kid(el('g', {}, world), look, -1, s);
+  const ballL = el('g', {}, world), trail = new Trail(ballL, '#ffffff', 9), bsh = el('ellipse', {fill:'rgba(0,0,0,.28)'}, ballL), ball = new SoccerBall(ballL, 13);
+  const burst = new Burst(el('g', {}, world));
+  const ground = 484, sg = ground - 8, x0 = 330, tc = 1.0, ti = 1.6;
+  const standP = pose({x: x0, y: sg - 74 * s, tor:184, head:26, aF:30, eF:40, aB:-20, eB:40, lF:6, kF:-10, lB:-6, kB:-10, face:0, ground: sg});
+  const crouch = pose({x: x0, y: sg - 64 * s, tor:176, head:30, aF:40, eF:60, aB:-30, eB:50, lF:30, kF:-60, lB:10, kB:-50, face:0, ground: sg});
+  const kick = pose({x: x0 + 14, y: sg - 150, tor:284, head:-6, aF:-10, eF:20, aB:-40, eB:20, lF:206, kF:-6, lB:118, kB:-70, face:0, ground: sg});
+  const wind = pose({x: x0 + 6, y: sg - 120, tor:236, head:10, aF:10, eF:30, aB:-30, eB:30, lF:150, kF:-40, lB:170, kB:-30, face:0, ground: sg});
+  const back = pose({x: x0 + 40, y: sg - 22, tor:282, head:-14, aF:-30, eF:20, aB:-60, eB:20, lF:150, kF:-30, lB:120, kB:-40, face:2, ground: sg});
+  const kidAt = t => {
+    if (t < .45) return mixPose(standP, crouch, easeIO(seg(t, .2, .45)));
+    if (t < .8) return mixPose(crouch, wind, easeO(seg(t, .45, .8)));
+    if (t < 1.08) return mixPose(wind, kick, easeIO(seg(t, .8, 1.02)));
+    if (t < 1.5){ const k = easeI(seg(t, 1.08, 1.5)); const P = mixPose(kick, back, k); return P; }
+    if (t < 2.0) return back;
+    if (t < 2.4) return mixPose(back, celeb(0, x0 + 30, sg, s), easeIO(seg(t, 2.0, 2.4)));
+    return celeb(t - 2.4, x0 + 30, sg, s); };
+  kid.set(kidAt(tc)); const contact = [kid.footF.ank[0] + 6, kid.footF.ank[1] - 12];
+  const target = {x: 534, y: 264}, impact = G.impactOf(target);
+  const kStand = pose({x: 592, y: 394 - 62, tor:174, aF:64, eF:24, aB:-58, eB:-24, lF:16, kF:-30, lB:-16, kB:-30, head:8, face:0});
+  const kDive = pose({x: 660, y: 268, tor:230, aF:208, eF:0, aB:198, eB:0, lF:-30, kF:-12, lB:-46, kB:-22, head:14, face:2});
+  const cam = new Cam([[0, 260, 300, 1.12], [.75, x0 - 10, 330, 1.35], [tc, contact[0], contact[1] + 60, 1.65], [ti, impact.x - 20, impact.y + 30, 1.55], [2.2, 420, 330, 1.3], [3.4, 400, 268, 1.06]]);
+  const slow = [[.72, .28], [1.2, .7], [1.5, 1]];
+  let last = -1;
+  return {dur: 6.8, sounds: [[.15, 'whoosh'], [realOf(slow, tc) - .02, 'kick'], [realOf(slow, 1.5), 'thud'], [realOf(slow, ti) - .02, 'net'], [realOf(slow, ti), 'roar', 4.4], [realOf(slow, ti) + .15, 'whistle']], frame(rt){
+    const t = warp(rt, slow), dt = last < 0 ? 0 : t - last; last = t;
+    kid.set(kidAt(t));
+    if (dt > 0 && t >= .5 && t - dt < .5) puffs.emit(x0, sg + 4, 8, 3);
+    if (dt > 0 && t >= 1.5 && t - dt < 1.5) puffs.emit(x0 + 40, sg + 4, 16, 5);
+    let b, fl = false, sc = 1, sh;
+    if (t < tc){ const u = seg(t, 0, tc); b = bez2([-80, 330], [140, 60], contact, u); fl = t > .05; sh = [b[0], ground]; }
+    else if (t < ti){ const u = seg(t, tc, ti); b = bez2(contact, [lerp(contact[0], target.x, .5), Math.min(contact[1], target.y) - 40], [target.x, target.y], u); sc = lerp(1, .78, u); fl = true; sh = [b[0], lerp(ground, 398, u)]; }
+    else { b = netDrop(G, target, impact, t - ti); sc = .76; sh = [b[0], 398]; }
+    ball.at(b[0], b[1], t * 1000, sc); trail.push(b[0], b[1], fl);
+    bsh.setAttribute('cx', sh[0].toFixed(1)); bsh.setAttribute('cy', (sh[1] + 3).toFixed(1)); bsh.setAttribute('rx', 10); bsh.setAttribute('ry', 3.4);
+    burst.at(contact[0], contact[1], seg(t, tc - .02, tc + .3));
+    let K; if (t < 1.1) K = Object.assign({}, kStand, {x: kStand.x + Math.sin(t * 3) * 6}); else if (t < 1.6){ const k = easeO(seg(t, 1.1, 1.6)); K = mixPose(kStand, kDive, k); K.y -= Math.sin(k * Math.PI) * 54; } else K = mixPose(kDive, Object.assign({}, kDive, {y: 364, tor: 264, lF:-86, lB:-98, face:1}), easeI(seg(t, 1.6, 2.0)));
+    K.ground = 394; keeper.set(K);
+    if (t >= ti && !G.bulge) G.bulge = {x: impact.x, y: impact.y, t: ti};
+    G.drawNet(t); puffs.step(); FX.step(rt, t, ti);
+    let [cx, cy, z] = cam.at(t); const shk = t >= ti ? Math.exp(-(t - ti) * 5) * 9 : 0;
+    return {x: cx + Math.sin(rt * 61) * shk, y: cy + Math.cos(rt * 47) * shk, z};
+  }};
+}
+
+// ================================================================ scene: free kick curled over the wall
+function sceneFreeKick(world, ui, look){
+  const S = stadium(world), FX = new GoalFx(world, ui, S, 'FREE KICK!', 96);
+  const G = new Goal(world, 520, 702, 236, 398); markings(world, 520, 398);
+  const keeper = new Kid(el('g', {}, world), keeperLook(), -1, .84, true); G.front();
+  // the wall: three defenders in the other team's kit, with the referee's spray line at their feet
+  const oKit = look.kit === '#d6352b' || look.kit === '#f2851b' ? {kit:'#f4f4f6', trim:'#1b1b2a', shorts:'#1b1b2a', socks:'#f4f4f6'} : {kit:'#d6352b', trim:'#ffffff', shorts:'#ffffff', socks:'#d6352b'};
+  el('path', {d:'M318,462 L420,462', stroke:'#fff', 'stroke-width':4, 'stroke-dasharray':'2 5', 'stroke-linecap':'round', opacity:.9}, world);
+  const wall = [0, 1, 2].map(i => ({x: 340 + i * 30, k: new Kid(el('g', {}, world), Object.assign({}, oKit, {skin: pick(SKINS), hair: pick(HAIRS), style: pick(STYLES), num: String(pick([3, 4, 5, 6, 14])), boot: pick(BOOTS)}), -1, .98), ph: i * .07}));
+  const puffs = new Puffs(el('g', {}, world)), s = 1.14, kid = new Kid(el('g', {}, world), look, 1, s);
+  const ballL = el('g', {}, world), trail = new Trail(ballL, '#ffffff', 9), bsh = el('ellipse', {fill:'rgba(0,0,0,.28)'}, ballL), ball = new SoccerBall(ballL, 13);
+  const burst = new Burst(el('g', {}, world));
+  const ground = 484, sg = ground - 8, foot = 210, tk = 1.3, ti = 2.15;
+  const target = {x: 552, y: 258}, impact = G.impactOf(target);
+  const standP = pose({x: 96, y: sg - 74 * s, tor:178, head:4, aF:20, eF:30, aB:-20, eB:30, face:0, ground: sg});
+  const wind = pose({x: foot - 50, y: sg - 74 * s - 2, tor:170, lF:-50, kF:-100, lB:8, kB:-14, aF:-62, eF:34, aB:74, eB:20, head:-6, face:0, ground: sg});
+  const strike = pose({x: foot - 42, y: sg - 74 * s - 2, tor:194, lF:84, kF:-6, lB:10, kB:-14, aF:-84, eF:12, aB:98, eB:10, head:-2, face:0, ground: sg});
+  const follow = pose({x: foot - 26, y: sg - 74 * s, tor:184, lF:30, kF:-34, lB:-4, kB:-12, aF:-34, eF:40, aB:44, eB:40, head:10, face:1, ground: sg});
+  const kidAt = t => {
+    if (t < .55) return standP;
+    if (t < 1.05) return run((t - .55) * 11, {x: lerp(96, foot - 56, seg(t, .55, 1.05)), y: sg - 74 * s - Math.abs(Math.sin((t - .55) * 11)) * 4, ground: sg});
+    if (t < 1.2) return mixPose(run(5.5, {x: foot - 56, y: sg - 74 * s, ground: sg}), wind, easeO(seg(t, 1.05, 1.2)));
+    if (t < 1.36) return mixPose(wind, strike, easeIO(seg(t, 1.2, 1.36)));
+    if (t < 2.3) return mixPose(strike, follow, easeO(seg(t, 1.36, 2.3)));
+    return celeb(t - 2.3, foot - 20 + Math.min(t - 2.3, .6) * 50, sg, s); };
+  const kStand = pose({x: 590, y: 394 - 62, tor:174, aF:64, eF:24, aB:-58, eB:-24, lF:16, kF:-30, lB:-16, kB:-30, head:8, face:0});
+  const kDive = pose({x: 626, y: 270, tor:226, aF:204, eF:0, aB:196, eB:0, lF:-30, kF:-12, lB:-46, kB:-22, head:14, face:2});
+  const cam = new Cam([[0, 230, 360, 1.25], [1.0, 220, 380, 1.4], [1.3, 240, 390, 1.6], [1.6, 340, 300, 1.25], [ti, impact.x - 10, impact.y + 30, 1.6], [2.8, 360, 320, 1.25], [4.0, 380, 268, 1.06]]);
+  const slow = [[1.22, .3], [1.6, .8], [1.9, 1]];
+  let last = -1;
+  return {dur: 7.0, sounds: [[.3, 'whistle'], [realOf(slow, tk) - .02, 'kick'], [realOf(slow, ti) - .02, 'net'], [realOf(slow, ti), 'roar', 4.4]], frame(rt){
+    const t = warp(rt, slow), dt = last < 0 ? 0 : t - last; last = t;
+    kid.set(kidAt(t));
+    if (dt > 0 && t >= tk && t - dt < tk) puffs.emit(foot - 4, ground - 4, 10, 4);
+    wall.forEach(w => { const k = seg(t, tk + .08 + w.ph, tk + .6 + w.ph), j = Math.sin(k * Math.PI);
+      const P = pose({x: w.x, y: sg - 72 * .98 - j * 40, tor:180, head: 10 + j * 12, aF:20 + j * 10, eF:-110, aB:10, eB:-100, lF:4 + j * 10, kF:-6 - j * 40, lB:-4, kB:-6 - j * 40, face: t > ti ? 1 : 0, ground: sg});
+      if (t > ti + .3){ P.tor = 178; P.head = -14; P.aF = 30; P.eF = 40; P.aB = 10; P.eB = 40; }
+      w.k.set(P); });
+    let b, fl = false, sc = 1, sh;
+    if (t < tk){ b = [foot, ground - 13]; sh = [foot, ground]; }
+    else if (t < ti){ const u = seg(t, tk, ti); b = bez3([foot, ground - 13], [300, 210], [420, 120], [target.x, target.y], u); sc = lerp(1, .78, u); fl = true; sh = [b[0], lerp(ground, 398, u)]; }
+    else { b = netDrop(G, target, impact, t - ti); sc = .76; sh = [b[0], 398]; }
+    ball.at(b[0], b[1], t * 1300, sc); trail.push(b[0], b[1], fl);
+    bsh.setAttribute('cx', sh[0].toFixed(1)); bsh.setAttribute('cy', (sh[1] + 3).toFixed(1)); bsh.setAttribute('rx', 10); bsh.setAttribute('ry', 3.4);
+    burst.at(foot + 6, ground - 14, seg(t, tk - .02, tk + .3));
+    let K; if (t < 1.75) K = Object.assign({}, kStand, {x: kStand.x + Math.sin(t * 2.5) * 10}); else if (t < 2.25){ const k = easeO(seg(t, 1.75, 2.25)); K = mixPose(kStand, kDive, k); K.y -= Math.sin(k * Math.PI) * 30; } else K = mixPose(kDive, Object.assign({}, kDive, {y: 364, tor: 264, lF:-86, lB:-98, face:1}), easeI(seg(t, 2.25, 2.65)));
+    K.ground = 394; keeper.set(K);
+    if (t >= ti && !G.bulge) G.bulge = {x: impact.x, y: impact.y, t: ti};
+    G.drawNet(t); puffs.step(); FX.step(rt, t, ti);
+    let [cx, cy, z] = cam.at(t); if (fl){ const k = smooth(seg(t, tk, tk + .3)); cx = lerp(cx, b[0], k * .6); cy = lerp(cy, b[1] + 60, k * .4); }
+    const shk = t >= ti ? Math.exp(-(t - ti) * 5) * 9 : 0;
+    return {x: cx + Math.sin(rt * 61) * shk, y: cy + Math.cos(rt * 47) * shk, z};
+  }};
+}
+
+// ================================================================ scene: the team runs in for high fives
+function sceneTeam(world, ui, look){
+  const S = stadium(world), flashes = new Flashes(world, 24, 80, 270);
+  const g0 = el('g', {}, world);
+  el('path', {d:'M620,320 L620,250 L762,250 L762,320', fill:'none', stroke: OUT, 'stroke-width':9, 'stroke-linejoin':'round'}, g0);
+  for (let i = 0; i <= 12; i++) el('line', {x1: 636 + i * 11.8, y1: 238, x2: 636 + i * 11.8, y2: 312, stroke:'#eef3fb', 'stroke-width':1, opacity:.6}, g0);
+  for (let i = 0; i <= 6; i++) el('line', {x1: 636, y1: 238 + i * 12, x2: 778, y2: 238 + i * 12, stroke:'#eef3fb', 'stroke-width':1, opacity:.6}, g0);
+  el('path', {d:'M620,320 L620,250 L762,250 L762,320', fill:'none', stroke:'#fff', 'stroke-width':5.5, 'stroke-linejoin':'round'}, g0);
+  const mate = n => Object.assign({}, look, {skin: pick(SKINS), hair: pick(HAIRS), style: pick(STYLES), num: String(n), boot: pick(BOOTS)});
+  const nums = [7, 9, 11, 4, 8, 3, 6].filter(n => String(n) !== look.num);
+  const gy = 470, s0 = 1.02, s = 1.14;
+  const mates = [{x0: -80, x1: 170, dir: 1, ph: .4}, {x0: -40, x1: 280, dir: 1, ph: 1.3}, {x0: 900, x1: 470, dir: -1, ph: 0}].map((m, i) => Object.assign(m, {k: new Kid(el('g', {}, world), mate(nums[i]), m.dir, s0)}));
+  const kid = new Kid(el('g', {}, world), look, 1, s), puffs = new Puffs(el('g', {}, world));
+  const burst = new Burst(el('g', {}, world)), conf = new Confetti(ui, 80), rays = new Rays(ui, W / 2, 110), banner = new Banner(ui, 'TEAMWORK!', 104, 92);
+  const tc = 1.3, kx = 380;
+  const cam = new Cam([[0, 380, 330, 1.2], [1.1, 420, 340, 1.5], [tc, 425, 330, 1.6], [2.2, 380, 300, 1.15], [4.0, 380, 270, 1.02]]);
+  const slow = [[1.15, .35], [1.6, 1]];
+  let last = -1;
+  return {dur: 6.2, sounds: [[.1, 'roar', 5.6], [realOf(slow, tc) - .02, 'clap'], [realOf(slow, tc) + .3, 'whistle']], frame(rt){
+    const t = warp(rt, slow), dt = last < 0 ? 0 : t - last; last = t;
+    const jump = (x, ph, sc, dir, k) => { const j = Math.abs(Math.sin(k * 5.2 + ph)); return pose({x, y: gy - 74 * sc - j * 40, tor:184, aF:136 + Math.sin(k * 10 + ph) * 14, eF:-16, aB:232, eB:16, lF:12 + j * 14, kF:-26 - j * 42, lB:-10, kB:-30 - j * 40, head:24, face:2, ground: gy}); };
+    mates.forEach((m, i) => { let P;
+      if (t < 1.0) P = run(t * 13 + m.ph, {x: lerp(m.x0, m.x1, easeO(seg(t, 0, 1.0))), y: gy - 74 * s0 - Math.abs(Math.sin(t * 13 + m.ph)) * 5, face:2, head:16, ground: gy});
+      else if (i === 2 && t < 1.7){ const up = pose({x: m.x1, y: gy - 74 * s0, tor:180, head:20, aF:176, eF:-10, aB:-20, eB:30, face:2, ground: gy}), hit = Object.assign({}, up, {aF:128, eF:-4});
+        P = t < tc - .1 ? mixPose(run(13 + m.ph, {x: m.x1, y: gy - 74 * s0, ground: gy}), up, easeO(seg(t, 1.0, tc - .1))) : mixPose(up, hit, easeIO(seg(t, tc - .1, tc))); }
+      else P = jump(m.x1, m.ph, s0, m.dir, t - 1.0);
+      m.k.set(P); });
+    let P;
+    if (t < 1.0) P = jump(kx, 0, s, 1, t);
+    else if (t < 1.7){ const up = pose({x: kx, y: gy - 74 * s, tor:180, head:20, aF:176, eF:-10, aB:-20, eB:30, face:2, ground: gy}), hit = Object.assign({}, up, {aF:128, eF:-4});
+      P = t < tc - .1 ? mixPose(jump(kx, 0, s, 1, 1.0), up, easeO(seg(t, 1.0, tc - .1))) : mixPose(up, hit, easeIO(seg(t, tc - .1, tc))); }
+    else P = jump(kx, .8, s, 1, t - 1.7);
+    kid.set(P);
+    if (t < 1.0 && Math.floor(t * 8) !== Math.floor((t - dt) * 8)) mates.forEach(m => puffs.emit(lerp(m.x0, m.x1, easeO(seg(t, 0, 1.0))), gy, 2, 2));
+    const hx = (kid.handF[0] + mates[2].k.handF[0]) / 2, hy = (kid.handF[1] + mates[2].k.handF[1]) / 2;
+    if (!this.hand && t >= tc) this.hand = [hx, hy];
+    const hp = this.hand || [hx, hy]; burst.at(hp[0], hp[1], seg(t, tc, tc + .4)); puffs.step();
+    const party = clamp(t * 2, 0, 1); cheerCrowd(S.all, rt, party); flashes.at(rt, party); boardsGoal(S, rt, true);
+    rays.at(seg(t, tc + .05, tc + .6), rt); banner.at(seg(t, tc + .05, tc + .6), rt); conf.step(t > tc);
+    const [cx, cy, z] = cam.at(t); return {x: cx, y: cy, z};
+  }};
+}
+
+const SCENES = {goal: sceneGoal, header: sceneHeader, bicycle: sceneBicycle, freekick: sceneFreeKick, team: sceneTeam, slide: sceneSlide, trophy: sceneTrophy, swish: sceneSwish};
+// 'soccer' picks one of the scoring scenes, never the same one twice in a row
+const SOCCER = ['goal', 'header', 'bicycle', 'freekick']; let lastSoccer = '';
+function soccerPick(){ const opts = SOCCER.filter(k => k !== lastSoccer); return lastSoccer = pick(opts); }
 
 // ================================================================ the pop-up
 const CSS = `.cheer-ov{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(5,9,26,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:chFade .25s ease-out}
@@ -653,6 +898,7 @@ function build(kind, o){
   const camG = el('g', {}, svg), world = el('g', {}, camG), ui = el('g', {});
   el('rect', {x:0, y:0, width:W, height:H, fill:'url(#chVig)', 'pointer-events':'none'}, svg);
   svg.appendChild(ui);
+  if (kind === 'soccer') kind = soccerPick();
   const sc = (SCENES[kind] || sceneGoal)(world, ui, lookOf(o.look));
   const frame = t => { const c = sc.frame(t) || {x: W / 2, y: H / 2, z: 1}; const z = Math.max(1, c.z || 1), hw = W / 2 / z, hh = H / 2 / z;
     const x = clamp(c.x, hw - M * .9, W - hw + M * .9), y = clamp(c.y, hh - M * .9, H - hh + M * .9);
@@ -699,5 +945,5 @@ function portrait(o, size){
   new SoccerBall(svg, 10).at(118, 177, 20);
   return svg;
 }
-window.Cheer = {play, portrait, KITS, SKINS, HAIRS, STYLES, isOpen: () => !!open, close: () => open && open.close()};
+window.Cheer = {SCENES: Object.keys(SCENES), play, portrait, KITS, SKINS, HAIRS, STYLES, isOpen: () => !!open, close: () => open && open.close()};
 })();
