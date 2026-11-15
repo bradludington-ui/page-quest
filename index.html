@@ -4998,7 +4998,7 @@ function parentCard(){
     <p class="mut">${rows.length ? `${kids.map(esc).join(', ')}${last ? ` · last scanned ${new Date(last.saved).toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}` : ''}` : 'Scan the code from each child\'s iPad (📱 Show my reading report code, at the bottom of their home screen) to start the log. Every scan adds that day, and the last 4 weeks, to the log for good.'}</p>
     <div class="row"><button class="btn sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button>
       <button class="btn" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog'}))}">📖 Open the log</button>
-      <button class="btn ghost" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog', speed:true}))}">⚡ Speed trends</button></div>
+      <button class="btn ghost" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog', speed:true}))}">⚡ Speed</button></div>
     ${rows.length ? dayLogHtml(rows, true) : ''}
   </div>`;
 }
@@ -5058,16 +5058,17 @@ function speedCompareSvg(byKid){
 }
 function speedHtml(rows){
   const names = [...new Set(rows.map(r => r.n))].sort(), byKid = {}; names.forEach(nm => byKid[nm] = speedWeeksOf(rows.filter(r => r.n === nm)));
-  const latest = nm => byKid[nm][byKid[nm].length - 1], arrow = c => c == null ? '<span class="mut">–</span>' : c > 0 ? `<b style="color:var(--good)">▲ +${c}</b>` : c < 0 ? `<b style="color:var(--oops)">▼ ${c}</b>` : '<span class="mut">no change</span>';
-  return `<div class="card" style="display:flex;flex-direction:column;gap:12px"><h2>⚡ Reading speed, week over week</h2>
-    <div class="tablewrap"><table class="logtab rtab"><tr><th>Child</th><th>This week</th><th>vs last week</th><th>Level</th><th>Target</th><th>Since first week</th></tr>
-      ${names.map((nm, k) => { const w = latest(nm), f = byKid[nm][0]; return w ? `<tr><td><span class="kdot" style="background:${KID_COLS[k % KID_COLS.length]}"></span><b>${esc(nm)}</b> <span class="mut">gr ${w.g}</span></td><td><b>${w.s}</b> wpm</td><td>${arrow(w.chg)}</td><td>${w.band.ic} ${w.band.lab}</td><td>${w.tg}+ <span class="mut">(${w.s >= w.tg ? 'reached!' : (w.tg - w.s) + ' to go'})</span></td><td>${byKid[nm].length > 1 ? arrow(w.s - f.s) : '<span class="mut">–</span>'}</td></tr>` : `<tr><td><b>${esc(nm)}</b></td><td colspan="5" class="mut">No microphone reads logged yet</td></tr>`; }).join('')}
-    </table></div>
-    ${names.length > 1 ? `<h3>Compared with each other</h3><p class="mut" style="font-size:.9rem">Each line is a child's weekly speed as a share of their own grade's target, so the twins and Charlee compare fairly. 100% = reached the top-25% target.</p>${speedCompareSvg(byKid)}` : ''}
-    ${names.map(nm => { const ws = byKid[nm]; return `<div class="schoolwk"><h3>${esc(nm)}</h3>${speedTrendSvg(ws)}
-      ${ws.length ? `<div class="tablewrap"><table class="logtab rtab"><tr><th>Week of</th><th>Speed</th><th>Change</th><th>Level</th><th>Target</th><th>Reads</th></tr>
-        ${ws.slice().reverse().map(w => `<tr><td>${new Date(w.ws+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td><td><b>${w.s}</b></td><td>${arrow(w.chg)}</td><td>${w.band.ic} ${w.band.lab}</td><td>${w.tg}+</td><td>${w.sp.length}</td></tr>`).join('')}</table></div>` : ''}</div>`; }).join('')}
-    <p class="mut" style="font-size:.85rem">This week is still in progress, so it can move until Saturday. Speed is the middle of all microphone reads that week, so one fast or slow page cannot swing it. Benchmarks: Hasbrouck & Tindal (2017); targets rise through the school year.</p>
+  const chg = c => c == null ? '<span class="mut">–</span>' : c > 0 ? `<b style="color:var(--good)">▲ ${c}</b>` : c < 0 ? `<b style="color:var(--oops)">▼ ${-c}</b>` : '<span class="mut">same</span>';
+  const dt = d => new Date(d+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'});
+  return `<div class="card" style="display:flex;flex-direction:column;gap:12px"><h2>⚡ Reading speed</h2>
+    <table class="daytab"><tr><th>Child</th><th class="num">This week</th><th class="num">vs last</th><th class="num">Target</th></tr>
+      ${names.map((nm, k) => { const ws = byKid[nm], w = ws[ws.length-1]; return w ? `<tr><td><span class="kdot" style="background:${KID_COLS[k % KID_COLS.length]}"></span><b>${esc(nm)}</b></td><td class="num"><b>${w.band.ic} ${w.s}</b></td><td class="num">${chg(w.chg)}</td><td class="num">${w.tg}</td></tr>` : `<tr><td><b>${esc(nm)}</b></td><td class="num mut" colspan="3">no reads yet</td></tr>`; }).join('')}
+    </table>
+    <p class="mut" style="font-size:.85rem">Words per minute, out loud. Target = top 25% for their grade. ✅ on grade level · 🚀 at target · 🟠 some risk · 🔴 high risk.</p>
+    ${names.length > 1 ? `<h3>Side by side</h3><p class="mut" style="font-size:.85rem">Each line is a share of that child's own target, so different grades compare fairly. 100% = at target.</p>${speedCompareSvg(byKid)}` : ''}
+    ${names.map(nm => { const ws = byKid[nm]; return ws.length ? `<div class="schoolwk"><h3>${esc(nm)}</h3>${speedTrendSvg(ws)}
+      <table class="daytab"><tr><th>Week of</th><th class="num">Speed</th><th class="num">Change</th><th class="num">Target</th></tr>
+        ${ws.slice().reverse().map(w => `<tr><td>${dt(w.ws)}</td><td class="num"><b>${w.band.ic} ${w.s}</b></td><td class="num">${chg(w.chg)}</td><td class="num">${w.tg}</td></tr>`).join('')}</table></div>` : ''; }).join('')}
   </div>`;
 }
 // one day as a card: date, child, minutes, out loud, speed, then each book with its chapters and minutes
@@ -5094,34 +5095,39 @@ function dayLogHtml(rows, withChild){
     <table class="daytab"><tr><th>Title</th><th class="num">Minutes</th></tr>
       ${on.map(r => { const bs = schoolDay(r);
         return (withChild ? `<tr class="kidhead"><td colspan="2">${esc(r.a || '')} ${esc(r.n)}</td></tr>` : '') +
-          (bs.length ? bs : [{book:'Practice passages and word games', parts:[], mins:0, practice:true}]).map(b => `<tr><td>${b.practice ? `<span class="mut">${b.book}</span>` : esc(b.book)}${b.parts.length ? ` <span class="mut">(${esc(b.parts.map(q => q.replace('Chapter', 'Ch')).join(', '))})</span>` : ''}</td><td class="num">${b.mins ? b.mins : '–'}</td></tr>`).join('') +
+          bs.map(b => `<tr><td>${esc(b.book)}${b.parts.length ? ` <span class="mut">(${esc(b.parts.map(q => q.replace('Chapter', 'Ch')).join(', '))})</span>` : ''}</td><td class="num">${b.mins ? b.mins : '–'}</td></tr>`).join('') +
           `<tr class="daytot"><td>Total minutes read</td><td class="num"><b>${r.m || 0}</b></td></tr>`; }).join('')}
     </table>
-    <p class="mut" style="font-size:.85rem">Minutes on a title count the time spent reading it. The total also includes reading practice and word games, so it can be bigger than the titles added up.</p></div>`;
+    <p class="mut" style="font-size:.85rem">The total also counts reading practice, so it can be more than the titles add up to.</p></div>`;
 }
 // Brad's full log: each child's all-time totals, every week and every day
 function vKidLog(){
   const v = view, rows = logRows(), names = [...new Set(rows.map(r => r.n))].sort();
   const who = names.includes(v.who) ? v.who : names[0], tab = v.tab || 'school';
-  const mine = rows.filter(r => r.n === who), weeks = logWeeks(mine);
-  const tot = k => mine.reduce((a, r) => a + (r[k]||0), 0), stories = mine.reduce((a, r) => a + (r.rd||[]).length, 0);
-  const sp = mine.filter(r => r.s).sort((a, b) => a.d.localeCompare(b.d)), first = sp[0], lastS = sp[sp.length-1];
-  const g = mine[0] ? mine[0].g : 3, bNow = lastS && bandOf(g, lastS.s, lastS.d);
+  const mine = rows.filter(r => r.n === who), g = mine[0] ? mine[0].g : 3;
+  const dt = (d, o) => new Date(d+'T12:00').toLocaleDateString(undefined, o || {month:'short', day:'numeric'});
+  const speedCell = (s, g2, d) => s ? `${bandOf(g2, s, d).ic} ${s}` : '–';
+  let body = '';
+  if (tab === 'school') body = dayLogHtml(mine, false);
+  else if (tab === 'week') body = `<table class="daytab"><tr><th>Week of</th><th class="num">Minutes</th><th class="num">Days</th><th class="num">Speed</th></tr>
+    ${logWeeks(mine).map(w => `<tr><td>${dt(w.ws)}</td><td class="num"><b>${w.m}</b></td><td class="num">${w.days}</td><td class="num">${speedCell(w.s, w.g, w.ws)}</td></tr>`).join('')}</table>
+    <p class="mut" style="font-size:.85rem">Speed is words per minute, out loud. ✅ on grade level · 🚀 top 25% · 🟠 some risk · 🔴 high risk.</p>`;
+  else {
+    const tot = k => mine.reduce((a, r) => a + (r[k]||0), 0), sp = mine.filter(r => r.s).sort((a, b) => a.d.localeCompare(b.d)), f = sp[0], l = sp[sp.length-1];
+    const line = (k, val) => `<tr><td>${k}</td><td class="num"><b>${val}</b></td></tr>`;
+    body = `<table class="daytab"><tr><th>All time, since ${dt(mine[mine.length-1].d)}</th><th class="num"></th></tr>
+      ${line('Days read', mine.length)}${line('Minutes read', tot('m'))}${line('Hours read', Math.round(tot('m')/6)/10)}${line('Minutes out loud', tot('al'))}
+      ${line('Stories and chapters', mine.reduce((a, r) => a + (r.rd||[]).length, 0))}${line('Days the goal was met', mine.filter(r => (r.m||0) >= (r.gl||20)).length)}
+      ${l ? line('First reading speed', `${f.s} wpm`) + line('Latest reading speed', `${bandOf(g, l.s, l.d).ic} ${l.s} wpm`) + line('Target for grade ' + g, `${normAt(g, 75)}+ wpm`) : ''}</table>`;
+  }
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'hub'}))}">← Back</button><button class="btn small sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button></div>
   <h1>📒 Reading log</h1>
-  ${names.length ? `<div class="tabs"><button class="${v.speed?'on':''}" data-a="${A(()=>{ v.speed = true; render(); })}">⚡ Speed trends</button>${names.map(nm => `<button class="${nm===who && !v.speed?'on':''}" data-a="${A(()=>{ v.who = nm; v.speed = false; render(); })}">${esc(nm)}</button>`).join('')}</div>` : '<p class="mut">No days logged yet.</p>'}
+  ${names.length ? `<div class="tabs">${names.map(nm => `<button class="${nm===who && !v.speed?'on':''}" data-a="${A(()=>{ v.who = nm; v.speed = false; v.logDay = null; render(); })}">${esc(nm)}</button>`).join('')}<button class="${v.speed?'on':''}" data-a="${A(()=>{ v.speed = true; render(); })}">⚡ Speed</button></div>` : '<p class="mut">No days logged yet.</p>'}
   ${v.speed && names.length ? speedHtml(rows) : who ? `<div class="card" style="display:flex;flex-direction:column;gap:12px">
-    <h2>${esc((mine[0]||{}).a || '')} ${esc(who)} <span class="mut" style="font-size:1rem">Grade ${g} · all time since ${niceDate(mine[mine.length-1].d)}</span></h2>
-    <div class="row" style="gap:6px"><span class="chip">📅 ${mine.length} days read</span><span class="chip">⏱ ${Math.round(tot('m')/60*10)/10} hours (${tot('m')} min)</span><span class="chip">🎤 ${tot('al')} min out loud</span>
-      <span class="chip">📚 ${stories} stories and chapters</span><span class="chip">✓ goal met ${mine.filter(r => (r.m||0) >= (r.gl||20)).length} days</span>
-      ${lastS ? `<span class="chip">⚡ ${first.s} → ${lastS.s} words/min · ${bNow.ic} ${bNow.lab}</span>` : ''}</div>
-    <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">📚 Day log</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">Weekly</button><button class="${tab==='day'?'on':''}" data-a="${A(()=>{ v.tab='day'; render(); })}">Daily</button></div>
-    ${tab === 'school' ? schoolHtml(mine, who) : tab === 'week' ? `<div class="tablewrap"><table class="logtab rtab"><tr><th>Week of</th><th>Days</th><th>Min</th><th>🎤 Min</th><th>✓ Goal</th><th>📚</th><th>⚡</th></tr>
-      ${weeks.map(w => { const b = w.s && bandOf(w.g, w.s, w.ws); return `<tr><td>${new Date(w.ws+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td><td>${w.days}</td><td>${w.m}</td><td>${w.al}</td><td>${w.met}</td><td title="${esc(w.titles.join('; '))}">${w.stories}</td><td>${w.s ? `${b.ic} ${w.s}` : '–'}</td></tr>`; }).join('')}</table></div>`
-    : `<div class="dcards">${mine.map(r => logDayCard(r, false)).join('')}</div>`}
-  </div>` : ''}
-  <div class="card">${logFilesHtml(today(), rows.length)}</div>
-  ${phoneReports().length ? `<p><button class="btn ghost small" data-a="${A(()=>go({name:'phonerep'}))}">Scanned reports, as they arrived (${phoneReports().length})</button></p>` : ''}`;
+    <h2>${esc((mine[0]||{}).a || '')} ${esc(who)} <span class="mut" style="font-size:1rem">Grade ${g}</span></h2>
+    <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">Day log</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">By week</button><button class="${tab==='all'?'on':''}" data-a="${A(()=>{ v.tab='all'; render(); })}">All time</button></div>
+    ${body}</div>` : ''}
+  <div class="card">${logFilesHtml(today(), rows.length)}</div>`;
 }
 let scanStop = () => {};
 function loadJsQR(){
