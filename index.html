@@ -351,6 +351,14 @@ a{color:var(--accent)}
   .rtab td:first-child{grid-column:1/-1;font-weight:800}.rtab td:first-child::before{display:none}
   .tablewrap:has(.rtab){overflow:visible}
 }
+.daylog{display:flex;flex-direction:column;gap:8px}
+.daynav{display:flex;align-items:center;justify-content:space-between;gap:8px}.daynav b{font-family:var(--display);font-size:1.1rem;text-align:center}
+.daytab{width:100%;border-collapse:collapse;font-size:1rem}
+.daytab th{text-align:left;font-size:.8rem;color:var(--mut);padding:6px 8px;border-bottom:2px solid var(--line)}
+.daytab td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+.daytab .num{text-align:right;white-space:nowrap;width:1%}
+.daytab tr.kidhead td{font-family:var(--display);font-weight:800;font-size:1.05rem;padding-top:16px;border-bottom:2px solid var(--line)}
+.daytab tr.daytot td{background:var(--soft,rgba(100,116,139,.1));font-weight:700}
 </style>
 
 </head>
@@ -4991,7 +4999,7 @@ function parentCard(){
     <div class="row"><button class="btn sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button>
       <button class="btn" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog'}))}">📖 Open the log</button>
       <button class="btn ghost" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog', speed:true}))}">⚡ Speed trends</button></div>
-    ${rows.length ? `<div class="dcards">${rows.slice(0, 4).map(r => logDayCard(r, true)).join('')}</div>` : ''}
+    ${rows.length ? dayLogHtml(rows, true) : ''}
   </div>`;
 }
 function logFilesHtml(stamp, n){
@@ -5071,14 +5079,25 @@ function logDayCard(r, withName){
     ${(r.wp||[]).length ? `<p class="dwords">Practise: ${r.wp.map(esc).join(', ')}</p>` : ''}</div>`;
 }
 // the school view: week by week, each day's books and minutes, with Copy for the reading journal
-function schoolHtml(mine, who){
-  const weeks = new Map(); mine.forEach(r => { const w = weekStart(r.d); (weeks.get(w) || weeks.set(w, []).get(w)).push(r); });
-  return [...weeks.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([ws, rows], i) => {
-    const txt = schoolText(rows, who), tot = rows.reduce((a, r) => a + (r.m||0), 0);
-    return `<div class="schoolwk"><div class="row spread"><h3>Week of ${new Date(ws+'T12:00').toLocaleDateString(undefined,{month:'long', day:'numeric'})}</h3><span class="chip">${tot} min</span></div>
-      <div class="dcards">${rows.slice().sort((a, b) => a.d.localeCompare(b.d)).map(r => logDayCard(r, false)).join('')}</div>
-      <div class="row"><button class="btn small" data-a="${A(()=>copyText(txt, 'sw'+i))}">Copy this week</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(txt, 'sw'+i))}">Share…</button>` : ''}<span id="sw${i}"></span></div></div>`;
-  }).join('');
+function schoolHtml(mine, who){ return dayLogHtml(mine, false); }
+// the reading log for one day: each title on its own line with its minutes, ready to copy into the school log
+function dayLogHtml(rows, withChild){
+  const v = view, days = [...new Set(rows.map(r => r.d))].sort();
+  if (!days.length) return '<p class="mut">Nothing logged yet.</p>';
+  const d = v.logDay && days.includes(v.logDay) ? v.logDay : (days.includes(today()) ? today() : days[days.length - 1]);
+  const i = days.indexOf(d), on = rows.filter(r => r.d === d).sort((a, b) => a.n.localeCompare(b.n));
+  const go2 = dd => () => { v.logDay = dd; render(); };
+  return `<div class="daylog">
+    <div class="daynav"><button class="btn ghost small" aria-label="Earlier day" ${i > 0 ? '' : 'disabled'} data-a="${A(go2(days[i-1]))}">◀</button>
+      <b>${d === today() ? 'Today · ' : ''}${new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'})}</b>
+      <button class="btn ghost small" aria-label="Later day" ${i < days.length - 1 ? '' : 'disabled'} data-a="${A(go2(days[i+1]))}">▶</button></div>
+    <table class="daytab"><tr><th>Title</th><th class="num">Minutes</th></tr>
+      ${on.map(r => { const bs = schoolDay(r);
+        return (withChild ? `<tr class="kidhead"><td colspan="2">${esc(r.a || '')} ${esc(r.n)}</td></tr>` : '') +
+          (bs.length ? bs : [{book:'Practice passages and word games', parts:[], mins:0, practice:true}]).map(b => `<tr><td>${b.practice ? `<span class="mut">${b.book}</span>` : esc(b.book)}${b.parts.length ? ` <span class="mut">(${esc(b.parts.map(q => q.replace('Chapter', 'Ch')).join(', '))})</span>` : ''}</td><td class="num">${b.mins ? b.mins : '–'}</td></tr>`).join('') +
+          `<tr class="daytot"><td>Total minutes read</td><td class="num"><b>${r.m || 0}</b></td></tr>`; }).join('')}
+    </table>
+    <p class="mut" style="font-size:.85rem">Minutes on a title count the time spent reading it. The total also includes reading practice and word games, so it can be bigger than the titles added up.</p></div>`;
 }
 // Brad's full log: each child's all-time totals, every week and every day
 function vKidLog(){
@@ -5096,7 +5115,7 @@ function vKidLog(){
     <div class="row" style="gap:6px"><span class="chip">📅 ${mine.length} days read</span><span class="chip">⏱ ${Math.round(tot('m')/60*10)/10} hours (${tot('m')} min)</span><span class="chip">🎤 ${tot('al')} min out loud</span>
       <span class="chip">📚 ${stories} stories and chapters</span><span class="chip">✓ goal met ${mine.filter(r => (r.m||0) >= (r.gl||20)).length} days</span>
       ${lastS ? `<span class="chip">⚡ ${first.s} → ${lastS.s} words/min · ${bNow.ic} ${bNow.lab}</span>` : ''}</div>
-    <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">📚 For school</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">Weekly</button><button class="${tab==='day'?'on':''}" data-a="${A(()=>{ v.tab='day'; render(); })}">Daily</button></div>
+    <div class="modes"><button class="${tab==='school'?'on':''}" data-a="${A(()=>{ v.tab='school'; render(); })}">📚 Day log</button><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">Weekly</button><button class="${tab==='day'?'on':''}" data-a="${A(()=>{ v.tab='day'; render(); })}">Daily</button></div>
     ${tab === 'school' ? schoolHtml(mine, who) : tab === 'week' ? `<div class="tablewrap"><table class="logtab rtab"><tr><th>Week of</th><th>Days</th><th>Min</th><th>🎤 Min</th><th>✓ Goal</th><th>📚</th><th>⚡</th></tr>
       ${weeks.map(w => { const b = w.s && bandOf(w.g, w.s, w.ws); return `<tr><td>${new Date(w.ws+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td><td>${w.days}</td><td>${w.m}</td><td>${w.al}</td><td>${w.met}</td><td title="${esc(w.titles.join('; '))}">${w.stories}</td><td>${w.s ? `${b.ic} ${w.s}` : '–'}</td></tr>`; }).join('')}</table></div>`
     : `<div class="dcards">${mine.map(r => logDayCard(r, false)).join('')}</div>`}
