@@ -4636,7 +4636,7 @@ window.BreakGames = window.BreakGames || {};
 let breakCleanup = null;
 function breakStop(){ if (breakCleanup){ try{ breakCleanup(); }catch(e){} breakCleanup = null; } }
 const BREAK_OPEN_DAYS = ['2026-11-14']; // days a grown-up opened the Brain Break for every child, on every iPad
-function breakOpen(p){ return aloudToday(p) >= BREAK_ALOUD || p.breakDay === today() || BREAK_OPEN_DAYS.includes(today()); } // breakDay: a grown-up opened it for today
+function breakOpen(p){ return isParent(p) || aloudToday(p) >= BREAK_ALOUD || p.breakDay === today() || BREAK_OPEN_DAYS.includes(today()); } // breakDay: a grown-up opened it for today
 function breakApi(p, g){
   p.breakScores = p.breakScores || {}; p.breakStore = p.breakStore || {};
   const css = getComputedStyle(document.documentElement), c = n => css.getPropertyValue(n).trim();
@@ -4676,7 +4676,7 @@ function vBreak(){
   <div class="bbhero ${open ? 'open' : ''}">
     <div class="bbsparks" aria-hidden="true">${'✦✧✦✧✦✧'.split('').map((c,i) => `<i style="left:${8+i*16}%;animation-delay:${i*.7}s">${c}</i>`).join('')}</div>
     <div class="bbtext"><h1>🧠 Brain Break</h1>
-      <p>${open ? `You read out loud for ${BREAK_ALOUD} minutes today. <b>Every game is open, play as much as you like!</b>` : `Read out loud for <b>${BREAK_ALOUD} minutes</b> to unlock every game today. About <b>${need} more minute${need===1?'':'s'}</b> to go!`}</p>
+      <p>${open ? `${isParent(p) ? 'Grown-up account: <b>every game is always open</b> so you can try them out.' : `You read out loud for ${BREAK_ALOUD} minutes today. <b>Every game is open, play as much as you like!</b>`}` : `Read out loud for <b>${BREAK_ALOUD} minutes</b> to unlock every game today. About <b>${need} more minute${need===1?'':'s'}</b> to go!`}</p>
       ${open ? '<span class="bbopen">🔓 Open all day today</span>' : `<div class="row"><button class="btn sun" data-a="${A(()=>go({name:'library', tab:'rec'}))}">🎤 Read a story out loud</button><button class="btn ghost bbghost" data-a="${A(()=>go({name:'gym', mode:'mic'}))}">🏋️ Fluency Gym</button></div>`}</div>
     ${open ? '<div class="bbbig" aria-hidden="true">🎮</div>' : ring}
   </div>
