@@ -1,6 +1,6 @@
 // Page Quest service worker: always tries the network first so updates arrive,
 // and falls back to the last saved copy when the iPad is offline.
-const CACHE = 'page-quest-v25';
+const CACHE = 'page-quest-v26';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 // Break Zone games: cached on install so they also work offline
 const GAMES = ['bowling', 'golf', 'hoops', 'penalty', 'baseball', 'joust', 'hockey', 'fishing', 'stack', 'space', 'rings', 'rollball', 'balloons', 'draw', 'ttt', 'four', 'checkers', 'wordguess'].map(g => 'games/' + g + '.js?v=2').concat(['lib/jsQR.js?v=1']);

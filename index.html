@@ -312,6 +312,23 @@ a{color:var(--accent)}
 .bbgrid.locked .bbtile:hover{transform:none}
 @media (max-width:560px){.bbhero{flex-direction:column;align-items:flex-start}.bbring{width:84px;height:84px;position:absolute;top:16px;right:16px}.bbhero h1{max-width:calc(100% - 90px)}.bbhero h1{font-size:2rem}.bbgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.bbart{height:92px}.bbart span{font-size:3rem}.bbinfo>span:not(.bbchips){display:none}}
 @media (prefers-reduced-motion:reduce){.bbsparks,.bbbig{animation:none}.bbsparks{display:none}.bbtile,.bbart span{transition:none}}
+/* reading page: the controls sit beside the story on a wide screen and stay on screen on a narrow one */
+.readlay{display:flex;flex-direction:column;gap:16px}
+.readside{display:flex;flex-direction:column;gap:12px}
+#app:has(.readlay){max-width:1180px}
+@media (min-width:900px){
+  .readlay{display:grid;grid-template-columns:minmax(0,1fr) 290px;align-items:start}
+  .readside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+  .readside .modes{flex-direction:column}
+  .readside .modes button{width:100%;min-height:52px;text-align:left;font-size:1.05rem}
+  .readside .ctrl{flex-direction:column;align-items:stretch}
+  .readside .ctrl .btn{width:100%;min-height:60px;font-size:1.15rem;justify-content:center}
+  .readside .ctrl>p,.readside .ctrl>span{text-align:center}
+}
+@media (max-width:899px){
+  .readside{position:sticky;bottom:10px;z-index:5;box-shadow:0 -6px 24px -8px rgba(15,23,42,.35)}
+  .readside .ctrl .btn{min-height:54px;font-size:1.1rem}
+}
 </style>
 
 </head>
@@ -1286,13 +1303,15 @@ function vRead(){
     const ev = phase === 'look' ? evidenceIdx(pg.t, pg.e, words) : new Set();
     view.words = words;
     app.innerHTML = `${head}
+    <div class="readlay">
     <div class="card lv${s.lvl>=5?5:3}">
       ${phase==='look' ? `<p class="notice" style="margin-bottom:12px">Look back! The highlighted part has the answer. Read it again out loud.</p>` : ''}
       <p class="passage" id="passage">${words.map((w,i) => (i ? (pg.t.slice(words[i-1].end, w.at).includes('\n') ? '<br>' : ' ') : '') + `<span class="w${ev.has(i)?' ev':''}${isFocus(p, bankKey(w.raw)) ? ' fw' : ''}${pg.t.includes('\n') && w.end <= pg.t.indexOf('\n') ? ' ptitle' : ''}" data-i="${i}">${esc(w.raw)}</span>`).join('')}</p>
       ${words.some(w => isFocus(p, bankKey(w.raw))) ? `<p class="mut" style="font-size:.9rem;margin-top:6px"><span class="w fw">Dotted words</span> are your focus words. Read them carefully!</p>` : ''}
     </div>
-    ${phase==='look' ? `<div><button class="btn" data-a="${A(()=>{ view.phase='q'; render(); })}">Try the question again</button></div>`
-      : `<div class="card" style="display:flex;flex-direction:column;gap:12px">${modePicker(p)}<div id="ctrl"></div></div>`}`;
+    ${phase==='look' ? `<aside class="card readside"><button class="btn" data-a="${A(()=>{ view.phase='q'; render(); })}">Try the question again</button></aside>`
+      : `<aside class="card readside">${modePicker(p)}<div id="ctrl"></div></aside>`}
+    </div>`;
     document.getElementById('passage').addEventListener('click', e => { const w = e.target.closest('.w'); if (w) wordHelp(+w.dataset.i, w); });
     if (phase === 'text') setupMode();
   } else if (phase === 'q'){
