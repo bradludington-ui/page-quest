@@ -363,7 +363,7 @@ a{color:var(--accent)}
 .article + .article{border-top:3px dashed var(--line);padding-top:16px;margin-top:8px}.artlist{margin:0 0 0 22px;display:flex;flex-direction:column;gap:4px}
 .iwords{display:flex;flex-direction:column;gap:6px;margin-top:6px}.iwords span{border-left:4px solid var(--sun);padding-left:10px}
 .iqlay{display:flex;flex-direction:column;gap:16px}#app:has(.iqlay){max-width:1180px}
-@media (min-width:900px){.iqlay{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}.iqlay .iart{max-height:calc(100vh - 140px);overflow:auto;position:sticky;top:12px}.iqlay .iq{position:sticky;top:12px}}
+@media (min-width:900px){.iqlay{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}.iqlay .iart{max-height:calc(100vh - 140px);overflow:auto;position:sticky;top:12px}.iqlay .iq{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
 @media (max-width:899px){.iqlay .iart{max-height:42vh;overflow:auto}}
 .iq{display:flex;flex-direction:column;gap:12px}.irpart{font-weight:800;color:var(--accent);margin-top:4px}
 .opt.sel{outline:3px solid var(--accent);background:var(--sun-soft)}.result.miss{background:var(--oops-soft)}
@@ -5249,6 +5249,1774 @@ async function openReportLink(){
 }
 window.addEventListener('hashchange', () => { if (/^#r=/.test(location.hash)) openReportLink(); });
 
+// Info Lab: grade 3 informational articles with i-Ready style questions (original content)
+const INFO3 = [
+{id:'i3-01', g:3, title:`The Amazing Octopus`, icon:'🐙', topic:'animals',
+text:`The octopus is one of the strangest animals in the ocean. It has eight long arms, three hearts, and blue blood. It has no bones at all. Scientists who study octopuses say they are also very smart.\n\n## A Body That Can Squeeze\nBecause an octopus has no bones, its body is soft and bendy. An octopus can squeeze through a gap as small as its beak. The beak is the only hard part of its body. This lets an octopus slip into tiny cracks between rocks. A crack makes a safe place to hide from sharks and other hunters.\n\n## Masters of Disguise\nAn octopus can change the color of its skin in less than a second. Its skin has thousands of tiny color cells. The octopus uses these cells to match the sand, rocks, or coral around it. Some octopuses can even make their skin bumpy to look like a rock. This kind of hiding is called camouflage. If a hunter still finds it, the octopus has another trick. It squirts a cloud of dark ink into the water. The ink hides the octopus while it zooms away. By the time the cloud fades, the octopus is gone.\n\n## Arms That Can Taste\nEach arm is covered with round suckers. The suckers help the octopus grab food like crabs and clams. The suckers can also taste! An octopus can touch a rock and know if there is food inside.\n\n## Clever Problem Solvers\nOctopuses are good at solving puzzles. In aquariums, some octopuses have learned to open jars to get the food inside. Others have escaped from their tanks at night. These clever animals keep surprising the people who study them.`,
+words:[[`camouflage`,`hiding by blending in with what is around you`],[`beak`,`the hard, pointed mouth part of an octopus`],[`suckers`,`round cups on an octopus's arms that grab and hold`]],
+qs:[
+{t:'one', k:'main idea', q:`What is this passage mostly about?`, o:[`the special body parts and skills that help octopuses survive`,`how octopuses build homes out of rocks and sand`,`why sharks like to hunt octopuses in the ocean`,`how people take care of octopuses in aquariums`], e:`The octopus is one of the strangest animals in the ocean.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "This kind of hiding is called camouflage." What does the word "camouflage" mean?`, o:[`hiding by blending in with things nearby`,`swimming away from danger very fast`,`squirting dark ink into the water`,`puffing up to look big and scary`], e:`The octopus uses these cells to match the sand, rocks, or coral around it.`},
+{t:'two', k:'inference', a:{q:`Why can an octopus hide in very small spaces?`, o:[`Its body has almost no hard parts.`,`It can make itself invisible.`,`It is smaller than most fish.`,`It digs holes under the sand.`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`The beak is the only hard part of its body.`,`Each arm is covered with round suckers.`,`It squirts a cloud of dark ink into the water.`,`Octopuses are good at solving puzzles.`]}},
+{t:'multi', k:'key details', q:`Which TWO tricks help an octopus stay safe from hunters? Choose two answers.`, o:[`changing the color of its skin`,`squirting a cloud of dark ink`,`tasting food with its suckers`,`opening jars in aquariums`,`pumping blood with three hearts`], n:2},
+{t:'one', k:'text features', q:`How do the headings help the reader?`, o:[`They tell what each part of the passage is about.`,`They list new words and what they mean.`,`They show pictures of different octopuses.`,`They tell the reader where octopuses live.`], e:`## Arms That Can Taste`}
+]},
+
+{id:'i3-02', g:3, title:`Mountains of Fire`, icon:'🌋', topic:'earth and space',
+text:`Deep under the ground, it is very hot. In some places, it is hot enough to melt rock. This melted rock is called magma. Magma is lighter than the solid rock around it, so it slowly rises toward the surface. A volcano is an opening in Earth's crust where magma can escape.\n\nWhen magma reaches the surface, it gets a new name. It is called lava. Lava can be hotter than 2,000 degrees Fahrenheit. Some lava is thick and moves slowly, like cold honey. Other lava is thin and runs downhill like a river. As lava cools, it hardens into new rock. Over many years, layer after layer of cooled lava can build a tall mountain.\n\nNot every eruption looks the same. Some volcanoes ooze lava gently. Others explode with a loud blast. These eruptions throw ash and rocks high into the sky. Volcanic ash is not like the soft ash from a campfire. It is made of tiny, sharp bits of rock and glass.\n\nMany volcanoes sit in a giant loop around the Pacific Ocean. This loop is called the Ring of Fire. Pieces of Earth's crust, called plates, meet there and push against each other. More than half of the world's active volcanoes are in this ring.\n\nVolcanoes can be dangerous, but they also help our planet. Over time, ash and lava break down into rich soil. Farmers near volcanoes can grow healthy crops in this soil. Volcanoes have also made new land. The islands of Hawaii were built by volcanoes rising up from the ocean floor. Scientists watch volcanoes closely so they can warn people before an eruption.`,
+words:[[`magma`,`melted rock deep under the ground`],[`eruption`,`when a volcano pushes out lava, ash, or gas`],[`crust`,`the hard outer layer of Earth`]],
+qs:[
+{t:'one', k:'main idea', q:`What is the main idea of this passage?`, o:[`Volcanoes form where melted rock escapes, and they can both harm and help.`,`Volcanoes are only found on islands in the middle of the ocean.`,`Lava is the hottest thing that can be found anywhere on Earth.`,`Farmers like to live near volcanoes because the weather is warm.`], e:`Volcanoes can be dangerous, but they also help our planet.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "Some volcanoes ooze lava gently." What does the word "ooze" mean?`, o:[`flow out slowly`,`shoot up quickly`,`cool and harden`,`break into bits`], e:`Others explode with a loud blast.`},
+{t:'two', k:'key details', a:{q:`What is the difference between magma and lava?`, o:[`Lava is magma that has reached the surface.`,`Magma is much cooler than lava.`,`Lava is found only in Hawaii.`,`Magma is made of ash and glass.`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`When magma reaches the surface, it gets a new name.`,`Lava can be hotter than 2,000 degrees Fahrenheit.`,`Many volcanoes sit in a giant loop around the Pacific Ocean.`,`Farmers near volcanoes can grow healthy crops in this soil.`]}},
+{t:'multi', k:'key details', q:`Which TWO are ways volcanoes help the planet? Choose two answers.`, o:[`They make rich soil for crops.`,`They build new land, like islands.`,`They warn people before eruptions.`,`They make soft ash for campfires.`,`They keep the Pacific Ocean warm.`], n:2},
+{t:'one', k:'author purpose', q:`Why does the author compare thick lava to cold honey?`, o:[`to help readers picture how slowly it moves`,`to show readers that lava tastes sweet`,`to explain how lava is made underground`,`to tell readers that lava is safe to touch`], e:`Some lava is thick and moves slowly, like cold honey.`}
+]},
+
+{id:'i3-03', g:3, title:`The Wright Brothers Take Off`, icon:'✈️', topic:'history',
+text:`For thousands of years, people watched birds and wished they could fly too. Many inventors built flying machines, but none of them worked well. Then two brothers from Dayton, Ohio, changed history.\n\nWilbur and Orville Wright owned a bicycle shop. They built and fixed bikes for their customers. Working with bicycles taught them a lot about balance, light parts, and chains. The brothers believed these lessons could help them build a flying machine.\n\nThe Wrights did not rush. First, they studied how birds steer by twisting the tips of their wings. Next, they tested gliders, which are aircraft with no engine. They also built a small wind tunnel in their shop. It was a wooden box with a fan that blew air over tiny model wings. These tests showed them which wing shapes worked best. Finally, they built an airplane with an engine and two propellers. They named it the Wright Flyer.\n\nThe brothers needed a windy place with soft sand for landing. They chose a spot near Kitty Hawk, North Carolina. On December 17, 1903, Orville climbed onto the Flyer. The engine roared, and the plane rolled along a wooden track. Then it lifted into the air! The flight lasted only 12 seconds and went about 120 feet. That is shorter than many school hallways. Still, it was the first controlled flight of a powered airplane.\n\nThe brothers took turns flying that day. On the fourth flight, Wilbur stayed in the air for 59 seconds. Today, giant jets carry millions of people around the world. Every one of those flights traces back to two patient brothers and their bicycle shop.`,
+words:[[`propeller`,`spinning blades that pull an airplane forward`],[`patient`,`willing to keep trying without getting upset or rushing`],[`wind tunnel`,`a box or tube where air is blown over models to test them`]],
+qs:[
+{t:'one', k:'main idea', q:`What is this passage mostly about?`, o:[`how the Wright brothers worked carefully to make the first airplane flight`,`how to fix a broken bicycle chain in a small shop`,`why birds will always be better fliers than airplanes`,`how giant jets carry people all around the world`], e:`Then two brothers from Dayton, Ohio, changed history.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "Next, they tested gliders, which are aircraft with no engine." What is a "glider"?`, o:[`an aircraft that flies without an engine`,`a wooden box with a fan inside it`,`a tool used for fixing bicycles`,`a long wooden track for takeoff`], e:`Next, they tested gliders, which are aircraft with no engine.`},
+{t:'two', k:'key details', a:{q:`How did running a bicycle shop help the Wright brothers?`, o:[`It taught them about balance and light parts.`,`It gave them money to buy an airplane.`,`It was very close to Kitty Hawk.`,`It had a wooden track for takeoff.`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`Working with bicycles taught them a lot about balance, light parts, and chains.`,`They chose a spot near Kitty Hawk, North Carolina.`,`They named it the Wright Flyer.`,`The brothers took turns flying that day.`]}},
+{t:'multi', k:'text structure', q:`Which TWO things did the Wright brothers do BEFORE they built the Wright Flyer? Choose two answers.`, o:[`They studied how birds steer.`,`They tested gliders.`,`They flew for 59 seconds.`,`They flew for 12 seconds.`,`They rolled along a track.`], n:2},
+{t:'one', k:'text structure', q:`How does the author organize the third paragraph?`, o:[`by telling the steps the brothers took in order`,`by comparing birds to bicycles`,`by describing what Kitty Hawk looks like`,`by listing reasons people like jets`], e:`Finally, they built an airplane with an engine and two propellers.`}
+]},
+
+{id:'i3-04', g:3, title:`From Seed to Plant`, icon:'🌱', topic:'science',
+text:`A seed may look like a tiny pebble, but it is full of life. Inside every seed is a baby plant. The seed also holds a supply of food. A hard outer layer, called the seed coat, protects everything inside.\n\nA seed can wait for a long time before it starts to grow. It needs three things to wake up: water, warmth, and air. When a seed gets all three, it begins to sprout. This is called germination.\n\n## How to Grow a Bean Seed\nYou can watch germination happen at home. Follow these steps.\n1. Wet a paper towel and fold it in half.\n2. Place three bean seeds on the towel.\n3. Slide the towel into a clear plastic bag, and leave the bag open a little.\n4. Tape the bag to a sunny window.\n5. Check the seeds every day, and add water if the towel feels dry.\n\nAfter a few days, the seed coat will split open. A tiny root will poke out first. The root always grows down, even if the seed is upside down. It soaks up water and holds the plant in place. Next, a shoot will push up toward the light. The shoot becomes the stem.\n\nSoon the first leaves will open. Until now, the young plant has been living on the food stored in the seed. Once it has leaves, it can make its own food. Leaves use sunlight, air, and water to make food for the plant. Now your bean plant is ready for a pot of soil. With care, it may one day grow beans with new seeds inside, and the cycle can start again.`,
+words:[[`seed coat`,`the hard outer layer that protects a seed`],[`germination`,`when a seed starts to grow`],[`shoot`,`the first part of a new plant that grows up toward the light`]],
+qs:[
+{t:'one', k:'main idea', q:`What is the main idea of this passage?`, o:[`A seed holds a baby plant that grows when it gets water, warmth, and air.`,`Bean seeds grow best when they are kept in a dark closet.`,`Paper towels are the best place to grow every kind of plant.`,`Plants do not need sunlight, air, or water to make food.`], e:`It needs three things to wake up: water, warmth, and air.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "When a seed gets all three, it begins to sprout." What does the word "sprout" mean?`, o:[`start to grow`,`dry out`,`fall apart`,`stay asleep`], e:`When a seed gets all three, it begins to sprout.`},
+{t:'two', k:'text structure', a:{q:`What happens right after the seed coat splits open?`, o:[`A tiny root pokes out.`,`The first leaves open.`,`The plant grows beans.`,`The plant goes in soil.`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`A tiny root will poke out first.`,`Soon the first leaves will open.`,`Tape the bag to a sunny window.`,`The shoot becomes the stem.`]}},
+{t:'multi', k:'key details', q:`Which TWO jobs does the root do? Choose two answers.`, o:[`It soaks up water.`,`It holds the plant in place.`,`It makes food from sunlight.`,`It protects the baby plant.`,`It grows up toward the light.`], n:2},
+{t:'one', k:'text features', q:`Why does the author use a numbered list?`, o:[`to show the steps for growing a bean seed in order`,`to count how many seeds are inside one bean`,`to name each of the parts of a plant`,`to tell how many days a seed can sleep`], e:`Follow these steps.`}
+]},
+
+{id:'i3-05', g:3, title:`A Second Life for Trash`, icon:'♻️', topic:'communities',
+text:`Every week, families fill trash cans with bottles, cans, boxes, and paper. Much of that trash ends up in a landfill. A landfill is a huge area where garbage is buried in the ground. Some trash can stay there for hundreds of years without breaking down. Recycling is one way to send less trash to landfills.\n\nWhen you recycle, used things are turned into new things. A truck picks up the items from your bin and takes them to a recycling center. There, machines and workers sort everything. Magnets pull out steel cans. Other machines separate paper from plastic. Then each material is cleaned, melted, or mashed so it can be used again.\n\nThe results can be surprising. Old newspapers become new paper, cereal boxes, and egg cartons. Plastic bottles can be turned into carpet or even warm fleece jackets. An aluminum can is one of the best things to recycle. A recycled can may be back on a store shelf as a new can in about 60 days.\n\nRecycling saves more than space. Making a can from old cans uses much less energy than making one from new metal dug out of the ground. Recycling paper also means fewer trees are cut down.\n\n## How You Can Help\nRecycling works best when everyone does it the right way. Rinse food and drink out of containers before you put them in the bin. Keep plastic bags out of the bin unless your town says they are okay, because they can jam the sorting machines. Check your town's rules to learn what it accepts. Small choices at home can add up to a cleaner neighborhood for everyone.`,
+words:[[`landfill`,`a big place where trash is buried`],[`material`,`what something is made of, like paper, metal, or plastic`],[`energy`,`the power needed to make things work or move`]],
+qs:[
+{t:'one', k:'main idea', q:`What is this passage mostly about?`, o:[`how recycling turns used things into new things and why it matters`,`how workers build a landfill and bury garbage in the ground`,`how magnets pull steel cans out of a pile of trash`,`why aluminum cans are shiny and easy to carry`], e:`When you recycle, used things are turned into new things.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "Other machines separate paper from plastic." What does the word "separate" mean?`, o:[`pull apart into groups`,`melt together into one`,`throw away in the trash`,`paint a brand new color`], e:`There, machines and workers sort everything.`},
+{t:'two', k:'text evidence', a:{q:`Why should people keep plastic bags out of the recycling bin?`, o:[`The bags can get stuck in the sorting machines.`,`The bags are too heavy for the recycling truck.`,`The bags are needed to make fleece jackets.`,`The bags are made of steel and need magnets.`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`Keep plastic bags out of the bin unless your town says they are okay, because they can jam the sorting machines.`,`Magnets pull out steel cans.`,`Plastic bottles can be turned into carpet or even warm fleece jackets.`,`Check your town's rules to learn what it accepts.`]}},
+{t:'multi', k:'key details', q:`Which TWO things can old newspapers become? Choose two answers.`, o:[`cereal boxes`,`egg cartons`,`fleece jackets`,`steel cans`,`new carpet`], n:2},
+{t:'one', k:'author purpose', q:`What is the author's main purpose in the last paragraph?`, o:[`to tell readers how they can recycle the right way`,`to explain how magnets pull steel cans out`,`to describe what a big landfill looks like`,`to tell a funny story about a recycling truck`], e:`Recycling works best when everyone does it the right way.`}
+]},
+
+{id:'i3-06', g:3, title:`Staying Warm in the Arctic`, icon:'❄️', topic:'animals',
+text:`The Arctic is the area around the North Pole. In winter, the sun may not rise for weeks, and the temperature can drop far below zero. Cold winds blow across ice and snow. It seems like nothing could live there. Yet many animals make their homes in the Arctic. Each one has special features that help it stay warm and find food.\n\n## Polar Bears\nPolar bears are the largest bears on land. Their fur looks white, but each hair is actually clear and hollow. Under the fur, their skin is black. Dark skin soaks up heat from the sun. A thick layer of fat under the skin, called blubber, keeps the bear warm. Polar bears are also strong swimmers. They hunt seals at holes in the sea ice.\n\n## Arctic Foxes\nThe Arctic fox changes its coat with the seasons. In winter, its fur is thick and white, so it blends in with the snow. In summer, the fox sheds its white coat and grows a thinner brown or gray one. Its small, round ears lose less heat than big ears would. When it sleeps, the fox wraps its fluffy tail around its body like a blanket.\n\n## Walruses\nWalruses live along icy coasts. They have long tusks that can grow up to three feet long. A walrus uses its tusks to pull its heavy body out of the water and onto the ice. Like polar bears, walruses have thick blubber to stay warm in freezing water.\n\nEvery Arctic animal has its own way to survive. Fur, fat, and clever habits help them live in one of the coldest places on Earth.`,
+words:[[`blubber`,`a thick layer of fat that keeps an animal warm`],[`tusks`,`very long, pointed teeth that stick out of an animal's mouth`],[`hollow`,`empty inside`]],
+qs:[
+{t:'one', k:'main idea', q:`What is the main idea of this passage?`, o:[`Arctic animals have special features that help them survive the cold.`,`Polar bears are the very best swimmers in the whole world.`,`The sun never shines at all in the Arctic, even in summer.`,`Walruses and Arctic foxes live together in the same dens.`], e:`Each one has special features that help it stay warm and find food.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "In summer, the fox sheds its white coat and grows a thinner brown or gray one." What does the word "sheds" mean?`, o:[`loses or drops`,`washes clean`,`paints over`,`hides under`], e:`In summer, the fox sheds its white coat and grows a thinner brown or gray one.`},
+{t:'two', k:'inference', a:{q:`Why is it helpful for the Arctic fox to have a white coat in winter?`, o:[`It helps the fox blend in with the snow.`,`It helps the fox swim much faster.`,`It keeps the fox's ears small and round.`,`It helps the fox catch seals at ice holes.`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`In winter, its fur is thick and white, so it blends in with the snow.`,`Its small, round ears lose less heat than big ears would.`,`They hunt seals at holes in the sea ice.`,`Walruses live along icy coasts.`]}},
+{t:'multi', k:'key details', q:`Which TWO animals in the passage have blubber? Choose two answers.`, o:[`polar bears`,`walruses`,`Arctic foxes`,`snowy owls`,`gray wolves`], n:2},
+{t:'one', k:'text features', q:`Under which heading would you find out how an animal uses its tusks?`, o:[`Walruses`,`Polar Bears`,`Arctic Foxes`,`none of the headings`], e:`A walrus uses its tusks to pull its heavy body out of the water and onto the ice.`}
+]},
+
+{id:'i3-07', g:3, title:`The Moon's Changing Shape`, icon:'🌙', topic:'earth and space',
+text:`Have you ever noticed that the Moon seems to change shape? Some nights it is a big, bright circle. Other nights it is a thin curve, like a fingernail clipping. On some nights you cannot see it at all. The Moon is not really changing shape. What changes is how much of its lit side we can see.\n\nThe Moon does not make its own light. It shines because sunlight bounces off it, the same way light bounces off a mirror. The Sun always lights up half of the Moon. The other half is dark. The Moon travels in a path around Earth. One full trip takes about 29 and a half days. As the Moon moves, we see different amounts of its sunny side. These changing shapes are called phases.\n\nThe cycle begins with the new moon. At this time, the Moon is between Earth and the Sun. Its lit side faces away from us, so the Moon looks dark. Over the next few nights, a thin sliver of light appears. This is called a crescent. Each night, the lit part grows a little bigger. When the lit part is growing, we say the Moon is waxing.\n\nAbout two weeks after the new moon, we see the whole lit side. This is the full moon. After that, the lit part gets smaller each night. When the lit part is shrinking, the Moon is waning. Finally, the Moon is dark again, and a new cycle begins.\n\nYou can keep a Moon journal to see the phases yourself. Draw the Moon every clear night for a month. By the end, you will have drawn the whole cycle.`,
+words:[[`phase`,`one of the shapes the Moon seems to have as it moves around Earth`],[`crescent`,`a thin, curved shape like a banana`],[`cycle`,`a set of events that happens again and again in the same order`]],
+qs:[
+{t:'one', k:'main idea', q:`What is the main idea of this passage?`, o:[`The Moon seems to change shape because we see different amounts of its lit side.`,`The Moon makes its own light and turns it on and off each night.`,`The Moon grows and shrinks in size during every month of the year.`,`A Moon journal is the best kind of journal for a person to keep.`], e:`What changes is how much of its lit side we can see.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "When the lit part is growing, we say the Moon is waxing." What does the word "waxing" mean?`, o:[`getting bigger`,`getting smaller`,`turning dark`,`moving away`], e:`When the lit part is growing, we say the Moon is waxing.`},
+{t:'two', k:'key details', a:{q:`Why does the Moon look dark during a new moon?`, o:[`Its lit side is facing away from Earth.`,`The Sun stops shining on it for a while.`,`Clouds always cover it during that time.`,`It moves too far away from Earth to see.`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`Its lit side faces away from us, so the Moon looks dark.`,`This is called a crescent.`,`Draw the Moon every clear night for a month.`,`This is the full moon.`]}},
+{t:'multi', k:'key details', q:`Which TWO sentences about the Moon are true, based on the passage? Choose two answers.`, o:[`It shines because sunlight bounces off it.`,`One trip around Earth takes about 29 and a half days.`,`It makes its own light like the Sun does.`,`It is full about two days after the new moon.`,`Its dark half is always facing the Sun.`], n:2},
+{t:'one', k:'text structure', q:`How does the author explain the phases in paragraphs 3 and 4?`, o:[`in time order, from new moon to full moon and back`,`by comparing the Moon to the Sun and the stars`,`by listing reasons why people like the Moon`,`by telling a story about a girl named Mia`], e:`Finally, the Moon is dark again, and a new cycle begins.`}
+]},
+
+{id:'i3-08', g:3, title:`How Bridges Stay Up`, icon:'🌉', topic:'how things work',
+text:`Every day, bridges carry cars, trucks, trains, and people across rivers and valleys. A bridge has a hard job. It must hold up its own heavy weight, plus everything that crosses it. Engineers are the people who design bridges. They use two important forces to make bridges strong.\n\nThe first force is compression. Compression is a pushing or squeezing force. When you stand on a step, your weight squeezes it down. The second force is tension. Tension is a pulling or stretching force. When you play tug-of-war, the rope is under tension. A good bridge handles both forces without bending or breaking.\n\n## Beam Bridges\nThe simplest bridge is a beam bridge. It is a flat beam that rests on supports at each end. A log lying across a stream is a beam bridge. When weight presses down, the top of the beam is squeezed and the bottom is stretched. Beam bridges work well for short distances. If a beam is too long, it sags in the middle.\n\n## Arch Bridges\nAn arch bridge has a curved shape. The curve pushes the weight outward and down to the ends of the bridge. The ground at each end pushes back. Because the arch is always being squeezed, it can be made of stone. Some stone arch bridges built by the ancient Romans are still standing today.\n\n## Suspension Bridges\nSuspension bridges can stretch across very wide spaces. The road hangs from strong steel cables. The cables run over tall towers and are tied down at both ends. The Golden Gate Bridge in San Francisco is a famous suspension bridge. It opened in 1937, and millions of cars cross it every year.`,
+words:[[`engineer`,`a person who plans and designs things like bridges and machines`],[`compression`,`a pushing or squeezing force`],[`tension`,`a pulling or stretching force`]],
+qs:[
+{t:'one', k:'main idea', q:`What is the main idea of this passage?`, o:[`Engineers design different kinds of bridges to handle pushing and pulling forces.`,`The Golden Gate Bridge is the longest and oldest bridge in the world.`,`Logs lying across streams make the strongest bridges of all.`,`Tug-of-war is a game that teaches people how to build bridges.`], e:`They use two important forces to make bridges strong.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "If a beam is too long, it sags in the middle." What does the word "sags" mean?`, o:[`droops down`,`breaks apart`,`rises up`,`shines bright`], e:`If a beam is too long, it sags in the middle.`},
+{t:'two', k:'text structure', a:{q:`How is an arch bridge different from a beam bridge?`, o:[`Its curve pushes the weight out to its ends.`,`Its road hangs from strong steel cables.`,`It is always made from a single log.`,`It can only cross very short streams.`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`The curve pushes the weight outward and down to the ends of the bridge.`,`The road hangs from strong steel cables.`,`A log lying across a stream is a beam bridge.`,`Beam bridges work well for short distances.`]}},
+{t:'multi', k:'key details', q:`Which TWO parts help hold up a suspension bridge? Choose two answers.`, o:[`steel cables`,`tall towers`,`a stone arch`,`a single log`,`a long rope`], n:2},
+{t:'one', k:'author purpose', q:`Why does the author mention tug-of-war?`, o:[`to give an example of tension that readers know`,`to show that bridges are fun places to play`,`to explain how arch bridges are built of stone`,`to tell readers where the Golden Gate Bridge is`], e:`When you play tug-of-war, the rope is under tension.`}
+]},
+
+{id:'i3-09', g:3, title:`Dogs with Jobs`, icon:'🦮', topic:'communities',
+text:`Most dogs are pets, but some dogs have important jobs. Service dogs are trained to help people with disabilities live more freely. They go almost everywhere with their partners, including stores, schools, buses, and restaurants.\n\nService dogs can do many different jobs. Guide dogs help people who are blind or cannot see well. A guide dog leads its partner around poles, holes, and other things in the way. It also stops at curbs and stairs. Hearing dogs help people who are deaf. They touch their partner with a paw when the doorbell rings or a smoke alarm beeps. Other service dogs pick up dropped keys, open doors, or bring a phone to a person who uses a wheelchair.\n\nTraining a service dog takes a long time, often about two years. Many puppies first live with volunteer families. These families teach the puppy good manners and take it to busy places like parks and malls. That way, the puppy learns to stay calm around noise and crowds. Later, the dog goes to a trainer to learn its special skills.\n\nNot every dog is right for the job. A service dog must be calm, gentle, and good at paying attention. Some dogs are too excited or too nervous. Those dogs often become loving family pets instead.\n\nWhen you see a service dog, remember that it is working. Many service dogs wear a vest, but some do not. Do not pet, feed, or call to the dog. Even a quick pat can distract it from its partner. If you want to say hello, always ask the owner first. Giving a service dog space helps it do its important job.`,
+words:[[`disability`,`something that makes it harder for a person's body or mind to do certain things`],[`volunteer`,`a person who helps without being paid`],[`partner`,`a person who works together with someone else`]],
+qs:[
+{t:'one', k:'main idea', q:`What is the main idea of this passage?`, o:[`Service dogs are specially trained to help people with disabilities.`,`All dogs should wear vests when they go to stores and schools.`,`Puppies like to visit busy places such as parks and malls.`,`Hearing dogs are smarter and better than guide dogs.`], e:`Service dogs are trained to help people with disabilities live more freely.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "Even a quick pat can distract it from its partner." What does the word "distract" mean?`, o:[`take attention away from`,`make stronger and faster`,`lead safely around`,`help find something`], e:`Even a quick pat can distract it from its partner.`},
+{t:'two', k:'inference', a:{q:`Why do volunteer families take puppies to busy places?`, o:[`so the puppies learn to stay calm in crowds`,`so the puppies can meet their new owners`,`so the puppies can practice picking up keys`,`so the puppies can rest after hard training`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`That way, the puppy learns to stay calm around noise and crowds.`,`Later, the dog goes to a trainer to learn its special skills.`,`Some dogs are too excited or too nervous.`,`Many service dogs wear a vest, but some do not.`]}},
+{t:'multi', k:'key details', q:`Which TWO things should you do when you see a service dog? Choose two answers.`, o:[`Give the dog space to work.`,`Ask the owner before saying hello.`,`Pat the dog gently on the head.`,`Offer the dog a small snack.`,`Call out the dog's name.`], n:2},
+{t:'one', k:'key details', q:`How does a hearing dog let its partner know the doorbell is ringing?`, o:[`It touches its partner with a paw.`,`It barks over and over very loudly.`,`It brings its partner a phone.`,`It stops and sits at the curb.`], e:`They touch their partner with a paw when the doorbell rings or a smoke alarm beeps.`}
+]},
+
+{id:'i3-10', g:3, title:`The Story of the Library`, icon:'📚', topic:'history',
+text:`Today you can walk into a library, pick out a book, and take it home for free. But libraries did not always work this way. The story of the library goes back thousands of years.\n\nLong ago, people did not have paper books. In ancient times, people wrote on clay tablets or on scrolls. A scroll was a long roll of paper-like material. One of the most famous libraries of the ancient world was in Alexandria, Egypt. It was built more than 2,000 years ago. Scholars from far away traveled there to read and study its thousands of scrolls.\n\nFor many years after that, books were copied by hand. Making one book could take months, so books were very rare and costly. Only rich people and schools could own them. Most people never got to borrow a book.\n\nThat began to change in the 1700s. In 1731, Benjamin Franklin and his friends started a library in Philadelphia. Each member paid money to join. Together, they bought more books than any one person could afford alone. Members could borrow the books and bring them back.\n\nLater, towns began to open public libraries that were free for everyone. A rich businessman named Andrew Carnegie helped a lot. Starting in the late 1800s, he gave money to build more than 2,500 libraries around the world. Many of these buildings are still used as libraries today.\n\nLibraries keep changing. Now they lend e-books, movies, and even tools. Many have computers, story times, and summer reading clubs. Still, their main job is the same. Libraries help everyone learn and explore, no matter how much money they have.`,
+words:[[`scroll`,`a long roll of paper or similar material with writing on it`],[`scholar`,`a person who studies and learns a lot about a subject`],[`public`,`open to and shared by everyone`]],
+qs:[
+{t:'one', k:'main idea', q:`What is this passage mostly about?`, o:[`how libraries changed over time to serve more people`,`how people long ago wrote on clay tablets`,`the whole life story of Benjamin Franklin`,`why e-books are better than paper books`], e:`The story of the library goes back thousands of years.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "Making one book could take months, so books were very rare and costly." What does the word "costly" mean?`, o:[`expensive`,`heavy`,`dusty`,`boring`], e:`Only rich people and schools could own them.`},
+{t:'two', k:'text evidence', a:{q:`Why could most people long ago NOT borrow books?`, o:[`Books were copied by hand, so there were very few.`,`People long ago did not want to read any books.`,`Libraries long ago were only open late at night.`,`Books were written in secret codes nobody knew.`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`For many years after that, books were copied by hand.`,`It was built more than 2,000 years ago.`,`Each member paid money to join.`,`Now they lend e-books, movies, and even tools.`]}},
+{t:'multi', k:'key details', q:`Which TWO things can people find in many libraries today? Choose two answers.`, o:[`e-books and movies`,`computers and story times`,`clay tablets to write on`,`scrolls from Alexandria`,`free money for books`], n:2},
+{t:'one', k:'text structure', q:`How does the author organize most of this passage?`, o:[`in time order, from long ago to today`,`by comparing two libraries in one town`,`as a list of rules for using a library`,`as a story told by a friendly librarian`], e:`That began to change in the 1700s.`}
+]},
+
+{id:'i3-11', g:3, title:`How Bees Talk`, title2:`Busy Helpers`, icon:'🐝', topic:'animals',
+text:`A honeybee cannot speak, but it can still share news with its hive. When a worker bee finds a field full of flowers, it flies home and does a special dance.\n\nIf the flowers are close to the hive, the bee does a round dance. It runs in small circles, first one way and then the other. This tells the other bees to search nearby.\n\nIf the flowers are far away, the bee does a waggle dance. It walks in a straight line while shaking its body from side to side. Then it loops back and does it again. The direction of the straight line points the way to the flowers, using the sun as a guide. The longer the bee waggles, the farther away the food is.\n\nThe other bees crowd around the dancer. They feel its movements and smell the flowers on its body. Then they fly off to find the food themselves. One scientist studied these dances for many years and won a famous prize for his work.`,
+text2:`Honeybees are famous for making honey, but they have another important job. They help plants make seeds and fruit.\n\nA bee visits a flower to drink a sweet liquid called nectar. While it drinks, a yellow powder called pollen sticks to the tiny hairs on its body. When the bee flies to the next flower, some of that pollen rubs off. Moving pollen from one flower to another is called pollination. Many flowers need pollen from another flower of the same kind to make seeds.\n\nMany of the foods people eat depend on bees. Apples, cherries, almonds, and blueberries all need pollinators to grow well. Farmers sometimes rent hives of bees and bring them to their fields when the flowers bloom.\n\nA single bee can visit dozens of flowers in one trip. That makes honeybees some of the hardest workers in nature. The next time you bite into a crunchy apple, you can thank a bee.`,
+words:[[`waggle`,`to shake or wiggle from side to side`],[`nectar`,`a sweet liquid inside flowers`],[`pollination`,`moving pollen from one flower to another so plants can make seeds`]],
+qs:[
+{t:'one', k:'main idea', q:`What is the main idea of "How Bees Talk"?`, o:[`Honeybees use dances to tell other bees where to find food.`,`Honeybees make honey from the nectar inside flowers.`,`Bees use the sun to stay warm on cold days.`,`Scientists like to watch bees dance just for fun.`], e:`When a worker bee finds a field full of flowers, it flies home and does a special dance.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from "Busy Helpers": "Farmers sometimes rent hives of bees and bring them to their fields when the flowers bloom." What does the word "bloom" mean?`, o:[`open up`,`dry up`,`fall off`,`get picked`], e:`Farmers sometimes rent hives of bees and bring them to their fields when the flowers bloom.`},
+{t:'two', k:'key details', a:{q:`In "How Bees Talk," how do bees show that food is far away?`, o:[`The dancing bee does a waggle dance.`,`The dancing bee runs in small circles.`,`The dancing bee brings back pollen.`,`The dancing bee flies straight up high.`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`If the flowers are far away, the bee does a waggle dance.`,`It runs in small circles, first one way and then the other.`,`The other bees crowd around the dancer.`,`They help plants make seeds and fruit.`]}},
+{t:'multi', k:'key details', q:`Based on "Busy Helpers," which TWO foods need pollinators to grow well? Choose two answers.`, o:[`apples`,`blueberries`,`bread`,`milk`,`eggs`], n:2},
+{t:'one', k:'compare texts', q:`How are the two passages different?`, o:[`One tells how bees share news, and the other tells how bees help plants.`,`One is about bees, and the other is about butterflies and birds.`,`One says bees make honey, and the other says bees never make honey.`,`One is a story about a bee named Max, and the other is a poem.`], e:`They help plants make seeds and fruit.`}
+]},
+
+{id:'i3-12', g:3, title:`Life in the Rain Forest`, icon:'🌳', topic:'science',
+text:`Imagine a forest so thick that sunlight barely reaches the ground. Rain falls almost every day, and the air feels warm and wet. This is a tropical rain forest. Rain forests grow near the equator, where it is warm all year. The largest one is the Amazon rain forest in South America.\n\nRain forests cover only a small part of Earth's land. Yet scientists think more than half of all the kinds of plants and animals on Earth live in them. Many have not even been discovered yet. A rain forest is like a tall building, with different layers from top to bottom.\n\n## The Layers of a Rain Forest\nThe emergent layer is the very top. A few giant trees poke up above the rest of the forest. Eagles and butterflies live up here in the bright sun.\n\nJust below is the canopy. The leaves and branches in this layer grow close together like a leafy roof. Most rain forest animals live in the canopy, including monkeys, toucans, and sloths. Sloths move so slowly that tiny green plants called algae grow on their fur.\n\nUnder the canopy is the understory. It is dark and shady here because the canopy blocks most of the light. Plants in the understory often have very large leaves to catch what little sunlight gets through. The forest floor is the bottom layer. Fallen leaves rot quickly in the warm, damp air. Ants, beetles, and other tiny creatures help break them down.\n\nRain forests give us many things, such as fruits, nuts, and even some medicines. Their plants also take in carbon dioxide and give off oxygen. That is why people around the world work to protect them.`,
+words:[[`canopy`,`the thick layer of leaves and branches that covers a forest like a roof`],[`equator`,`an imaginary line around the middle of Earth`],[`layer`,`one level that lies over or under another`]],
+qs:[
+{t:'one', k:'main idea', q:`What is this passage mostly about?`, o:[`the layers of a rain forest and the life found in each one`,`how to plant a tree and help it grow tall`,`why sloths move so slowly through the trees`,`how people make medicine from rain forest plants`], e:`A rain forest is like a tall building, with different layers from top to bottom.`},
+{t:'one', k:'vocabulary', q:`Read this sentence from the passage: "Fallen leaves rot quickly in the warm, damp air." What does the word "damp" mean?`, o:[`a little wet`,`very cold`,`very dusty`,`very bright`], e:`Rain falls almost every day, and the air feels warm and wet.`},
+{t:'two', k:'inference', a:{q:`Why do plants in the understory often have large leaves?`, o:[`to catch the little sunlight that gets through`,`to hide from the monkeys and the toucans`,`to hold rainwater for the frogs to drink`,`to keep the forest floor warm at night`]}, b:{q:`Which sentence from the passage best supports the answer to Part A?`, o:[`Plants in the understory often have very large leaves to catch what little sunlight gets through.`,`Most rain forest animals live in the canopy, including monkeys, toucans, and sloths.`,`Rain falls almost every day, and the air feels warm and wet.`,`The emergent layer is the very top.`]}},
+{t:'multi', k:'key details', q:`Which TWO animals live in the canopy? Choose two answers.`, o:[`toucans`,`sloths`,`beetles`,`eagles`,`ants`], n:2},
+{t:'one', k:'text features', q:`Why did the author include the heading "The Layers of a Rain Forest"?`, o:[`to show that the next part describes each layer`,`to list all the animals that live in the Amazon`,`to tell where in the world rain forests grow`,`to explain how people protect rain forests`], e:`## The Layers of a Rain Forest`}
+]}
+];
+
+// Monthly checkpoint quizzes, four forms per grade band, written in the style of i-Ready items (original content)
+const CHECKS = {
+ "3": [
+  {
+   "id": "c3-1",
+   "items": [
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word has the same vowel sound as 'boat'?",
+     "o": [
+      "snow",
+      "cot",
+      "bought",
+      "bat"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word is split into syllables correctly?",
+     "o": [
+      "rab-bit",
+      "ra-bbit",
+      "rabb-it",
+      "r-abbit"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word has the r-controlled vowel 'ar'?",
+     "o": [
+      "farm",
+      "fame",
+      "fan",
+      "foam"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "hfw",
+     "k": "sight words",
+     "q": "Which word best completes the sentence? \"The kids hung ___ coats on the hooks.\"",
+     "o": [
+      "their",
+      "there",
+      "they're",
+      "then"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "hfw",
+     "k": "sight words",
+     "q": "Which word best completes the sentence? \"We walked ___ the dark tunnel to get to the park.\"",
+     "o": [
+      "through",
+      "though",
+      "thought",
+      "tough"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"The puppy was so tiny that it fit in Mia's hand.\" What does the word \"tiny\" mean?",
+     "o": [
+      "very small",
+      "very soft",
+      "very loud",
+      "very fast"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "word parts",
+     "q": "What does the word \"unhappy\" mean?",
+     "o": [
+      "not happy",
+      "happy again",
+      "very happy",
+      "happy before"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Which word means the opposite of \"quiet\"?",
+     "o": [
+      "noisy",
+      "calm",
+      "silent",
+      "soft"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "character",
+     "q": "How does Sam feel when the kite gets stuck in the tree?",
+     "o": [
+      "upset",
+      "proud",
+      "sleepy",
+      "bored"
+     ],
+     "p": "## The Kite in the Tree\nSam ran across the park with his new red kite. The wind pulled it high into the sky. Then a strong gust pushed the kite into a tall oak tree. Sam's face fell, and he kicked at the grass. His sister Maya walked over and looked up at the branches. \"Let's not give up yet,\" she said. Maya found a long stick near the fence. She held it up while Sam stood on a bench. Together they wiggled the kite free. It floated down into Sam's arms. Sam grinned and gave his sister a big hug. \"Next time, we will fly it far from the trees,\" he said.",
+     "e": "Sam's face fell, and he kicked at the grass."
+    },
+    {
+     "t": "two",
+     "dom": "lit",
+     "k": "theme",
+     "p": "## The Kite in the Tree\nSam ran across the park with his new red kite. The wind pulled it high into the sky. Then a strong gust pushed the kite into a tall oak tree. Sam's face fell, and he kicked at the grass. His sister Maya walked over and looked up at the branches. \"Let's not give up yet,\" she said. Maya found a long stick near the fence. She held it up while Sam stood on a bench. Together they wiggled the kite free. It floated down into Sam's arms. Sam grinned and gave his sister a big hug. \"Next time, we will fly it far from the trees,\" he said.",
+     "a": {
+      "q": "What lesson does the story teach?",
+      "o": [
+       "Working together can help solve a problem.",
+       "It is more fun to play all alone.",
+       "Kites are very hard to fly well.",
+       "Parks are not good places for kites."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "Together they wiggled the kite free.",
+       "The wind pulled it high into the sky.",
+       "Sam ran across the park with his new red kite.",
+       "Then a strong gust pushed the kite into a tall oak tree."
+      ]
+     }
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "text structure",
+     "q": "What happens right after Maya finds a long stick?",
+     "o": [
+      "She holds it up while Sam stands on a bench.",
+      "The kite gets stuck in the oak tree.",
+      "Sam kicks at the grass in the park.",
+      "The wind pulls the kite into the sky."
+     ],
+     "p": "## The Kite in the Tree\nSam ran across the park with his new red kite. The wind pulled it high into the sky. Then a strong gust pushed the kite into a tall oak tree. Sam's face fell, and he kicked at the grass. His sister Maya walked over and looked up at the branches. \"Let's not give up yet,\" she said. Maya found a long stick near the fence. She held it up while Sam stood on a bench. Together they wiggled the kite free. It floated down into Sam's arms. Sam grinned and gave his sister a big hug. \"Next time, we will fly it far from the trees,\" he said.",
+     "e": "She held it up while Sam stood on a bench."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "main idea",
+     "q": "What is the passage mostly about?",
+     "o": [
+      "how sea turtles live and grow",
+      "why snakes and lizards are reptiles",
+      "how to keep a beach clean",
+      "where land turtles sleep at night"
+     ],
+     "p": "## Sea Turtles\nSea turtles live in oceans all over the world. They are reptiles, like snakes and lizards. Sea turtles cannot pull their heads into their shells the way many land turtles can. Their front legs are shaped like flippers, which help them swim. A mother sea turtle crawls onto a sandy beach to lay her eggs. She digs a hole, lays her eggs, and covers them with sand. After about two months, the baby turtles hatch. They dig out of the sand and hurry to the water. Many people help sea turtles by keeping beaches clean.",
+     "e": "Sea turtles live in oceans all over the world."
+    },
+    {
+     "t": "multi",
+     "dom": "info",
+     "k": "key details",
+     "p": "## Sea Turtles\nSea turtles live in oceans all over the world. They are reptiles, like snakes and lizards. Sea turtles cannot pull their heads into their shells the way many land turtles can. Their front legs are shaped like flippers, which help them swim. A mother sea turtle crawls onto a sandy beach to lay her eggs. She digs a hole, lays her eggs, and covers them with sand. After about two months, the baby turtles hatch. They dig out of the sand and hurry to the water. Many people help sea turtles by keeping beaches clean.",
+     "q": "Which TWO details tell what a mother sea turtle does? Choose two answers.",
+     "o": [
+      "She crawls onto a sandy beach.",
+      "She covers her eggs with sand.",
+      "She pulls her head into her shell.",
+      "She carries her babies to the water.",
+      "She lays her eggs in the ocean."
+     ],
+     "n": 2
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "author purpose",
+     "q": "Why did the author most likely write this passage?",
+     "o": [
+      "to teach readers facts about sea turtles",
+      "to tell a funny story about a turtle",
+      "to get readers to buy a pet turtle",
+      "to explain how to build a sandcastle"
+     ],
+     "p": "## Sea Turtles\nSea turtles live in oceans all over the world. They are reptiles, like snakes and lizards. Sea turtles cannot pull their heads into their shells the way many land turtles can. Their front legs are shaped like flippers, which help them swim. A mother sea turtle crawls onto a sandy beach to lay her eggs. She digs a hole, lays her eggs, and covers them with sand. After about two months, the baby turtles hatch. They dig out of the sand and hurry to the water. Many people help sea turtles by keeping beaches clean.",
+     "e": "Their front legs are shaped like flippers, which help them swim."
+    }
+   ]
+  },
+  {
+   "id": "c3-2",
+   "items": [
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word has the same vowel sound as 'rain'?",
+     "o": [
+      "play",
+      "ran",
+      "ride",
+      "rug"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word has the same ending sound as 'nation'?",
+     "o": [
+      "station",
+      "nature",
+      "napkin",
+      "basket"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word is split into syllables correctly?",
+     "o": [
+      "ta-ble",
+      "tab-le",
+      "t-able",
+      "tabl-e"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "hfw",
+     "k": "sight words",
+     "q": "Which word best completes the sentence? \"___ did you put my library book?\"",
+     "o": [
+      "Where",
+      "Were",
+      "Wear",
+      "We're"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "hfw",
+     "k": "sight words",
+     "q": "Which word best completes the sentence? \"Lily ___ the movie would be funny, but it was sad.\"",
+     "o": [
+      "thought",
+      "through",
+      "though",
+      "throw"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"Ben swung the bat and hit the ball far.\" What does the word \"bat\" mean in this sentence?",
+     "o": [
+      "a stick used to hit a ball",
+      "a small animal that flies at night",
+      "to blink your eyes quickly",
+      "a large wooden box"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"The soup was so hot that Emma waited for it to cool before she took a sip.\" What does the word \"sip\" mean?",
+     "o": [
+      "a small drink",
+      "a big spoon",
+      "a quick stir",
+      "a strong smell"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "word parts",
+     "q": "What does the word \"careful\" mean?",
+     "o": [
+      "full of care",
+      "without care",
+      "cared for again",
+      "not caring at all"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "character",
+     "q": "How does Mia feel at the start of the story?",
+     "o": [
+      "nervous",
+      "angry",
+      "bored",
+      "sleepy"
+     ],
+     "p": "## Mia's First Swim Race\nMia stood at the edge of the pool and looked at the water. Her stomach felt full of butterflies. This was her first swim race, and the other kids looked fast. Her coach gave her a thumbs-up from the side of the pool. Mia took a deep breath and remembered all her practice. When the whistle blew, she dove in and kicked hard. She did not win, but she finished the whole race without stopping. Mia climbed out with a huge smile. She had been brave, and that felt like a prize.",
+     "e": "Her stomach felt full of butterflies."
+    },
+    {
+     "t": "two",
+     "dom": "lit",
+     "k": "theme",
+     "p": "## Mia's First Swim Race\nMia stood at the edge of the pool and looked at the water. Her stomach felt full of butterflies. This was her first swim race, and the other kids looked fast. Her coach gave her a thumbs-up from the side of the pool. Mia took a deep breath and remembered all her practice. When the whistle blew, she dove in and kicked hard. She did not win, but she finished the whole race without stopping. Mia climbed out with a huge smile. She had been brave, and that felt like a prize.",
+     "a": {
+      "q": "What is the lesson of the story?",
+      "o": [
+       "Doing your best is something to be proud of.",
+       "You should only enter races you can win.",
+       "Swimming is much easier than running.",
+       "Coaches should always swim with their teams."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "She had been brave, and that felt like a prize.",
+       "This was her first swim race, and the other kids looked fast.",
+       "Her coach gave her a thumbs-up from the side of the pool.",
+       "Mia stood at the edge of the pool and looked at the water."
+      ]
+     }
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "text structure",
+     "q": "What does Mia do right before the whistle blows?",
+     "o": [
+      "She takes a deep breath.",
+      "She climbs out of the pool.",
+      "She dives into the water.",
+      "She waves to her coach."
+     ],
+     "p": "## Mia's First Swim Race\nMia stood at the edge of the pool and looked at the water. Her stomach felt full of butterflies. This was her first swim race, and the other kids looked fast. Her coach gave her a thumbs-up from the side of the pool. Mia took a deep breath and remembered all her practice. When the whistle blew, she dove in and kicked hard. She did not win, but she finished the whole race without stopping. Mia climbed out with a huge smile. She had been brave, and that felt like a prize.",
+     "e": "Mia took a deep breath and remembered all her practice."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "text structure",
+     "q": "How does the author organize the passage?",
+     "o": [
+      "by telling the steps in order",
+      "by comparing bees and ants",
+      "by telling a problem and a solution",
+      "by listing reasons to like bees"
+     ],
+     "p": "## How Bees Make Honey\nHoneybees make honey from a sweet liquid in flowers called nectar. A worker bee sips nectar with its long, straw-like tongue. It stores the nectar in a special part of its body called a honey stomach. Back at the hive, the bee passes the nectar to other bees. The bees fan the nectar with their wings to dry it out. As the water leaves, the nectar turns thick and sticky. Then the bees seal the honey inside wax cells. The honey is saved as food for the cold winter months.",
+     "e": "Then the bees seal the honey inside wax cells."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "vocabulary",
+     "q": "Read this sentence from the passage: \"Honeybees make honey from a sweet liquid in flowers called nectar.\" What is nectar?",
+     "o": [
+      "a sweet liquid in flowers",
+      "a part of a bee's body",
+      "a wax cell in a hive",
+      "a kind of yellow flower"
+     ],
+     "p": "## How Bees Make Honey\nHoneybees make honey from a sweet liquid in flowers called nectar. A worker bee sips nectar with its long, straw-like tongue. It stores the nectar in a special part of its body called a honey stomach. Back at the hive, the bee passes the nectar to other bees. The bees fan the nectar with their wings to dry it out. As the water leaves, the nectar turns thick and sticky. Then the bees seal the honey inside wax cells. The honey is saved as food for the cold winter months.",
+     "e": "Honeybees make honey from a sweet liquid in flowers called nectar."
+    },
+    {
+     "t": "multi",
+     "dom": "info",
+     "k": "key details",
+     "p": "## How Bees Make Honey\nHoneybees make honey from a sweet liquid in flowers called nectar. A worker bee sips nectar with its long, straw-like tongue. It stores the nectar in a special part of its body called a honey stomach. Back at the hive, the bee passes the nectar to other bees. The bees fan the nectar with their wings to dry it out. As the water leaves, the nectar turns thick and sticky. Then the bees seal the honey inside wax cells. The honey is saved as food for the cold winter months.",
+     "q": "Which TWO things do bees do to turn nectar into honey? Choose two answers.",
+     "o": [
+      "They fan the nectar with their wings.",
+      "They seal the honey inside wax cells.",
+      "They mix the nectar with rain water.",
+      "They bury the nectar in the ground.",
+      "They heat the nectar in the sun."
+     ],
+     "n": 2
+    }
+   ]
+  },
+  {
+   "id": "c3-3",
+   "items": [
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word has the same vowel sound as 'moon'?",
+     "o": [
+      "blue",
+      "book",
+      "mole",
+      "mine"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "word parts",
+     "q": "Which word means \"paint again\"?",
+     "o": [
+      "repaint",
+      "unpaint",
+      "painter",
+      "painted"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word has the same vowel sound as 'bird'?",
+     "o": [
+      "turn",
+      "bread",
+      "barn",
+      "bead"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "hfw",
+     "k": "sight words",
+     "q": "Which word best completes the sentence? \"___ going to the zoo after lunch.\"",
+     "o": [
+      "They're",
+      "There",
+      "Their",
+      "Then"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "hfw",
+     "k": "sight words",
+     "q": "Which word best completes the sentence? \"Noah ___ at home when the storm started.\"",
+     "o": [
+      "was",
+      "saw",
+      "were",
+      "want"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Which word means almost the same as \"begin\"?",
+     "o": [
+      "start",
+      "finish",
+      "stop",
+      "wait"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"Owen was exhausted after the long hike, so he fell asleep right away.\" What does the word \"exhausted\" mean?",
+     "o": [
+      "very tired",
+      "very hungry",
+      "very excited",
+      "very cold"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "In which sentence does \"light\" mean \"not heavy\"?",
+     "o": [
+      "The bag of feathers was light.",
+      "Please turn on the light.",
+      "We will light the candle.",
+      "The sky was light blue."
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "character",
+     "q": "Which word best describes Ava at the end of the story?",
+     "o": [
+      "excited",
+      "worried",
+      "lonely",
+      "grumpy"
+     ],
+     "p": "## The Garden Surprise\nAva planted tiny seeds in a pot by her window. Every day she watered them and checked the soil. For a whole week, nothing happened. Ava felt like giving up, but her dad told her to wait. \"Good things take time,\" he said. After waiting patiently, Ava saw a small green sprout on the tenth morning. She jumped up and down and called her dad to come see. Soon the sprout grew into a plant with bright yellow flowers. Ava decided to plant even more seeds in the spring.",
+     "e": "She jumped up and down and called her dad to come see."
+    },
+    {
+     "t": "two",
+     "dom": "lit",
+     "k": "theme",
+     "p": "## The Garden Surprise\nAva planted tiny seeds in a pot by her window. Every day she watered them and checked the soil. For a whole week, nothing happened. Ava felt like giving up, but her dad told her to wait. \"Good things take time,\" he said. After waiting patiently, Ava saw a small green sprout on the tenth morning. She jumped up and down and called her dad to come see. Soon the sprout grew into a plant with bright yellow flowers. Ava decided to plant even more seeds in the spring.",
+     "a": {
+      "q": "What is the theme of the story?",
+      "o": [
+       "Being patient can pay off.",
+       "Plants need a lot of sunlight.",
+       "Some seeds never grow at all.",
+       "Dads know about every plant."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "After waiting patiently, Ava saw a small green sprout on the tenth morning.",
+       "Ava planted tiny seeds in a pot by her window.",
+       "Every day she watered them and checked the soil.",
+       "Ava decided to plant even more seeds in the spring."
+      ]
+     }
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "inference",
+     "q": "Why does Ava most likely decide to plant more seeds?",
+     "o": [
+      "She enjoyed watching her plant grow.",
+      "Her first seeds never grew at all.",
+      "Her dad told her to stop planting.",
+      "She wanted to sell the flowers."
+     ],
+     "p": "## The Garden Surprise\nAva planted tiny seeds in a pot by her window. Every day she watered them and checked the soil. For a whole week, nothing happened. Ava felt like giving up, but her dad told her to wait. \"Good things take time,\" he said. After waiting patiently, Ava saw a small green sprout on the tenth morning. She jumped up and down and called her dad to come see. Soon the sprout grew into a plant with bright yellow flowers. Ava decided to plant even more seeds in the spring.",
+     "e": "Soon the sprout grew into a plant with bright yellow flowers."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "main idea",
+     "q": "What is the main idea of the passage?",
+     "o": [
+      "The moon is a nearby object in space with interesting features.",
+      "Astronauts like to collect rocks and bring them home.",
+      "The sun is much brighter and hotter than the moon.",
+      "Scientists study many kinds of rocks in their labs."
+     ],
+     "p": "## The Moon\nThe moon is Earth's closest neighbor in space. It is about 239,000 miles away. The moon does not make its own light. Instead, it reflects light from the sun. As the moon travels around Earth, we see different amounts of its lit side. These shapes are called phases. It takes about one month for the moon to go through all of its phases. In 1969, astronauts walked on the moon for the first time. They brought rocks back to Earth for scientists to study.",
+     "e": "The moon is Earth's closest neighbor in space."
+    },
+    {
+     "t": "multi",
+     "dom": "info",
+     "k": "key details",
+     "p": "## The Moon\nThe moon is Earth's closest neighbor in space. It is about 239,000 miles away. The moon does not make its own light. Instead, it reflects light from the sun. As the moon travels around Earth, we see different amounts of its lit side. These shapes are called phases. It takes about one month for the moon to go through all of its phases. In 1969, astronauts walked on the moon for the first time. They brought rocks back to Earth for scientists to study.",
+     "q": "Which TWO details from the passage are true about the moon? Choose two answers.",
+     "o": [
+      "It reflects light from the sun.",
+      "It goes through its phases in about one month.",
+      "It makes its own light.",
+      "It is closer to the sun than to Earth.",
+      "No one has ever walked on it."
+     ],
+     "n": 2
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "key details",
+     "q": "What did the astronauts bring back from the moon?",
+     "o": [
+      "rocks",
+      "water",
+      "plants",
+      "ice"
+     ],
+     "p": "## The Moon\nThe moon is Earth's closest neighbor in space. It is about 239,000 miles away. The moon does not make its own light. Instead, it reflects light from the sun. As the moon travels around Earth, we see different amounts of its lit side. These shapes are called phases. It takes about one month for the moon to go through all of its phases. In 1969, astronauts walked on the moon for the first time. They brought rocks back to Earth for scientists to study.",
+     "e": "They brought rocks back to Earth for scientists to study."
+    }
+   ]
+  },
+  {
+   "id": "c3-4",
+   "items": [
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word has the same vowel sound as 'leaf'?",
+     "o": [
+      "team",
+      "left",
+      "life",
+      "late"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word is split into syllables correctly?",
+     "o": [
+      "mo-tion",
+      "mot-ion",
+      "m-otion",
+      "moti-on"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "word parts",
+     "q": "What does the word \"unlock\" mean?",
+     "o": [
+      "to open a lock",
+      "to lock again",
+      "locked before",
+      "to lock tightly"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "hfw",
+     "k": "sight words",
+     "q": "Which word best completes the sentence? \"Leo has a red bike, and Mia has a red bike, ___.\"",
+     "o": [
+      "too",
+      "to",
+      "two",
+      "toe"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "hfw",
+     "k": "sight words",
+     "q": "Which word best completes the sentence? \"Please ___ quiet in the library.\"",
+     "o": [
+      "be",
+      "by",
+      "bee",
+      "buy"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Which word means the opposite of \"shallow\"?",
+     "o": [
+      "deep",
+      "wide",
+      "wet",
+      "clear"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"The path was narrow, so only one person could walk on it at a time.\" What does the word \"narrow\" mean?",
+     "o": [
+      "not wide",
+      "very long",
+      "very rocky",
+      "not safe"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "word parts",
+     "q": "What does the word \"fearless\" mean?",
+     "o": [
+      "without fear",
+      "full of fear",
+      "afraid again",
+      "able to scare"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "character",
+     "q": "Which word best describes Leo?",
+     "o": [
+      "creative",
+      "lazy",
+      "shy",
+      "careless"
+     ],
+     "p": "## Leo and the Big Box\nLeo's family got a new fridge, and it came in a huge cardboard box. Leo's brother Ben wanted to throw the box away. Leo had a different idea. He found markers, tape, and scissors. Leo cut out a door and two round windows. He drew stars and planets all over the sides. Then he called Ben to come look. \"Welcome to my rocket ship!\" Leo said. Ben laughed and climbed inside. The two brothers played space explorers until dinner.",
+     "e": "He drew stars and planets all over the sides."
+    },
+    {
+     "t": "two",
+     "dom": "lit",
+     "k": "inference",
+     "p": "## Leo and the Big Box\nLeo's family got a new fridge, and it came in a huge cardboard box. Leo's brother Ben wanted to throw the box away. Leo had a different idea. He found markers, tape, and scissors. Leo cut out a door and two round windows. He drew stars and planets all over the sides. Then he called Ben to come look. \"Welcome to my rocket ship!\" Leo said. Ben laughed and climbed inside. The two brothers played space explorers until dinner.",
+     "a": {
+      "q": "How do Ben's feelings about the box change?",
+      "o": [
+       "At first he wants to throw it away, but then he enjoys it.",
+       "At first he likes the box, but then he wants it gone.",
+       "He feels angry about the box the whole time.",
+       "He never looks at the box or plays with it."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "Ben laughed and climbed inside.",
+       "Leo had a different idea.",
+       "Leo cut out a door and two round windows.",
+       "He found markers, tape, and scissors."
+      ]
+     }
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "text structure",
+     "q": "What does Leo do first to make his rocket ship?",
+     "o": [
+      "He finds markers, tape, and scissors.",
+      "He draws stars on the box.",
+      "He cuts out a door.",
+      "He calls Ben to look."
+     ],
+     "p": "## Leo and the Big Box\nLeo's family got a new fridge, and it came in a huge cardboard box. Leo's brother Ben wanted to throw the box away. Leo had a different idea. He found markers, tape, and scissors. Leo cut out a door and two round windows. He drew stars and planets all over the sides. Then he called Ben to come look. \"Welcome to my rocket ship!\" Leo said. Ben laughed and climbed inside. The two brothers played space explorers until dinner.",
+     "e": "He found markers, tape, and scissors."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "main idea",
+     "q": "What is the passage mostly about?",
+     "o": [
+      "why leaves change color in the fall",
+      "how to rake leaves into piles",
+      "why maple trees grow so tall",
+      "what trees do in the summer"
+     ],
+     "p": "## Why Do Leaves Change Color?\nIn the fall, many trees change from green to red, orange, and yellow. Leaves are green because of something inside them called chlorophyll. Chlorophyll helps leaves use sunlight to make food for the tree. In the fall, the days get shorter and cooler. Trees stop making as much chlorophyll. As the green fades, the yellow and orange colors that were hiding in the leaves begin to show. Some trees, like maples, also make new red colors. Soon the leaves fall to the ground, and the tree rests for the winter.",
+     "e": "In the fall, many trees change from green to red, orange, and yellow."
+    },
+    {
+     "t": "multi",
+     "dom": "info",
+     "k": "key details",
+     "p": "## Why Do Leaves Change Color?\nIn the fall, many trees change from green to red, orange, and yellow. Leaves are green because of something inside them called chlorophyll. Chlorophyll helps leaves use sunlight to make food for the tree. In the fall, the days get shorter and cooler. Trees stop making as much chlorophyll. As the green fades, the yellow and orange colors that were hiding in the leaves begin to show. Some trees, like maples, also make new red colors. Soon the leaves fall to the ground, and the tree rests for the winter.",
+     "q": "Which TWO things happen to trees in the fall? Choose two answers.",
+     "o": [
+      "They make less chlorophyll.",
+      "Their leaves fall to the ground.",
+      "They grow new green leaves.",
+      "They make more food from sunlight.",
+      "Their days get longer."
+     ],
+     "n": 2
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "text features",
+     "q": "The title of the passage is a question. How does the title help the reader?",
+     "o": [
+      "It tells the question the passage will answer.",
+      "It names the person who wrote the passage.",
+      "It lists the trees that change color.",
+      "It shows a picture of a maple tree."
+     ],
+     "p": "## Why Do Leaves Change Color?\nIn the fall, many trees change from green to red, orange, and yellow. Leaves are green because of something inside them called chlorophyll. Chlorophyll helps leaves use sunlight to make food for the tree. In the fall, the days get shorter and cooler. Trees stop making as much chlorophyll. As the green fades, the yellow and orange colors that were hiding in the leaves begin to show. Some trees, like maples, also make new red colors. Soon the leaves fall to the ground, and the tree rests for the winter.",
+     "e": "Leaves are green because of something inside them called chlorophyll."
+    }
+   ]
+  }
+ ],
+ "5": [
+  {
+   "id": "c5-1",
+   "items": [
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "word parts",
+     "q": "The Greek root \"graph\" means \"write.\" Which word names a person's own written signature?",
+     "o": [
+      "autograph",
+      "photograph",
+      "paragraph",
+      "graphic"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "How many syllables are in the word \"unbelievable\"?",
+     "o": [
+      "five",
+      "four",
+      "six",
+      "three"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"The classroom was a beehive of activity before the field trip.\" What does \"a beehive of activity\" mean?",
+     "o": [
+      "a very busy place",
+      "a place full of bees",
+      "a quiet, calm place",
+      "a place that smells sweet"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Which word gives the most positive feeling about a person who is careful with money?",
+     "o": [
+      "thrifty",
+      "stingy",
+      "cheap",
+      "greedy"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "word parts",
+     "q": "The Latin root \"port\" means \"carry.\" What does the word \"portable\" mean?",
+     "o": [
+      "able to be carried",
+      "able to be seen",
+      "able to be built",
+      "able to be written"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"The judge will rule on the case tomorrow.\" What does the word \"rule\" mean in this sentence?",
+     "o": [
+      "make an official decision",
+      "draw a straight line",
+      "a law everyone must follow",
+      "lead a kingdom as king"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "vocabulary",
+     "q": "Read this sentence from the passage: \"On the morning of the fair, she carried it carefully into the gym, her heart drumming like a marching band.\" What does the phrase \"her heart drumming like a marching band\" show?",
+     "o": [
+      "Emma was nervous and excited.",
+      "Emma could hear music in the gym.",
+      "Emma was tired from carrying the model.",
+      "Emma wanted to join the school band."
+     ],
+     "p": "## The Science Fair\nEmma had spent three weeks building a model volcano for the science fair. On the morning of the fair, she carried it carefully into the gym, her heart drumming like a marching band. Then she tripped on a loose shoelace. The volcano tumbled to the floor, and its cone cracked down the middle. Emma wanted to sink into the floor and disappear. Her friend Noah knelt beside her and studied the broken pieces. \"Look inside,\" he said. \"Now everyone can see how the magma tube works.\" Emma stared at the crack for a long moment. Slowly, she realized he was right. She grabbed a marker and labeled each layer on a card. When the judges arrived, Emma explained how pressure builds deep underground before an eruption. One judge smiled and said she had never seen the inside of a volcano model before. Emma did not win first place, but she earned a ribbon for creative thinking. Walking home, she decided that mistakes could sometimes open new doors.",
+     "e": "On the morning of the fair, she carried it carefully into the gym, her heart drumming like a marching band."
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "character",
+     "q": "How does Emma change from the beginning to the end of the story?",
+     "o": [
+      "She goes from upset about a mistake to seeing it as a chance.",
+      "She goes from proud of her model to angry at her friend.",
+      "She goes from bored with science to excited about art.",
+      "She goes from shy around the judges to rude to them."
+     ],
+     "p": "## The Science Fair\nEmma had spent three weeks building a model volcano for the science fair. On the morning of the fair, she carried it carefully into the gym, her heart drumming like a marching band. Then she tripped on a loose shoelace. The volcano tumbled to the floor, and its cone cracked down the middle. Emma wanted to sink into the floor and disappear. Her friend Noah knelt beside her and studied the broken pieces. \"Look inside,\" he said. \"Now everyone can see how the magma tube works.\" Emma stared at the crack for a long moment. Slowly, she realized he was right. She grabbed a marker and labeled each layer on a card. When the judges arrived, Emma explained how pressure builds deep underground before an eruption. One judge smiled and said she had never seen the inside of a volcano model before. Emma did not win first place, but she earned a ribbon for creative thinking. Walking home, she decided that mistakes could sometimes open new doors.",
+     "e": "Slowly, she realized he was right."
+    },
+    {
+     "t": "two",
+     "dom": "lit",
+     "k": "theme",
+     "p": "## The Science Fair\nEmma had spent three weeks building a model volcano for the science fair. On the morning of the fair, she carried it carefully into the gym, her heart drumming like a marching band. Then she tripped on a loose shoelace. The volcano tumbled to the floor, and its cone cracked down the middle. Emma wanted to sink into the floor and disappear. Her friend Noah knelt beside her and studied the broken pieces. \"Look inside,\" he said. \"Now everyone can see how the magma tube works.\" Emma stared at the crack for a long moment. Slowly, she realized he was right. She grabbed a marker and labeled each layer on a card. When the judges arrived, Emma explained how pressure builds deep underground before an eruption. One judge smiled and said she had never seen the inside of a volcano model before. Emma did not win first place, but she earned a ribbon for creative thinking. Walking home, she decided that mistakes could sometimes open new doors.",
+     "a": {
+      "q": "Which sentence best states the theme of the story?",
+      "o": [
+       "A mistake can sometimes lead to something good.",
+       "Winning first place is all that really matters.",
+       "Science fairs are too difficult for most students.",
+       "Friends should always tell each other the truth."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "Walking home, she decided that mistakes could sometimes open new doors.",
+       "Emma had spent three weeks building a model volcano for the science fair.",
+       "Then she tripped on a loose shoelace.",
+       "Her friend Noah knelt beside her and studied the broken pieces."
+      ]
+     }
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "point of view",
+     "q": "From what point of view is the story told?",
+     "o": [
+      "third person, by a narrator outside the story",
+      "first person, by Emma",
+      "first person, by Noah",
+      "second person, speaking to the reader"
+     ],
+     "p": "## The Science Fair\nEmma had spent three weeks building a model volcano for the science fair. On the morning of the fair, she carried it carefully into the gym, her heart drumming like a marching band. Then she tripped on a loose shoelace. The volcano tumbled to the floor, and its cone cracked down the middle. Emma wanted to sink into the floor and disappear. Her friend Noah knelt beside her and studied the broken pieces. \"Look inside,\" he said. \"Now everyone can see how the magma tube works.\" Emma stared at the crack for a long moment. Slowly, she realized he was right. She grabbed a marker and labeled each layer on a card. When the judges arrived, Emma explained how pressure builds deep underground before an eruption. One judge smiled and said she had never seen the inside of a volcano model before. Emma did not win first place, but she earned a ribbon for creative thinking. Walking home, she decided that mistakes could sometimes open new doors.",
+     "e": "Emma stared at the crack for a long moment."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "main idea",
+     "q": "What is the central idea of the passage?",
+     "o": [
+      "Glaciers are powerful forces that change the shape of the land.",
+      "Glaciers are made of snow that melts every summer.",
+      "The Great Lakes are the largest lakes in the world.",
+      "Scientists enjoy climbing mountains to study the ice."
+     ],
+     "p": "## How Glaciers Shape the Land\nA glacier is a huge, slow-moving mass of ice that forms over many years. It begins when more snow falls in winter than melts in summer. Year after year, the snow piles up and presses down on the layers beneath it. Eventually, the weight squeezes the lower snow into solid ice. Because a glacier is so heavy, it slowly slides downhill under its own weight. As it moves, it acts like a giant bulldozer. It scrapes rocks loose and carries them along, sometimes for hundreds of miles. Over thousands of years, glaciers can carve wide, U-shaped valleys out of mountains. When a glacier finally melts, it leaves behind piles of rock and soil called moraines. Many lakes in the northern United States, including the Great Lakes, were shaped by glaciers during the last ice age. Today, scientists study glaciers closely because they are shrinking in many parts of the world. Watching glaciers helps scientists understand how Earth's climate is changing.",
+     "e": "Over thousands of years, glaciers can carve wide, U-shaped valleys out of mountains."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "text structure",
+     "q": "How does the author organize the first four sentences of the passage?",
+     "o": [
+      "in sequence, explaining the steps of how a glacier forms",
+      "by comparing glaciers to bulldozers and other machines",
+      "by describing a problem and then its solution",
+      "by listing different opinions about glaciers"
+     ],
+     "p": "## How Glaciers Shape the Land\nA glacier is a huge, slow-moving mass of ice that forms over many years. It begins when more snow falls in winter than melts in summer. Year after year, the snow piles up and presses down on the layers beneath it. Eventually, the weight squeezes the lower snow into solid ice. Because a glacier is so heavy, it slowly slides downhill under its own weight. As it moves, it acts like a giant bulldozer. It scrapes rocks loose and carries them along, sometimes for hundreds of miles. Over thousands of years, glaciers can carve wide, U-shaped valleys out of mountains. When a glacier finally melts, it leaves behind piles of rock and soil called moraines. Many lakes in the northern United States, including the Great Lakes, were shaped by glaciers during the last ice age. Today, scientists study glaciers closely because they are shrinking in many parts of the world. Watching glaciers helps scientists understand how Earth's climate is changing.",
+     "e": "Eventually, the weight squeezes the lower snow into solid ice."
+    },
+    {
+     "t": "two",
+     "dom": "info",
+     "k": "text evidence",
+     "p": "## How Glaciers Shape the Land\nA glacier is a huge, slow-moving mass of ice that forms over many years. It begins when more snow falls in winter than melts in summer. Year after year, the snow piles up and presses down on the layers beneath it. Eventually, the weight squeezes the lower snow into solid ice. Because a glacier is so heavy, it slowly slides downhill under its own weight. As it moves, it acts like a giant bulldozer. It scrapes rocks loose and carries them along, sometimes for hundreds of miles. Over thousands of years, glaciers can carve wide, U-shaped valleys out of mountains. When a glacier finally melts, it leaves behind piles of rock and soil called moraines. Many lakes in the northern United States, including the Great Lakes, were shaped by glaciers during the last ice age. Today, scientists study glaciers closely because they are shrinking in many parts of the world. Watching glaciers helps scientists understand how Earth's climate is changing.",
+     "a": {
+      "q": "According to the passage, why do scientists study glaciers today?",
+      "o": [
+       "to learn about changes in Earth's climate",
+       "to find new places to build lakes",
+       "to collect rocks for science museums",
+       "to measure how much snow falls in summer"
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "Watching glaciers helps scientists understand how Earth's climate is changing.",
+       "It begins when more snow falls in winter than melts in summer.",
+       "As it moves, it acts like a giant bulldozer.",
+       "A glacier is a huge, slow-moving mass of ice that forms over many years."
+      ]
+     }
+    },
+    {
+     "t": "multi",
+     "dom": "info",
+     "k": "key details",
+     "p": "## How Glaciers Shape the Land\nA glacier is a huge, slow-moving mass of ice that forms over many years. It begins when more snow falls in winter than melts in summer. Year after year, the snow piles up and presses down on the layers beneath it. Eventually, the weight squeezes the lower snow into solid ice. Because a glacier is so heavy, it slowly slides downhill under its own weight. As it moves, it acts like a giant bulldozer. It scrapes rocks loose and carries them along, sometimes for hundreds of miles. Over thousands of years, glaciers can carve wide, U-shaped valleys out of mountains. When a glacier finally melts, it leaves behind piles of rock and soil called moraines. Many lakes in the northern United States, including the Great Lakes, were shaped by glaciers during the last ice age. Today, scientists study glaciers closely because they are shrinking in many parts of the world. Watching glaciers helps scientists understand how Earth's climate is changing.",
+     "q": "Which TWO things can glaciers do to the land? Choose two answers.",
+     "o": [
+      "carve wide, U-shaped valleys",
+      "leave behind piles of rock called moraines",
+      "turn rocks back into snow",
+      "make mountains grow taller",
+      "stop rivers from ever flowing"
+     ],
+     "n": 2
+    }
+   ]
+  },
+  {
+   "id": "c5-2",
+   "items": [
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "word parts",
+     "q": "The Latin root \"struct\" means \"build.\" Which word means \"to build something again\"?",
+     "o": [
+      "reconstruct",
+      "destruct",
+      "instruct",
+      "structure"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word is divided into syllables correctly?",
+     "o": [
+      "in-ter-rupt",
+      "int-err-upt",
+      "in-te-rrupt",
+      "inter-ru-pt"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"The hikers were famished after the long climb, so they quickly ate every sandwich in their packs.\" What does the word \"famished\" mean?",
+     "o": [
+      "extremely hungry",
+      "extremely tired",
+      "very cheerful",
+      "slightly lost"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"Max told a joke to break the ice on his first day at a new school.\" What does \"break the ice\" mean?",
+     "o": [
+      "help people feel comfortable talking",
+      "crack a frozen pond",
+      "stop a game early",
+      "tell a secret to a friend"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Which word has the most positive connotation?",
+     "o": [
+      "confident",
+      "bossy",
+      "pushy",
+      "arrogant"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "word parts",
+     "q": "The prefix \"mis-\" means \"wrongly.\" What does the word \"misjudge\" mean?",
+     "o": [
+      "to judge wrongly",
+      "to judge again",
+      "to judge carefully",
+      "to refuse to judge"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "vocabulary",
+     "q": "Read this sentence from the passage: \"Owen's first notes sounded like a squeaky door, and he laughed until his cheeks hurt.\" What does the simile show about Owen's first notes?",
+     "o": [
+      "They sounded rough and unpleasant.",
+      "They sounded soft and beautiful.",
+      "They were too quiet to hear.",
+      "They sounded just like Grandpa's."
+     ],
+     "p": "## Grandpa's Violin\nOwen had never cared much about the dusty violin case in the corner of Grandpa's living room. To him, it was just another piece of old furniture, like the creaky rocking chair beside it. One rainy Saturday, Grandpa opened the case and lifted out the violin as gently as if it were a sleeping bird. He tucked it under his chin and began to play. The music filled the room, soft and slow at first, then quick and bright like sunlight bouncing off water. Owen sat perfectly still. When the song ended, Grandpa explained that he had played the same tune at his own wedding sixty years earlier. \"Would you like to try?\" he asked. Owen's first notes sounded like a squeaky door, and he laughed until his cheeks hurt. Still, Grandpa patiently showed him where to place each finger. By the end of the afternoon, Owen could play the first line of the song. As he packed the violin away, he handled it with the same care Grandpa had shown. The old case no longer looked like furniture to him at all.",
+     "e": "Owen's first notes sounded like a squeaky door, and he laughed until his cheeks hurt."
+    },
+    {
+     "t": "two",
+     "dom": "lit",
+     "k": "character",
+     "p": "## Grandpa's Violin\nOwen had never cared much about the dusty violin case in the corner of Grandpa's living room. To him, it was just another piece of old furniture, like the creaky rocking chair beside it. One rainy Saturday, Grandpa opened the case and lifted out the violin as gently as if it were a sleeping bird. He tucked it under his chin and began to play. The music filled the room, soft and slow at first, then quick and bright like sunlight bouncing off water. Owen sat perfectly still. When the song ended, Grandpa explained that he had played the same tune at his own wedding sixty years earlier. \"Would you like to try?\" he asked. Owen's first notes sounded like a squeaky door, and he laughed until his cheeks hurt. Still, Grandpa patiently showed him where to place each finger. By the end of the afternoon, Owen could play the first line of the song. As he packed the violin away, he handled it with the same care Grandpa had shown. The old case no longer looked like furniture to him at all.",
+     "a": {
+      "q": "How do Owen's feelings about the violin change during the story?",
+      "o": [
+       "He goes from ignoring it to treating it as something special.",
+       "He goes from loving it to feeling afraid of it.",
+       "He goes from wanting to sell it to wanting to hide it.",
+       "He goes from enjoying it to feeling bored by it."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "As he packed the violin away, he handled it with the same care Grandpa had shown.",
+       "Owen sat perfectly still.",
+       "He tucked it under his chin and began to play.",
+       "One rainy Saturday, Grandpa opened the case and lifted out the violin as gently as if it were a sleeping bird."
+      ]
+     }
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "theme",
+     "q": "Which statement best expresses a theme of the story?",
+     "o": [
+      "Sharing a skill can connect people across generations.",
+      "Old objects should be cleared out of a home.",
+      "Music is only for people who practice for years.",
+      "Rainy days are always boring for children."
+     ],
+     "p": "## Grandpa's Violin\nOwen had never cared much about the dusty violin case in the corner of Grandpa's living room. To him, it was just another piece of old furniture, like the creaky rocking chair beside it. One rainy Saturday, Grandpa opened the case and lifted out the violin as gently as if it were a sleeping bird. He tucked it under his chin and began to play. The music filled the room, soft and slow at first, then quick and bright like sunlight bouncing off water. Owen sat perfectly still. When the song ended, Grandpa explained that he had played the same tune at his own wedding sixty years earlier. \"Would you like to try?\" he asked. Owen's first notes sounded like a squeaky door, and he laughed until his cheeks hurt. Still, Grandpa patiently showed him where to place each finger. By the end of the afternoon, Owen could play the first line of the song. As he packed the violin away, he handled it with the same care Grandpa had shown. The old case no longer looked like furniture to him at all.",
+     "e": "Still, Grandpa patiently showed him where to place each finger."
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "inference",
+     "q": "Why does the violin case \"no longer look like furniture\" to Owen at the end?",
+     "o": [
+      "He now understands that the violin is special to Grandpa and to him.",
+      "Grandpa moved the case into a different room.",
+      "The old case was cleaned and painted a new color.",
+      "Owen decided to use the case as a seat instead."
+     ],
+     "p": "## Grandpa's Violin\nOwen had never cared much about the dusty violin case in the corner of Grandpa's living room. To him, it was just another piece of old furniture, like the creaky rocking chair beside it. One rainy Saturday, Grandpa opened the case and lifted out the violin as gently as if it were a sleeping bird. He tucked it under his chin and began to play. The music filled the room, soft and slow at first, then quick and bright like sunlight bouncing off water. Owen sat perfectly still. When the song ended, Grandpa explained that he had played the same tune at his own wedding sixty years earlier. \"Would you like to try?\" he asked. Owen's first notes sounded like a squeaky door, and he laughed until his cheeks hurt. Still, Grandpa patiently showed him where to place each finger. By the end of the afternoon, Owen could play the first line of the song. As he packed the violin away, he handled it with the same care Grandpa had shown. The old case no longer looked like furniture to him at all.",
+     "e": "The old case no longer looked like furniture to him at all."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "author purpose",
+     "q": "What is the author's main claim?",
+     "o": [
+      "People should recycle aluminum cans.",
+      "Aluminum cans should be banned.",
+      "Plastic is easier to recycle than aluminum.",
+      "Mining is the best way to get aluminum."
+     ],
+     "p": "## Why Every Can Counts\nEvery year, people in the United States throw away billions of aluminum cans. That is a waste, because aluminum is one of the easiest materials to recycle. Unlike some plastics, aluminum can be melted down and reused again and again without losing its strength. A recycled can may be back on a store shelf as a new can in about two months. Recycling also saves a great deal of energy. Making a can from recycled aluminum uses about 95 percent less energy than making one from raw materials dug out of the ground. Less mining also means less damage to forests and land. Some people say recycling is too much trouble. However, rinsing a can and dropping it in a bin takes only a few seconds. Many towns now collect recycling right at the curb, which makes the job even easier. Families who recycle every can they use can make a real difference. If everyone does a small part, the benefits add up quickly.",
+     "e": "Families who recycle every can they use can make a real difference."
+    },
+    {
+     "t": "two",
+     "dom": "info",
+     "k": "text evidence",
+     "p": "## Why Every Can Counts\nEvery year, people in the United States throw away billions of aluminum cans. That is a waste, because aluminum is one of the easiest materials to recycle. Unlike some plastics, aluminum can be melted down and reused again and again without losing its strength. A recycled can may be back on a store shelf as a new can in about two months. Recycling also saves a great deal of energy. Making a can from recycled aluminum uses about 95 percent less energy than making one from raw materials dug out of the ground. Less mining also means less damage to forests and land. Some people say recycling is too much trouble. However, rinsing a can and dropping it in a bin takes only a few seconds. Many towns now collect recycling right at the curb, which makes the job even easier. Families who recycle every can they use can make a real difference. If everyone does a small part, the benefits add up quickly.",
+     "a": {
+      "q": "According to the passage, how does recycling aluminum help save energy?",
+      "o": [
+       "Making cans from recycled aluminum uses much less energy.",
+       "Recycled cans are lighter for families to carry home.",
+       "Recycling trucks all run on solar power.",
+       "Melting old cans creates new electricity."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "Making a can from recycled aluminum uses about 95 percent less energy than making one from raw materials dug out of the ground.",
+       "Every year, people in the United States throw away billions of aluminum cans.",
+       "Some people say recycling is too much trouble.",
+       "If everyone does a small part, the benefits add up quickly."
+      ]
+     }
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "text structure",
+     "q": "How does the author respond to people who say recycling is too much trouble?",
+     "o": [
+      "by explaining that recycling a can takes only a few seconds",
+      "by agreeing that recycling is too hard for most people",
+      "by telling a story about one family who recycles",
+      "by listing the costs of mining for new aluminum"
+     ],
+     "p": "## Why Every Can Counts\nEvery year, people in the United States throw away billions of aluminum cans. That is a waste, because aluminum is one of the easiest materials to recycle. Unlike some plastics, aluminum can be melted down and reused again and again without losing its strength. A recycled can may be back on a store shelf as a new can in about two months. Recycling also saves a great deal of energy. Making a can from recycled aluminum uses about 95 percent less energy than making one from raw materials dug out of the ground. Less mining also means less damage to forests and land. Some people say recycling is too much trouble. However, rinsing a can and dropping it in a bin takes only a few seconds. Many towns now collect recycling right at the curb, which makes the job even easier. Families who recycle every can they use can make a real difference. If everyone does a small part, the benefits add up quickly.",
+     "e": "However, rinsing a can and dropping it in a bin takes only a few seconds."
+    },
+    {
+     "t": "multi",
+     "dom": "info",
+     "k": "key details",
+     "p": "## Why Every Can Counts\nEvery year, people in the United States throw away billions of aluminum cans. That is a waste, because aluminum is one of the easiest materials to recycle. Unlike some plastics, aluminum can be melted down and reused again and again without losing its strength. A recycled can may be back on a store shelf as a new can in about two months. Recycling also saves a great deal of energy. Making a can from recycled aluminum uses about 95 percent less energy than making one from raw materials dug out of the ground. Less mining also means less damage to forests and land. Some people say recycling is too much trouble. However, rinsing a can and dropping it in a bin takes only a few seconds. Many towns now collect recycling right at the curb, which makes the job even easier. Families who recycle every can they use can make a real difference. If everyone does a small part, the benefits add up quickly.",
+     "q": "Which TWO facts support the claim that aluminum is easy to recycle? Choose two answers.",
+     "o": [
+      "It can be reused again and again without losing strength.",
+      "A recycled can may be back on a shelf in about two months.",
+      "People throw away billions of cans each year.",
+      "Some people say recycling is too much trouble.",
+      "Mining causes damage to forests and land."
+     ],
+     "n": 2
+    }
+   ]
+  },
+  {
+   "id": "c5-3",
+   "items": [
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "word parts",
+     "q": "The Greek root \"tele\" means \"far.\" Which word names a tool for seeing things that are far away?",
+     "o": [
+      "telescope",
+      "microscope",
+      "stethoscope",
+      "kaleidoscope"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word has an open first syllable (a first syllable that ends with a vowel sound)?",
+     "o": [
+      "robot",
+      "rabbit",
+      "basket",
+      "napkin"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"The fog was so dense that Mia could not see the house across the street.\" What does the word \"dense\" mean?",
+     "o": [
+      "thick",
+      "bright",
+      "cold",
+      "light"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"The wind howled at the windows all night.\" What does this sentence suggest about the wind?",
+     "o": [
+      "It was loud and strong.",
+      "It sounded like a real wolf.",
+      "It broke all the windows.",
+      "It was soft and gentle."
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "word parts",
+     "q": "The Latin root \"aud\" means \"hear.\" Which word means \"able to be heard\"?",
+     "o": [
+      "audible",
+      "visible",
+      "edible",
+      "portable"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "In which sentence does \"present\" mean \"to show or give formally\"?",
+     "o": [
+      "Leo will present his report to the class.",
+      "Ava wrapped a present for her mom.",
+      "All of the students were present today.",
+      "Try to enjoy the present, not the past."
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "point of view",
+     "q": "Who is telling this story?",
+     "o": [
+      "Max's older sibling",
+      "Max",
+      "Mom",
+      "a narrator outside the story"
+     ],
+     "p": "## The Long Way Home\nI used to think my little brother Max was the most annoying person in the world. He followed me everywhere, asked a thousand questions, and never let me read in peace. Last Saturday, Mom asked me to walk him home from soccer practice. I sighed loudly enough for the whole field to hear. Halfway home, a sudden rainstorm swept across the park. Max's face crumpled, and he grabbed my sleeve. \"I don't like thunder,\" he whispered. I remembered being scared of storms when I was his age, too. So I pulled off my jacket and held it over both our heads like a tent. To keep his mind off the thunder, I made up a silly story about a dragon who was afraid of puddles. By the time we reached our front door, Max was laughing so hard he forgot about the storm. That night, he knocked on my door and asked if the dragon could have another adventure tomorrow. For once, I didn't mind at all.",
+     "e": "I used to think my little brother Max was the most annoying person in the world."
+    },
+    {
+     "t": "two",
+     "dom": "lit",
+     "k": "character",
+     "p": "## The Long Way Home\nI used to think my little brother Max was the most annoying person in the world. He followed me everywhere, asked a thousand questions, and never let me read in peace. Last Saturday, Mom asked me to walk him home from soccer practice. I sighed loudly enough for the whole field to hear. Halfway home, a sudden rainstorm swept across the park. Max's face crumpled, and he grabbed my sleeve. \"I don't like thunder,\" he whispered. I remembered being scared of storms when I was his age, too. So I pulled off my jacket and held it over both our heads like a tent. To keep his mind off the thunder, I made up a silly story about a dragon who was afraid of puddles. By the time we reached our front door, Max was laughing so hard he forgot about the storm. That night, he knocked on my door and asked if the dragon could have another adventure tomorrow. For once, I didn't mind at all.",
+     "a": {
+      "q": "How does the narrator's attitude toward Max change?",
+      "o": [
+       "The narrator goes from feeling annoyed by Max to enjoying time with him.",
+       "The narrator goes from liking Max to feeling angry with him.",
+       "The narrator goes from fearing storms to loving them.",
+       "The narrator goes from loving soccer to quitting the team."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "For once, I didn't mind at all.",
+       "I sighed loudly enough for the whole field to hear.",
+       "Halfway home, a sudden rainstorm swept across the park.",
+       "Last Saturday, Mom asked me to walk him home from soccer practice."
+      ]
+     }
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "vocabulary",
+     "q": "Read this sentence from the passage: \"Max's face crumpled, and he grabbed my sleeve.\" What does \"Max's face crumpled\" mean?",
+     "o": [
+      "Max looked like he was about to cry.",
+      "Max started to laugh loudly.",
+      "Max fell down on the wet ground.",
+      "Max made a silly face on purpose."
+     ],
+     "p": "## The Long Way Home\nI used to think my little brother Max was the most annoying person in the world. He followed me everywhere, asked a thousand questions, and never let me read in peace. Last Saturday, Mom asked me to walk him home from soccer practice. I sighed loudly enough for the whole field to hear. Halfway home, a sudden rainstorm swept across the park. Max's face crumpled, and he grabbed my sleeve. \"I don't like thunder,\" he whispered. I remembered being scared of storms when I was his age, too. So I pulled off my jacket and held it over both our heads like a tent. To keep his mind off the thunder, I made up a silly story about a dragon who was afraid of puddles. By the time we reached our front door, Max was laughing so hard he forgot about the storm. That night, he knocked on my door and asked if the dragon could have another adventure tomorrow. For once, I didn't mind at all.",
+     "e": "Max's face crumpled, and he grabbed my sleeve."
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "inference",
+     "q": "Why does the narrator tell Max a silly story?",
+     "o": [
+      "to help Max stop thinking about the thunder",
+      "to get Max to walk home faster",
+      "to teach Max how to read on his own",
+      "to practice for a story contest"
+     ],
+     "p": "## The Long Way Home\nI used to think my little brother Max was the most annoying person in the world. He followed me everywhere, asked a thousand questions, and never let me read in peace. Last Saturday, Mom asked me to walk him home from soccer practice. I sighed loudly enough for the whole field to hear. Halfway home, a sudden rainstorm swept across the park. Max's face crumpled, and he grabbed my sleeve. \"I don't like thunder,\" he whispered. I remembered being scared of storms when I was his age, too. So I pulled off my jacket and held it over both our heads like a tent. To keep his mind off the thunder, I made up a silly story about a dragon who was afraid of puddles. By the time we reached our front door, Max was laughing so hard he forgot about the storm. That night, he knocked on my door and asked if the dragon could have another adventure tomorrow. For once, I didn't mind at all.",
+     "e": "To keep his mind off the thunder, I made up a silly story about a dragon who was afraid of puddles."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "text structure",
+     "q": "How is the passage mainly organized?",
+     "o": [
+      "compare and contrast",
+      "cause and effect",
+      "time order",
+      "problem and solution"
+     ],
+     "p": "## Polar Bears and Grizzly Bears\nPolar bears and grizzly bears are both large, powerful members of the bear family, but they live very different lives. Polar bears make their home in the icy Arctic. Their thick white fur helps them blend in with the snow, and underneath it, their skin is actually black, which helps soak up heat from the sun. Polar bears depend on sea ice to hunt seals, their main food. Grizzly bears, on the other hand, live in forests, mountains, and meadows in parts of North America. Their brown fur blends in with trees and dirt. Unlike polar bears, grizzlies eat a wide variety of foods, including berries, roots, insects, and fish. Each fall, grizzlies eat huge amounts of food to build up fat. Then they spend most of the winter resting in dens. Most polar bears stay active through the winter, when the sea ice is thick and seals are easier to catch. Although both bears are strong and smart, each one is suited to its own environment.",
+     "e": "Grizzly bears, on the other hand, live in forests, mountains, and meadows in parts of North America."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "main idea",
+     "q": "Which sentence best states the central idea of the passage?",
+     "o": [
+      "Polar bears and grizzly bears are alike in some ways but suited to different places.",
+      "Grizzly bears are much stronger and smarter than polar bears.",
+      "Polar bears eat more kinds of food than grizzly bears do.",
+      "All bears sleep through the winter in warm dens."
+     ],
+     "p": "## Polar Bears and Grizzly Bears\nPolar bears and grizzly bears are both large, powerful members of the bear family, but they live very different lives. Polar bears make their home in the icy Arctic. Their thick white fur helps them blend in with the snow, and underneath it, their skin is actually black, which helps soak up heat from the sun. Polar bears depend on sea ice to hunt seals, their main food. Grizzly bears, on the other hand, live in forests, mountains, and meadows in parts of North America. Their brown fur blends in with trees and dirt. Unlike polar bears, grizzlies eat a wide variety of foods, including berries, roots, insects, and fish. Each fall, grizzlies eat huge amounts of food to build up fat. Then they spend most of the winter resting in dens. Most polar bears stay active through the winter, when the sea ice is thick and seals are easier to catch. Although both bears are strong and smart, each one is suited to its own environment.",
+     "e": "Although both bears are strong and smart, each one is suited to its own environment."
+    },
+    {
+     "t": "two",
+     "dom": "info",
+     "k": "compare texts",
+     "p": "## Polar Bears and Grizzly Bears\nPolar bears and grizzly bears are both large, powerful members of the bear family, but they live very different lives. Polar bears make their home in the icy Arctic. Their thick white fur helps them blend in with the snow, and underneath it, their skin is actually black, which helps soak up heat from the sun. Polar bears depend on sea ice to hunt seals, their main food. Grizzly bears, on the other hand, live in forests, mountains, and meadows in parts of North America. Their brown fur blends in with trees and dirt. Unlike polar bears, grizzlies eat a wide variety of foods, including berries, roots, insects, and fish. Each fall, grizzlies eat huge amounts of food to build up fat. Then they spend most of the winter resting in dens. Most polar bears stay active through the winter, when the sea ice is thick and seals are easier to catch. Although both bears are strong and smart, each one is suited to its own environment.",
+     "a": {
+      "q": "How is a grizzly bear's diet different from a polar bear's?",
+      "o": [
+       "Grizzlies eat many kinds of food, while polar bears mainly eat seals.",
+       "Grizzlies eat only fish, while polar bears eat only berries.",
+       "Grizzlies eat less in the fall than polar bears do.",
+       "Grizzlies hunt seals on ice, while polar bears dig for roots."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "Unlike polar bears, grizzlies eat a wide variety of foods, including berries, roots, insects, and fish.",
+       "Their brown fur blends in with trees and dirt.",
+       "Polar bears make their home in the icy Arctic.",
+       "Then they spend most of the winter resting in dens."
+      ]
+     }
+    },
+    {
+     "t": "multi",
+     "dom": "info",
+     "k": "key details",
+     "p": "## Polar Bears and Grizzly Bears\nPolar bears and grizzly bears are both large, powerful members of the bear family, but they live very different lives. Polar bears make their home in the icy Arctic. Their thick white fur helps them blend in with the snow, and underneath it, their skin is actually black, which helps soak up heat from the sun. Polar bears depend on sea ice to hunt seals, their main food. Grizzly bears, on the other hand, live in forests, mountains, and meadows in parts of North America. Their brown fur blends in with trees and dirt. Unlike polar bears, grizzlies eat a wide variety of foods, including berries, roots, insects, and fish. Each fall, grizzlies eat huge amounts of food to build up fat. Then they spend most of the winter resting in dens. Most polar bears stay active through the winter, when the sea ice is thick and seals are easier to catch. Although both bears are strong and smart, each one is suited to its own environment.",
+     "q": "Which TWO details describe how polar bears are suited to life in the Arctic? Choose two answers.",
+     "o": [
+      "Their white fur helps them blend in with the snow.",
+      "Their black skin helps soak up heat from the sun.",
+      "Their brown fur blends in with trees and dirt.",
+      "They eat berries, roots, and insects.",
+      "They rest in dens through most of the winter."
+     ],
+     "n": 2
+    }
+   ]
+  },
+  {
+   "id": "c5-4",
+   "items": [
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "word parts",
+     "q": "The Latin root \"rupt\" means \"break.\" What does the word \"erupt\" mean?",
+     "o": [
+      "to break out suddenly",
+      "to build up slowly",
+      "to carry far away",
+      "to look at closely"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "phon",
+     "k": "phonics",
+     "q": "Which word ends with a consonant-le syllable?",
+     "o": [
+      "puzzle",
+      "planet",
+      "pilot",
+      "pencil"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"Ben was reluctant to jump into the cold lake, so he stood on the dock for a long time.\" What does the word \"reluctant\" mean?",
+     "o": [
+      "unwilling",
+      "eager",
+      "careful",
+      "proud"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Read this sentence: \"I have told you a million times to clean your room!\" What does the speaker mean?",
+     "o": [
+      "The speaker has said it many times.",
+      "The speaker counted exactly a million times.",
+      "The speaker enjoys cleaning rooms.",
+      "The speaker has never said it before."
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "vocabulary",
+     "q": "Which word gives the most positive description of an old house?",
+     "o": [
+      "historic",
+      "rundown",
+      "shabby",
+      "crumbling"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "voc",
+     "k": "word parts",
+     "q": "The suffix \"-ology\" means \"the study of.\" What does the word \"geology\" mean?",
+     "o": [
+      "the study of the earth",
+      "the study of living things",
+      "the study of the stars",
+      "the study of the weather"
+     ]
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "vocabulary",
+     "q": "Read this sentence from the passage: \"But when she saw the steep, rocky trail winding up the mountain, her confidence melted like snow in spring.\" What does the simile mean?",
+     "o": [
+      "Maya's confidence quickly disappeared.",
+      "Maya felt warm and sunny inside.",
+      "The snow on the trail began to melt.",
+      "Maya became more sure of herself."
+     ],
+     "p": "## The Mountain Trail\nMaya had been looking forward to the hike up Eagle Peak for months. But when she saw the steep, rocky trail winding up the mountain, her confidence melted like snow in spring. Her cousin Ava, who was two years older, bounded ahead without looking back. Maya trudged behind, counting every step and complaining about her aching legs. About halfway up, Maya noticed a small boy sitting on a rock, crying because he had lost sight of his family. Maya forgot about her own tired legs. She sat beside him, shared her trail mix, and promised to help. Together they climbed slowly, and Maya pointed out funny-shaped clouds to cheer him up. Near the top, they found the boy's parents, who hugged him tightly and thanked Maya again and again. When Maya finally reached the summit, the whole valley stretched out below her like a green quilt. Ava asked why she had taken so long. Maya just smiled. She had discovered that helping someone else had made the climb feel lighter.",
+     "e": "But when she saw the steep, rocky trail winding up the mountain, her confidence melted like snow in spring."
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "character",
+     "q": "Which word best describes Maya when she meets the lost boy?",
+     "o": [
+      "caring",
+      "impatient",
+      "selfish",
+      "frightened"
+     ],
+     "p": "## The Mountain Trail\nMaya had been looking forward to the hike up Eagle Peak for months. But when she saw the steep, rocky trail winding up the mountain, her confidence melted like snow in spring. Her cousin Ava, who was two years older, bounded ahead without looking back. Maya trudged behind, counting every step and complaining about her aching legs. About halfway up, Maya noticed a small boy sitting on a rock, crying because he had lost sight of his family. Maya forgot about her own tired legs. She sat beside him, shared her trail mix, and promised to help. Together they climbed slowly, and Maya pointed out funny-shaped clouds to cheer him up. Near the top, they found the boy's parents, who hugged him tightly and thanked Maya again and again. When Maya finally reached the summit, the whole valley stretched out below her like a green quilt. Ava asked why she had taken so long. Maya just smiled. She had discovered that helping someone else had made the climb feel lighter.",
+     "e": "She sat beside him, shared her trail mix, and promised to help."
+    },
+    {
+     "t": "two",
+     "dom": "lit",
+     "k": "theme",
+     "p": "## The Mountain Trail\nMaya had been looking forward to the hike up Eagle Peak for months. But when she saw the steep, rocky trail winding up the mountain, her confidence melted like snow in spring. Her cousin Ava, who was two years older, bounded ahead without looking back. Maya trudged behind, counting every step and complaining about her aching legs. About halfway up, Maya noticed a small boy sitting on a rock, crying because he had lost sight of his family. Maya forgot about her own tired legs. She sat beside him, shared her trail mix, and promised to help. Together they climbed slowly, and Maya pointed out funny-shaped clouds to cheer him up. Near the top, they found the boy's parents, who hugged him tightly and thanked Maya again and again. When Maya finally reached the summit, the whole valley stretched out below her like a green quilt. Ava asked why she had taken so long. Maya just smiled. She had discovered that helping someone else had made the climb feel lighter.",
+     "a": {
+      "q": "What theme does the story develop?",
+      "o": [
+       "Helping others can make our own challenges easier.",
+       "Older cousins are always better at hiking.",
+       "Hiking is too dangerous for young children.",
+       "It is important to reach the top first."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "She had discovered that helping someone else had made the climb feel lighter.",
+       "Ava asked why she had taken so long.",
+       "Her cousin Ava, who was two years older, bounded ahead without looking back.",
+       "Maya had been looking forward to the hike up Eagle Peak for months."
+      ]
+     }
+    },
+    {
+     "t": "one",
+     "dom": "lit",
+     "k": "character",
+     "q": "At the start of the climb, how is Maya's reaction different from Ava's?",
+     "o": [
+      "Maya struggles and complains, while Ava rushes ahead.",
+      "Maya runs ahead, while Ava falls far behind.",
+      "Both girls complain about their aching legs.",
+      "Maya helps Ava, while Ava helps the lost boy."
+     ],
+     "p": "## The Mountain Trail\nMaya had been looking forward to the hike up Eagle Peak for months. But when she saw the steep, rocky trail winding up the mountain, her confidence melted like snow in spring. Her cousin Ava, who was two years older, bounded ahead without looking back. Maya trudged behind, counting every step and complaining about her aching legs. About halfway up, Maya noticed a small boy sitting on a rock, crying because he had lost sight of his family. Maya forgot about her own tired legs. She sat beside him, shared her trail mix, and promised to help. Together they climbed slowly, and Maya pointed out funny-shaped clouds to cheer him up. Near the top, they found the boy's parents, who hugged him tightly and thanked Maya again and again. When Maya finally reached the summit, the whole valley stretched out below her like a green quilt. Ava asked why she had taken so long. Maya just smiled. She had discovered that helping someone else had made the climb feel lighter.",
+     "e": "Maya trudged behind, counting every step and complaining about her aching legs."
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "text structure",
+     "q": "Which text structure does the author mainly use?",
+     "o": [
+      "cause and effect",
+      "compare and contrast",
+      "question and answer",
+      "description of a place"
+     ],
+     "p": "## A Machine That Changed the World\nBefore the 1400s, almost every book in Europe was copied by hand. Skilled writers called scribes spent months, or even years, copying a single long book. Because books took so long to make, they were rare and expensive, and few people learned to read. Around 1440, a German metalworker named Johannes Gutenberg began developing a printing press that used movable metal type. Each small metal block held one letter or symbol. Workers could arrange the blocks to form words, ink them, and press them onto paper. Then they could rearrange the same blocks to print a different page. As a result, books could be made far more quickly and cheaply than before. Gutenberg's famous Bible, printed in the 1450s, showed how clear and beautiful printed pages could be. Within a few decades, printing shops had opened in cities across Europe. Ideas about science, history, and religion spread faster than ever before. Many historians believe the printing press was one of the most important inventions in human history.",
+     "e": "As a result, books could be made far more quickly and cheaply than before."
+    },
+    {
+     "t": "two",
+     "dom": "info",
+     "k": "text evidence",
+     "p": "## A Machine That Changed the World\nBefore the 1400s, almost every book in Europe was copied by hand. Skilled writers called scribes spent months, or even years, copying a single long book. Because books took so long to make, they were rare and expensive, and few people learned to read. Around 1440, a German metalworker named Johannes Gutenberg began developing a printing press that used movable metal type. Each small metal block held one letter or symbol. Workers could arrange the blocks to form words, ink them, and press them onto paper. Then they could rearrange the same blocks to print a different page. As a result, books could be made far more quickly and cheaply than before. Gutenberg's famous Bible, printed in the 1450s, showed how clear and beautiful printed pages could be. Within a few decades, printing shops had opened in cities across Europe. Ideas about science, history, and religion spread faster than ever before. Many historians believe the printing press was one of the most important inventions in human history.",
+     "a": {
+      "q": "Why were books rare before the printing press?",
+      "o": [
+       "They had to be copied by hand, which took a long time.",
+       "Most people did not want to read any books.",
+       "Paper had not been invented in Europe yet.",
+       "Metal type was too expensive for scribes."
+      ]
+     },
+     "b": {
+      "q": "Which sentence from the passage best supports the answer to Part A?",
+      "o": [
+       "Skilled writers called scribes spent months, or even years, copying a single long book.",
+       "Each small metal block held one letter or symbol.",
+       "Within a few decades, printing shops had opened in cities across Europe.",
+       "Gutenberg's famous Bible, printed in the 1450s, showed how clear and beautiful printed pages could be."
+      ]
+     }
+    },
+    {
+     "t": "one",
+     "dom": "info",
+     "k": "main idea",
+     "q": "What is the central idea of the passage?",
+     "o": [
+      "The printing press made books easier to produce and helped ideas spread.",
+      "Scribes were the most skilled writers who ever lived in Europe.",
+      "Gutenberg was a talented metalworker who mostly made jewelry.",
+      "Books in the 1400s were mostly about history and science."
+     ],
+     "p": "## A Machine That Changed the World\nBefore the 1400s, almost every book in Europe was copied by hand. Skilled writers called scribes spent months, or even years, copying a single long book. Because books took so long to make, they were rare and expensive, and few people learned to read. Around 1440, a German metalworker named Johannes Gutenberg began developing a printing press that used movable metal type. Each small metal block held one letter or symbol. Workers could arrange the blocks to form words, ink them, and press them onto paper. Then they could rearrange the same blocks to print a different page. As a result, books could be made far more quickly and cheaply than before. Gutenberg's famous Bible, printed in the 1450s, showed how clear and beautiful printed pages could be. Within a few decades, printing shops had opened in cities across Europe. Ideas about science, history, and religion spread faster than ever before. Many historians believe the printing press was one of the most important inventions in human history.",
+     "e": "Ideas about science, history, and religion spread faster than ever before."
+    },
+    {
+     "t": "multi",
+     "dom": "info",
+     "k": "key details",
+     "p": "## A Machine That Changed the World\nBefore the 1400s, almost every book in Europe was copied by hand. Skilled writers called scribes spent months, or even years, copying a single long book. Because books took so long to make, they were rare and expensive, and few people learned to read. Around 1440, a German metalworker named Johannes Gutenberg began developing a printing press that used movable metal type. Each small metal block held one letter or symbol. Workers could arrange the blocks to form words, ink them, and press them onto paper. Then they could rearrange the same blocks to print a different page. As a result, books could be made far more quickly and cheaply than before. Gutenberg's famous Bible, printed in the 1450s, showed how clear and beautiful printed pages could be. Within a few decades, printing shops had opened in cities across Europe. Ideas about science, history, and religion spread faster than ever before. Many historians believe the printing press was one of the most important inventions in human history.",
+     "q": "Which TWO details explain how movable type worked? Choose two answers.",
+     "o": [
+      "Each small metal block held one letter or symbol.",
+      "Workers could rearrange the blocks to print a different page.",
+      "Scribes copied books by hand.",
+      "Printing shops opened across Europe.",
+      "Few people learned to read."
+     ],
+     "n": 2
+    }
+   ]
+  }
+ ]
+};
+
 // ---------- i-Ready: results, informational reading, monthly checkpoints, goal tracker ----------
 // The parent's goal: raise each child's i-Ready Diagnostic reading scores, out of "high risk" and past their peers.
 // A grown-up enters each Diagnostic from the family report; the daily quest then works on the weakest domains.
@@ -5304,12 +7072,22 @@ function qHtml(it, st, practice, done){
 }
 // a passage with "## Heading" lines, numbered or bulleted lists and paragraphs
 function articleHtml(title, text){
-  const parts = String(text).split(/\n\n+/).map(b => {
-    if (/^## /.test(b)) { const [h, ...rest] = b.split('\n'); return `<h3>${esc(h.slice(3))}</h3>${rest.length ? `<p>${esc(rest.join(' '))}</p>` : ''}`; }
-    const lines = b.split('\n'); if (lines.length > 1 && lines.every(l => /^(\d+\.|[-•*])\s/.test(l))) return `<ul class="artlist">${lines.map(l => `<li>${esc(l.replace(/^(\d+\.|[-•*])\s/, ''))}</li>`).join('')}</ul>`;
-    return `<p>${esc(b.replace(/\n/g, ' '))}</p>`;
-  }).join('');
-  return `<article class="article">${title ? `<h2>${esc(title)}</h2>` : ''}${parts}</article>`;
+  // line by line: "## " lines are headings, runs of "1." or "-" lines are lists, everything else joins into paragraphs
+  const out = [];
+  String(text).split(/\n\n+/).forEach(block => {
+    let para = [], list = null;
+    const flushP = () => { if (para.length){ out.push(`<p>${esc(para.join(' '))}</p>`); para = []; } };
+    const flushL = () => { if (list){ out.push(`<${list.t} class="artlist">${list.items.map(x => `<li>${esc(x)}</li>`).join('')}</${list.t}>`); list = null; } };
+    block.split('\n').forEach(line => {
+      const l = line.trim(); if (!l) return;
+      if (/^##\s/.test(l)){ flushP(); flushL(); out.push(`<h3>${esc(l.replace(/^##\s*/, ''))}</h3>`); return; }
+      const m = l.match(/^(\d+\.|[-•*])\s+(.*)$/);
+      if (m){ flushP(); const t = /\d/.test(m[1]) ? 'ol' : 'ul'; if (!list || list.t !== t){ flushL(); list = {t, items:[]}; } list.items.push(m[2]); return; }
+      flushL(); para.push(l);
+    });
+    flushP(); flushL();
+  });
+  return `<article class="article">${title ? `<h2>${esc(title)}</h2>` : ''}${out.join('')}</article>`;
 }
 
 // ---- Info Lab: grade-level nonfiction with i-Ready style questions ----
