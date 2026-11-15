@@ -330,6 +330,7 @@ a{color:var(--accent)}
   .readside .ctrl .btn{min-height:54px;font-size:1.1rem}
 }
 .myqrtile{width:100%}
+.logtab{font-size:.9rem}.logtab td,.logtab th{padding:8px 6px}.logtab td:first-child{white-space:nowrap}
 </style>
 
 </head>
@@ -956,7 +957,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog})[view.name]();
 }
 function topbar(back){
   const p = me(), L = level(p);
@@ -4809,8 +4810,11 @@ function reportPack(d, range, who){
     const day = dd => { const x = dayData(p, dd), sp = x.speed, b = sp && bandOf(p.grade, sp.w, dd);
       return {d:dd, m:x.mins, gl:goalOf(p), al:x.aloud, s: sp ? sp.w : null, b: b ? b.k : null, tg: normAt(p.grade, 75, dd),
         rd: x.reads.map(r => [r.title, Math.round(r.mins||0), r.right||0, r.total||0]), wp: x.practise.map(w => w.k).slice(0, 12), gy: x.gym.map(g => g.w)}; };
-    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
-    return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt}, day(d));
+    const inPack = new Set(range === 'day' ? [d] : [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return today(t); }));
+    const h = [...Array(28)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 1 - i); return today(t); }).filter(dd => !inPack.has(dd))
+      .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), x.reads.map(r => String(r.title).slice(0, 48))] : null; }).filter(Boolean);
+    if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length)};
+    return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h}, day(d));
   })};
 }
 // a child's own code, from the bottom of their home screen: just their report, today or this week
@@ -4846,16 +4850,45 @@ async function showReportQR(){
 // ---------- Brad's reading log: scan reports into one log and save it to Files ----------
 // A reader whose name is Brad is a grown-up account: its home screen holds the report scanner and the log.
 function isParent(p){ return !!p && /^brad\b/i.test(String(p.name).trim()); }
-// one row per child per day, from every saved report (a day report wins over the same day inside a week report)
+// ---- the all-time log: one row per child per day, kept forever on this phone ----
+// Every scanned code is merged in. A day seen in a day report beats the same day inside a week report,
+// which beats the short form carried for the last 28 days; between equals, the newer scan wins.
+const LOG_KEY = 'pagequest.log', LOG_RANK = {day:3, week:2, hist:1};
+function logStore(){
+  let L = null; try{ L = JSON.parse(localStorage.getItem(LOG_KEY)); }catch(e){}
+  if (!L || !L.kids){ L = {v:1, kids:{}}; const old = phoneReports(); if (old.length){ old.slice().sort((a, b) => a.saved - b.saved).forEach(x => logMergeInto(L, x, x.saved)); logSaveStore(L); } }
+  return L;
+}
+function logSaveStore(L){ try{ localStorage.setItem(LOG_KEY, JSON.stringify(L)); return true; }catch(e){ return false; } }
+function logPut(kid, row, src, at){
+  if (row.m == null && !(row.rd||[]).length) return;
+  const old = kid.days[row.d];
+  if (old && (LOG_RANK[old.src] > LOG_RANK[src] || (LOG_RANK[old.src] === LOG_RANK[src] && old.at > at))) return;
+  kid.days[row.d] = Object.assign({}, row, {src, at});
+}
+function logMergeInto(L, pack, at){
+  at = at || Date.now();
+  (pack.k || []).forEach(k => {
+    const kid = L.kids[k.n] || (L.kids[k.n] = {g:k.g, a:k.a, days:{}}); kid.g = k.g; if (k.a) kid.a = k.a;
+    (k.h || []).forEach(([d, m, al, sp, gl, rd]) => { const b = sp ? bandOf(k.g, sp, d) : null;
+      logPut(kid, {d, m, al, s: sp || null, gl, b: b ? b.k : null, tg: normAt(k.g, 75, d), rd: (rd||[]).map(t => [t, 0, 0, 0]), wp: [], gy: []}, 'hist', at); });
+    if (pack.r === 'day') logPut(kid, {d: pack.d, m:k.m, al:k.al, s:k.s, gl:k.gl, b:k.b, tg:k.tg, rd:k.rd||[], wp:k.wp||[], gy:k.gy||[], t:k.t}, 'day', at);
+    else (k.dd || []).forEach(dd => logPut(kid, dd, 'week', at));
+  });
+}
+function logMerge(pack){ const L = logStore(); logMergeInto(L, pack); return logSaveStore(L); }
 function logRows(){
-  const rows = new Map();
-  phoneReports().slice().sort((a, b) => a.saved - b.saved).forEach(x => x.k.forEach(k => {
-    const days = x.r === 'day' ? [Object.assign({d:x.d}, k)] : (k.dd || []);
-    days.forEach(dd => { if (dd.m == null) return; const key = k.n + '|' + dd.d, old = rows.get(key);
-      if (old && old.fromDay && x.r !== 'day') return; if (x.r !== 'day' && !dd.m && !(dd.rd||[]).length) return;
-      rows.set(key, Object.assign({}, dd, {n:k.n, g:k.g, fromDay: x.r === 'day'})); });
-  }));
-  return [...rows.values()].sort((a, b) => b.d.localeCompare(a.d) || a.n.localeCompare(b.n));
+  const L = logStore(), rows = [];
+  Object.entries(L.kids).forEach(([n, kid]) => Object.values(kid.days).forEach(r => rows.push(Object.assign({n, g:kid.g, a:kid.a}, r))));
+  return rows.sort((a, b) => b.d.localeCompare(a.d) || a.n.localeCompare(b.n));
+}
+// weeks run Sunday to Saturday
+function weekStart(d){ const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - t.getDay()); return today(t); }
+function logWeeks(rows){
+  const W = new Map();
+  rows.forEach(r => { const k = r.n + '|' + weekStart(r.d), w = W.get(k) || {n:r.n, g:r.g, ws:weekStart(r.d), days:0, m:0, al:0, met:0, stories:0, sp:[], titles:[]};
+    w.days++; w.m += r.m||0; w.al += r.al||0; if ((r.m||0) >= (r.gl||20)) w.met++; (r.rd||[]).forEach(x => { w.stories++; w.titles.push(x[0]); }); if (r.s) w.sp.push(r.s); W.set(k, w); });
+  return [...W.values()].map(w => Object.assign(w, {s: median(w.sp)})).sort((a, b) => b.ws.localeCompare(a.ws) || a.n.localeCompare(b.n));
 }
 function csvCell(v){ v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
 function logCsv(){
@@ -4868,11 +4901,29 @@ function logCsv(){
   });
   return lines.join('\r\n');
 }
+function logWeekCsv(){
+  const lines = [['Week of (Sunday)','Child','Grade','Days read','Minutes read','Minutes out loud','Days goal met','Stories and chapters','Middle reading speed (words/min)','Level','What they read'].join(',')];
+  logWeeks(logRows()).forEach(w => { const b = w.s ? bandOf(w.g, w.s, w.ws) : null;
+    lines.push([w.ws, w.n, w.g, w.days, w.m, w.al, w.met, w.stories, w.s || '', b ? b.lab : '', w.titles.join('; ')].map(csvCell).join(',')); });
+  return lines.join('\r\n');
+}
+function logBackup(){ return JSON.stringify({app:'Page Quest reading log', saved: new Date().toISOString(), log: logStore()}); }
+function logRestore(file, msgId){
+  const say = t => { const el = document.getElementById(msgId); if (el) el.innerHTML = t; };
+  const fr = new FileReader();
+  fr.onload = () => { try{
+    const j = JSON.parse(fr.result), src = j.log || j; if (!src.kids) throw 0;
+    const L = logStore(); let n = 0;
+    Object.entries(src.kids).forEach(([name, kid]) => { const mine = L.kids[name] || (L.kids[name] = {g:kid.g, a:kid.a, days:{}});
+      Object.values(kid.days || {}).forEach(r => { const before = mine.days[r.d]; logPut(mine, r, r.src || 'hist', r.at || 0); if (mine.days[r.d] !== before) n++; }); });
+    logSaveStore(L); render(); setTimeout(() => say(`✓ Restored. ${n} day${n===1?'':'s'} added or updated.`), 50);
+  }catch(e){ say('That file is not a Page Quest log backup.'); } };
+  fr.readAsText(file);
+}
 function logText(){
-  const seen = new Set(), out = [];
-  phoneReports().forEach(x => x.k.forEach(k => { const key = x.r + '|' + x.d + '|' + k.n; if (seen.has(key)) return; seen.add(key); out.push({d:x.d, r:x.r, t:packText(k, x.d, x.r)}); }));
-  out.sort((a, b) => a.d.localeCompare(b.d));
-  return 'Page Quest reading log\n\n' + out.map(o => o.t).join('\n\n');
+  const rows = logRows().slice().reverse();
+  return 'Page Quest reading log\n\n' + rows.map(r => r.t || [`${r.n}: ${niceDate(r.d, true)}`, `Minutes read: ${r.m}` + (r.al ? ` (${r.al} out loud)` : ''),
+    'Read: ' + ((r.rd||[]).length ? r.rd.map(x => x[0]).join('; ') : 'practice passages and word games')].concat(r.s ? [`Reading speed: ${r.s} words per minute`] : []).join('\n')).join('\n\n');
 }
 // iPhone: the share sheet's "Save to Files"; elsewhere a download
 async function saveFile(name, text, type, msgId){
@@ -4889,16 +4940,48 @@ function parentCard(){
   const stamp = today();
   return `<div class="card" style="display:flex;flex-direction:column;gap:12px;border:3px solid var(--accent)">
     <div class="row spread"><h2>📒 Kids' reading log</h2><span class="chip">${rows.length} day${rows.length===1?'':'s'} logged</span></div>
-    <p class="mut">${list.length ? `${kids.map(esc).join(', ')} · last scanned ${new Date(last.saved).toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}` : 'Scan the QR code on each child\'s iPad (Grown-ups → Daily reading report → 📱 Send to my phone) to start the log.'}</p>
+    <p class="mut">${rows.length ? `${kids.map(esc).join(', ')}${last ? ` · last scanned ${new Date(last.saved).toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}` : ''}` : 'Scan the code from each child\'s iPad (📱 Show my reading report code, at the bottom of their home screen) to start the log. Every scan adds that day, and the last 4 weeks, to the log for good.'}</p>
     <div class="row"><button class="btn sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button>
-      <button class="btn" ${list.length ? '' : 'disabled'} data-a="${A(()=>go({name:'phonerep'}))}">📖 Open the log</button></div>
-    <div class="row"><button class="btn ghost" ${rows.length ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest reading log ${stamp}.csv`, logCsv(), 'text/csv', 'logMsg'))}">💾 Save stats to Files</button>
-      <button class="btn ghost" ${list.length ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest reading journal ${stamp}.txt`, logText(), 'text/plain', 'logMsg'))}">💾 Save journal to Files</button></div>
-    <span id="logMsg" class="mut"></span>
+      <button class="btn" ${rows.length ? '' : 'disabled'} data-a="${A(()=>go({name:'kidlog'}))}">📖 Open the log</button></div>
     ${rows.length ? `<div class="tablewrap"><table><tr><th>Date</th><th>Child</th><th>Minutes</th><th>Out loud</th><th>Speed</th><th>Read</th></tr>
-      ${rows.slice(0, 9).map(r => { const b = r.b && BANDS.find(x => x.k === r.b); return `<tr><td>${niceDate(r.d)}</td><td>${esc(r.n)}</td><td>${r.m}${r.m >= r.gl ? ' ✓' : ''}</td><td>${r.al}</td><td>${r.s ? `${b ? b.ic : ''} ${r.s}` : '–'}</td><td>${(r.rd||[]).map(x => esc(x[0])).join('<br>') || '<span class="mut">practice</span>'}</td></tr>`; }).join('')}</table></div>` : ''}
-    <p class="mut" style="font-size:.85rem">Each save writes the whole log so far, so the newest file in Files always has everything. The spreadsheet opens in Numbers or Excel.</p>
+      ${rows.slice(0, 6).map(r => { const b = r.b && BANDS.find(x => x.k === r.b); return `<tr><td>${niceDate(r.d)}</td><td>${esc(r.n)}</td><td>${r.m}${r.m >= r.gl ? ' ✓' : ''}</td><td>${r.al}</td><td>${r.s ? `${b ? b.ic : ''} ${r.s}` : '–'}</td><td>${(r.rd||[]).map(x => esc(x[0])).join('<br>') || '<span class="mut">practice</span>'}</td></tr>`; }).join('')}</table></div>` : ''}
+    ${logFilesHtml(stamp, rows.length)}
   </div>`;
+}
+function logFilesHtml(stamp, n){
+  return `<div><h3>Save to Files</h3>
+    <div class="row" style="margin-top:6px"><button class="btn ghost small" ${n ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest daily log ${stamp}.csv`, logCsv(), 'text/csv', 'logMsg'))}">📊 Daily stats (spreadsheet)</button>
+      <button class="btn ghost small" ${n ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest weekly log ${stamp}.csv`, logWeekCsv(), 'text/csv', 'logMsg'))}">📅 Weekly stats (spreadsheet)</button>
+      <button class="btn ghost small" ${n ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest reading journal ${stamp}.txt`, logText(), 'text/plain', 'logMsg'))}">📝 Journal (text)</button></div>
+    <div class="row" style="margin-top:6px"><button class="btn ghost small" ${n ? '' : 'disabled'} data-a="${A(()=>saveFile(`Page Quest log backup ${stamp}.json`, logBackup(), 'application/json', 'logMsg'))}">🗄️ Back up the whole log</button>
+      <label class="btn ghost small" style="cursor:pointer">♻️ Restore from a backup<input type="file" accept=".json,application/json" style="display:none" onchange="if(this.files[0]) logRestore(this.files[0], 'logMsg')"></label></div>
+    <p id="logMsg" class="mut" style="margin-top:4px"></p>
+    <p class="mut" style="font-size:.85rem">Every file holds the whole log from the first scan, so the newest one always has everything. Back up now and then: if this phone's storage is ever cleared, ♻️ Restore puts every day back.</p></div>`;
+}
+// Brad's full log: each child's all-time totals, every week and every day
+function vKidLog(){
+  const v = view, rows = logRows(), names = [...new Set(rows.map(r => r.n))].sort();
+  const who = names.includes(v.who) ? v.who : names[0], tab = v.tab || 'week';
+  const mine = rows.filter(r => r.n === who), weeks = logWeeks(mine);
+  const tot = k => mine.reduce((a, r) => a + (r[k]||0), 0), stories = mine.reduce((a, r) => a + (r.rd||[]).length, 0);
+  const sp = mine.filter(r => r.s).sort((a, b) => a.d.localeCompare(b.d)), first = sp[0], lastS = sp[sp.length-1];
+  const g = mine[0] ? mine[0].g : 3, bNow = lastS && bandOf(g, lastS.s, lastS.d);
+  app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name:'hub'}))}">← Back</button><button class="btn small sun" data-a="${A(()=>go({name:'scan'}))}">📷 Scan a report</button></div>
+  <h1>📒 Reading log</h1>
+  ${names.length ? `<div class="tabs">${names.map(nm => `<button class="${nm===who?'on':''}" data-a="${A(()=>{ v.who = nm; render(); })}">${esc(nm)}</button>`).join('')}</div>` : '<p class="mut">No days logged yet.</p>'}
+  ${who ? `<div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <h2>${esc((mine[0]||{}).a || '')} ${esc(who)} <span class="mut" style="font-size:1rem">Grade ${g} · all time since ${niceDate(mine[mine.length-1].d)}</span></h2>
+    <div class="row" style="gap:6px"><span class="chip">📅 ${mine.length} days read</span><span class="chip">⏱ ${Math.round(tot('m')/60*10)/10} hours (${tot('m')} min)</span><span class="chip">🎤 ${tot('al')} min out loud</span>
+      <span class="chip">📚 ${stories} stories and chapters</span><span class="chip">✓ goal met ${mine.filter(r => (r.m||0) >= (r.gl||20)).length} days</span>
+      ${lastS ? `<span class="chip">⚡ ${first.s} → ${lastS.s} words/min · ${bNow.ic} ${bNow.lab}</span>` : ''}</div>
+    <div class="modes"><button class="${tab==='week'?'on':''}" data-a="${A(()=>{ v.tab='week'; render(); })}">Weekly</button><button class="${tab==='day'?'on':''}" data-a="${A(()=>{ v.tab='day'; render(); })}">Daily</button></div>
+    ${tab === 'week' ? `<div class="tablewrap"><table class="logtab"><tr><th>Week of</th><th>Days</th><th>Min</th><th>🎤 Min</th><th>✓ Goal</th><th>📚</th><th>⚡</th></tr>
+      ${weeks.map(w => { const b = w.s && bandOf(w.g, w.s, w.ws); return `<tr><td>${new Date(w.ws+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td><td>${w.days}</td><td>${w.m}</td><td>${w.al}</td><td>${w.met}</td><td title="${esc(w.titles.join('; '))}">${w.stories}</td><td>${w.s ? `${b.ic} ${w.s}` : '–'}</td></tr>`; }).join('')}</table></div>`
+    : `<div class="tablewrap"><table class="logtab"><tr><th>Date</th><th>Min</th><th>🎤 Min</th><th>⚡</th><th>Read</th><th>Practise</th></tr>
+      ${mine.map(r => { const b = r.b && BANDS.find(x => x.k === r.b); return `<tr><td>${new Date(r.d+'T12:00').toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'})}</td><td>${r.m}${r.m >= r.gl ? ' ✓' : ''}</td><td>${r.al}</td><td>${r.s ? `${b ? b.ic : ''} ${r.s}` : '–'}</td><td>${(r.rd||[]).map(x => esc(x[0]) + (x[1] ? ` <span class="mut">(${x[1]} min${x[3] ? `, ${x[2]}/${x[3]} right` : ''})</span>` : '')).join('<br>') || '<span class="mut">practice</span>'}</td><td>${(r.wp||[]).map(esc).join(', ')}</td></tr>`; }).join('')}</table></div>`}
+  </div>` : ''}
+  <div class="card">${logFilesHtml(today(), rows.length)}</div>
+  ${phoneReports().length ? `<p><button class="btn ghost small" data-a="${A(()=>go({name:'phonerep'}))}">Scanned reports, as they arrived (${phoneReports().length})</button></p>` : ''}`;
 }
 let scanStop = () => {};
 function loadJsQR(){
@@ -4943,9 +5026,10 @@ function vScan(){
 const PHONE_KEY = 'pagequest.reports';
 function phoneReports(){ try{ return JSON.parse(localStorage.getItem(PHONE_KEY)) || []; }catch(e){ return []; } }
 function phoneSave(pack){
+  logMerge(pack);
   const list = phoneReports().filter(x => !(x.d === pack.d && x.r === pack.r && x.k.map(k => k.n).join() === pack.k.map(k => k.n).join()));
   list.push(Object.assign({saved: Date.now()}, pack)); list.sort((a, b) => b.d.localeCompare(a.d) || b.saved - a.saved);
-  try{ localStorage.setItem(PHONE_KEY, JSON.stringify(list.slice(0, 200))); }catch(e){}
+  try{ localStorage.setItem(PHONE_KEY, JSON.stringify(list.slice(0, 400))); }catch(e){}
 }
 function packText(k, d, r){
   if (k.t) return k.t;
