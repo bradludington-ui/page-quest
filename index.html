@@ -414,11 +414,18 @@ body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(
 .exgrid th.exkid{text-align:center;font-size:.85rem;color:var(--ink)}.exgrid td.num{text-align:center;width:auto;white-space:nowrap}.exgrid td:first-child{white-space:nowrap;font-weight:600}.exread{margin:4px 0;line-height:1.5}
 @media (max-width:600px){.exgrid{font-size:.82rem}.exgrid td,.exgrid th{padding:7px 3px!important}.exgrid td:first-child{white-space:normal;font-weight:600}.exgrid td.num{white-space:normal}}
 .exgrid{width:100%;table-layout:auto}
+.myplayer{display:flex;flex-direction:column;gap:10px}.mpgrid{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start}
+.mppic{display:flex;justify-content:center}.mpopts{display:flex;flex-direction:column;gap:10px;min-width:0}
+.mprow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}.mpnum{min-width:2.2em;text-align:center;font-size:1.3rem}
+.pswatch{width:36px;height:36px;border-radius:50%;border:3px solid var(--panel);box-shadow:0 0 0 2px var(--line);cursor:pointer;padding:0}
+.pswatch.on{box-shadow:0 0 0 3px var(--accent)}.mpoff{display:flex;gap:8px;align-items:center;font-weight:600}
+@media (max-width:560px){.mpgrid{grid-template-columns:1fr}}
 </style>
 
 </head>
 <body>
 <canvas id="fx"></canvas>
+<script src="cheer.js?v=1" defer onload="if (typeof view !== 'undefined' && view && view.name === 'mystats') render()"></script>
 <div id="app"><p class="mut">Loading Page Quest…</p></div>
 
 <script>
@@ -1715,7 +1722,9 @@ function finishStory(){
   R.coins += bonus + chest + bookBonus; addCoins(bonus + chest + bookBonus, book === 'done' ? 'book finished!' : chest ? 'treasure chest!' : 'story done');
   questMark('story');
   logEvent(s.series ? 'chapter' : 'story', s.title, {id:s.id, right, total, mins: R.mins || 0});
-  confetti(book === 'done' ? 140 : 80);
+  if (book === 'done') cheer('trophy', `Book champion, ${fname(p)}!`, `You finished ${((SERIES.find(x => x.id === s.series) || {}).title) || 'the whole book'}!`, 140);
+  else if (stars >= 3) cheer(Math.random() < .7 ? 'goal' : 'swish', `What a read, ${fname(p)}!`, `${s.title}: ${right} of ${total} right.`, 80);
+  else confetti(80);
   go({name:'finish', stars, right, total, chest, coins:R.coins, book, next: view.nextChap});
 }
 function vFinish(){
@@ -2307,6 +2316,14 @@ function hangNext(){
 }
 
 // ---------- Celebration ----------
+// Sports celebrations (cheer.js): a short drawn scene with the child's own player, for the big moments.
+// Falls back to confetti if the drawings have not loaded or the child turned them off.
+function fname(p){ return String((p && p.name) || '').trim().split(/\s+/)[0] || 'Champ'; }
+function cheer(kind, title, sub, n){
+  const p = me();
+  if (p && window.Cheer && !(p.player || {}).off && Cheer.play(kind, {look: p.player, title, sub})) return true;
+  confetti(n || 60); return false;
+}
 function floatText(t){ const d = document.createElement('div'); d.className = 'float'; d.textContent = t; document.body.appendChild(d); setTimeout(()=>d.remove(), 1200); }
 const fx = document.getElementById('fx'), ctx = fx.getContext('2d'); let parts = [], fxOn = false;
 function confetti(n){
@@ -4091,7 +4108,7 @@ function addAloud(secs){
   for (const d of Object.keys(p.aloud)) if (d < addDays(-60)) delete p.aloud[d];
   const was = aloudToday(p);
   p.aloud[t] = (p.aloud[t]||0) + Math.min(secs, 900)/60; save();
-  if (was < BREAK_ALOUD && aloudToday(p) >= BREAK_ALOUD){ floatText(breakOpen(p) ? '🎉 Brain Break open!' : '🎤 20 reading minutes done!'); confetti(100); }
+  if (was < BREAK_ALOUD && aloudToday(p) >= BREAK_ALOUD) cheer('goal', `GOAL, ${fname(p)}!`, breakOpen(p) ? '20 minutes of reading out loud. Brain Break is open!' : '20 minutes of reading out loud done!', 100);
 }
 function aloudToday(p){ return ((p.aloud||{})[today()]) || 0; }
 
@@ -4107,7 +4124,7 @@ function addMinutes(m, title){
   p.readT = p.readT || {}; const day = p.readT[t] || (p.readT[t] = {}), k = title || 'Reading practice'; day[k] = (day[k] || 0) + m;
   Object.keys(p.readT).forEach(d => { if (d < addDays(-60)) delete p.readT[d]; });
   save();
-  if (p.goalPaid !== t && minsToday(p) >= goalOf(p)){ p.goalPaid = t; save(); giveTickets(1); addCoins(10, 'daily goal!'); confetti(50); }
+  if (p.goalPaid !== t && minsToday(p) >= goalOf(p)){ p.goalPaid = t; save(); giveTickets(1); addCoins(10, 'daily goal!'); cheer('goal', `GOAL, ${fname(p)}!`, `You read ${goalOf(p)} minutes today. Daily goal done!`, 50); }
 }
 function ringSvg(p){
   const done = Math.min(1, minsToday(p)/goalOf(p)), r = 26, c = 2*Math.PI*r;
@@ -4165,7 +4182,7 @@ function questMark(k){
   const q = p.quest[t] || (p.quest[t] = {});
   if (q[k]) return; q[k] = true; save();
   const items = questItems(p);
-  if (items.some(i => i.k === k) && items.every(i => i.done) && !q.paid){ q.paid = true; save(); giveTickets(1); addCoins(20, 'quest complete!'); confetti(90); }
+  if (items.some(i => i.k === k) && items.every(i => i.done) && !q.paid){ q.paid = true; save(); giveTickets(1); addCoins(20, 'quest complete!'); cheer('trophy', `Quest champion, ${fname(p)}!`, "You finished every step of today's quest.", 90); }
 }
 
 // ---------- Chapter books (one chapter a day) ----------
@@ -7251,7 +7268,7 @@ function infoFinish(a){
   a.qs.forEach((q, i) => { if (IR_SKILL[q.k]) skillMark(IR_SKILL[q.k], !!v.st[i].ok); });
   p.infoDone = p.infoDone || {}; const prev = p.infoDone[a.id]; if (!prev || r >= prev.r) p.infoDone[a.id] = {d:today(), r, t:a.qs.length};
   logEvent('story', a.title, {id:a.id, right:r, total:a.qs.length, mins:v.mins || 0});
-  addCoins(r * 4 + 5, 'Info Lab'); if (r === a.qs.length) confetti(60);
+  addCoins(r * 4 + 5, 'Info Lab'); if (r === a.qs.length) cheer('swish', `Swish, ${fname(p)}!`, `Every question right on ${a.title}.`, 60);
   questMark('info'); save(); v.phase = 'done'; render(); window.scrollTo({top:0});
 }
 
@@ -7288,7 +7305,7 @@ function cpFinish(f){
   f.items.forEach((it, i) => { const d = dom[it.dom] || (dom[it.dom] = [0, 0]); d[1]++; if (v.st[i].ok) d[0]++; });
   p.cps = p.cps || []; p.cps.push({d:today(), id:f.id, dom, mins: Math.round((Date.now() - (v.t0 || Date.now())) / 60000)});
   addMinutes(Math.min(30, (Date.now() - (v.t0 || Date.now())) / 60000), 'Monthly checkpoint');
-  logEvent('checkin', 'Monthly checkpoint', {w:0}); addCoins(30, 'checkpoint'); confetti(50); questMark('check'); save();
+  logEvent('checkin', 'Monthly checkpoint', {w:0}); addCoins(30, 'checkpoint'); cheer('trophy', `Checkpoint champion, ${fname(p)}!`, 'Monthly checkpoint finished. Great focus!', 50); questMark('check'); save();
 }
 function cpTableHtml(cps){
   if (!cps.length) return '<p class="mut">No checkpoints yet. One is ready on the child\'s home screen each month.</p>';
@@ -7379,7 +7396,7 @@ const MTIME = {last:0};
 function mathTick(){ const p = me(); if (!p) return; const now = Date.now(), m = mathState(p), t = today(), was = mathToday(p);
   if (MTIME.last){ const gap = Math.min(30000, now - MTIME.last) / 60000; m.min[t] = (m.min[t] || 0) + gap; }
   MTIME.last = now; save();
-  if (was < MATH_GOAL && mathToday(p) >= MATH_GOAL){ floatText('🔢 10 math minutes done!'); confetti(60); if (breakOpen(p)) setTimeout(() => floatText('🎉 Brain Break open!'), 900); }
+  if (was < MATH_GOAL && mathToday(p) >= MATH_GOAL) cheer('slide', `What a finish, ${fname(p)}!`, breakOpen(p) ? '10 minutes of math done. Brain Break is open!' : '10 minutes of math done!', 60);
 }
 function breakNeed(p){
   const r = Math.max(0, Math.ceil(BREAK_ALOUD - aloudToday(p))), m = MATH_ON ? Math.max(0, Math.ceil(MATH_GOAL - mathToday(p))) : 0, out = [];
@@ -7667,7 +7684,7 @@ function mathFinish(v){
   const p = me(), mins = Math.max(0, mathToday(p) - (v.m0 || 0));
   logEvent('math', v.title, {right:v.right, total:v.skills.length, mins: Math.round(mins * 10) / 10, skills:[...new Set(v.skills)]});
   if (v.questKey && v.questKey !== 'topic') questMark(v.questKey);
-  addCoins(5, 'math'); if (v.right === v.skills.length) confetti(50); save();
+  addCoins(5, 'math'); if (v.right === v.skills.length) cheer('swish', `Perfect, ${fname(p)}!`, `${v.title}: every problem right on the first try.`, 50); save();
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center">
     <span class="big-emoji">${v.right === v.skills.length ? '🏆' : '⭐'}</span><h1>${v.right} of ${v.skills.length} on the first try</h1>
     <p>${v.right === v.skills.length ? 'Perfect!' : v.right >= v.skills.length * 0.7 ? 'Great work!' : 'Nice effort. Every mistake you fix makes your brain stronger.'}</p>
@@ -7695,6 +7712,26 @@ function mathCardHtml(p){
       : `<div class="row" style="margin-top:6px"><button class="btn small" data-a="${A(()=>{ view.mapEdit = p.id; render(); })}">＋ Enter a MAP score</button></div>`}</div>`;
 }
 function mathSetUnit(id, u){ const p = S.profiles.find(x => x.id === id); if (!p) return; p.mathUnit = u || ''; save(); render(); }
+
+// ---------- My player: how the child looks in the celebrations ----------
+function myPlayerCard(p){
+  if (!window.Cheer) return '';
+  const pl = p.player || {}, set = (k, v) => A(() => { p.player = Object.assign({}, p.player, {[k]: v}); save(); render(); });
+  const sw = (k, list, cur) => list.map((c, i) => `<button class="pswatch ${cur === i ? 'on' : ''}" style="background:${c}" aria-label="${k} ${i + 1}" data-a="${set(k, i)}"></button>`).join('');
+  const styles = {short:'Short', spiky:'Spiky', curly:'Curly', pony:'Ponytail', long:'Long'};
+  const num = +pl.num || 10;
+  return `<div class="card myplayer"><h3>⚽ My player</h3><p class="mut" style="margin:2px 0 8px">This is you in the celebrations when you finish something big.</p>
+    <div class="mpgrid"><div id="myPlayerPic" class="mppic"></div><div class="mpopts">
+      <div><b>Hair</b><div class="mprow">${Object.keys(styles).map(k => `<button class="btn small ${(pl.style || 'short') === k ? 'sun' : 'ghost'}" data-a="${set('style', k)}">${styles[k]}</button>`).join('')}</div></div>
+      <div><b>Hair color</b><div class="mprow">${sw('hairC', Cheer.HAIRS, pl.hairC == null ? 0 : pl.hairC)}</div></div>
+      <div><b>Skin</b><div class="mprow">${sw('skin', Cheer.SKINS, pl.skin == null ? 1 : pl.skin)}</div></div>
+      <div><b>Team colors</b><div class="mprow">${Object.keys(Cheer.KITS).map(k => `<button class="pswatch kit ${(pl.kit || 'blue') === k ? 'on' : ''}" style="background:linear-gradient(135deg,${Cheer.KITS[k].kit} 55%,${Cheer.KITS[k].shorts} 55%)" aria-label="${Cheer.KITS[k].name}" data-a="${set('kit', k)}"></button>`).join('')}</div></div>
+      <div><b>Number</b><div class="mprow"><button class="btn small ghost" aria-label="Lower number" data-a="${set('num', num > 1 ? num - 1 : 99)}">−</button><b class="mpnum">${num}</b><button class="btn small ghost" aria-label="Higher number" data-a="${set('num', num < 99 ? num + 1 : 1)}">+</button></div></div>
+    </div></div>
+    <div><b>Watch one</b><div class="mprow">${[['goal', '⚽ Goal'], ['slide', '🥳 Knee slide'], ['trophy', '🏆 Trophy'], ['swish', '🏀 Swish']].map(([k, t]) => `<button class="btn small" data-a="${A(() => Cheer.play(k, {look: p.player, title: k === 'trophy' ? `Champion, ${fname(p)}!` : `GOAL, ${fname(p)}!`, sub: 'This is how it looks when you finish something big.', button: 'Done'}))}">${t}</button>`).join('')}</div></div>
+    <label class="mpoff"><input type="checkbox" ${pl.off ? '' : 'checked'} data-a="${A(() => { p.player = Object.assign({}, p.player, {off: !(p.player || {}).off}); save(); render(); })}"> Show celebrations</label>
+  </div>`;
+}
 
 // ---------- My stats: the kids' own page ----------
 // What they read and for how long (any day), this week's minutes, reading speed, and math, in kid language.
@@ -7727,11 +7764,13 @@ function vMyStats(){
 </div>
   ${sp ? `<div class="card" style="display:flex;flex-direction:column;gap:10px"><h3>⚡ My reading speed</h3>${speedGoal(p).replace(/^<div class="card speedgoal">/, '<div class="speedgoal">').replace('<h3>⚡ Reading speed</h3>', '')}
     ${spW.length > 1 ? `<table class="daytab"><tr><th>Week of</th><th class="num">Words a minute</th></tr>${spW.slice().reverse().map((w, k, A) => `<tr><td>${new Date(w.end+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</td><td class="num"><b>${w.w}</b>${A[k+1] ? (w.w > A[k+1].w ? ' <span style="color:var(--good)">▲</span>' : w.w < A[k+1].w ? ' <span style="color:var(--oops)">▼</span>' : '') : ''}</td></tr>`).join('')}</table>` : ''}</div>` : ''}
+  ${myPlayerCard(p)}
   ${myMathCard(p)}
   <div class="card"><h3>🏆 All time</h3><div class="kstats">
     ${stat('📚', p.completed || 0, 'stories and chapters')}${stat('📕', books, 'books finished')}${stat('⏱', Math.round((p.minutes || 0) / 6) / 10, 'hours reading')}
     ${stat('🔥', (p.streak || {}).n || 0, 'day streak')}${stat('🎯', p.mastered || 0, 'focus words mastered')}${stat('🔬', Object.keys(p.infoDone || {}).length, 'Info Lab articles')}
     ${MATH_ON ? stat('🔢', solved, 'math problems') + stat('✅', solved ? Math.round(right / solved * 100) + '%' : '–', 'math right first try') : ''}</div></div>`;
+  const pic = document.getElementById('myPlayerPic'); if (pic && window.Cheer) pic.appendChild(Cheer.portrait(p.player, 140));
 }
 
 // ---------- Brad's summary: today and the rolling week, for every child, at a glance ----------
