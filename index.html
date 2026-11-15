@@ -267,6 +267,16 @@ a{color:var(--accent)}
 .aloudline.open{background:var(--good-soft)}
 .aloudline.open .abar>i{background:var(--good)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.speedbox{display:flex;gap:14px;flex-wrap:wrap;align-items:stretch;margin:8px 0}
+.speednow{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:3px solid;border-radius:16px;padding:10px 18px;min-width:150px}
+.speednow b{font-family:var(--display);font-size:2.6rem;line-height:1}
+.speednums{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px 14px;flex:1;min-width:240px;align-content:center}
+.speednums div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:4px 0}
+.speedchart{width:100%;height:auto;display:block;margin:6px 0}
+.speedgoal .sbar{position:relative;display:flex;height:16px;border-radius:9px;overflow:visible;margin:30px 0 8px}
+.speedgoal .sbar i{height:100%;display:block}.speedgoal .sbar i.z0{background:var(--oops-soft);border-radius:9px 0 0 9px}.speedgoal .sbar i.z1{background:var(--sun-soft)}.speedgoal .sbar i.z2{background:color-mix(in srgb,var(--accent) 25%,transparent)}.speedgoal .sbar i.z3{background:var(--good);border-radius:0 9px 9px 0}
+.speedgoal .sflag,.speedgoal .sme{position:absolute;bottom:12px;transform:translateX(-50%);font-size:1.5rem;line-height:1}
+.speedgoal .sflag{transform:translateX(-15%)}
 </style>
 
 </head>
@@ -1024,6 +1034,7 @@ function vHub(){
   </div>
   ${ch ? `<div class="card row spread"><div class="row" style="min-width:0"><span class="big-emoji">${ch.se.icon}</span><div style="min-width:0"><h3>${esc(ch.se.title)}</h3><p class="mut">${ch.locked ? `Chapter ${ch.n+1} unlocks tomorrow. What do you think will happen?` : `Chapter ${ch.n+1} of ${ch.se.chapters.length} is ready!`}</p></div></div>
     <button class="btn ${ch.locked?'ghost':''}" data-a="${A(()=>go({name:'series', id:ch.se.id}))}">${ch.locked ? 'See chapters' : 'Read chapter ' + (ch.n+1)}</button></div>` : ''}
+  ${speedGoal(p)}
   <div class="card"><div class="row spread" style="margin-bottom:8px"><h2>Your story path</h2><span class="chip">${p.completed} stor${p.completed===1?'y':'ies'} read</span></div>
     ${mapSvg(p)}
     <p class="mut" style="margin-top:6px">Every story or chapter moves you one stop. Treasure chests wait at stops 5, 10 and 15.</p></div>
@@ -1373,7 +1384,7 @@ function readDone(){
 function logWpm(n, secs, how){
   const p = me(); const w = Math.round(n / (secs/60));
   if (w < 15 || w > 300) return w;
-  p.wpm.push({d:today(), w, how, s:R.s.id}); if (p.wpm.length > 60) p.wpm.shift(); save(); return w;
+  p.wpm.push({d:today(), w, how, s:R.s.id}); if (p.wpm.length > 400) p.wpm.shift(); save(); return w;
 }
 
 // Read out loud: speech recognition follows along and turns words green.
@@ -1478,14 +1489,14 @@ function checkMicDone(){
 }
 function micResult(w, whole){
   const key = R.s.id+'#'+R.page, p = me();
-  if (w >= 15 && w <= 300){ p.wpm.push({d:today(), w, how:'mic', s:R.s.id}); if (p.wpm.length > 60) p.wpm.shift(); save(); }
+  if (w >= 15 && w <= 300){ p.wpm.push({d:today(), w, how:'mic', s:R.s.id}); if (p.wpm.length > 400) p.wpm.shift(); save(); }
   p.best = p.best || {}; const prev = p.best[key];
   const beat = prev && w > prev;
   if (!prev || w > prev) p.best[key] = w; save();
   setMicState('');
   const out = document.getElementById('micOut');
   const unclear = flagUnclear(R.s.pages[R.page].t);
-  if (out) out.innerHTML = `<div class="result">${whole ? 'You read the whole page' : 'You read this page'} at about <b>${w} words a minute</b>${beat?`, faster than last time (${prev})! 🎉`: prev?` (your best is ${prev}).`:'.'}</div>${unclearHtml(unclear)}`;
+  if (out) out.innerHTML = `<div class="result">${whole ? 'You read the whole page' : 'You read this page'} at about <b>${w} words a minute</b>${beat?`, faster than last time (${prev})! 🎉`: prev?` (your best is ${prev}).`:'.'}${w >= targetOf(p) ? ' 🚀 Rocket zone!' : ` Goal: ${targetOf(p)}.`}</div>${unclearHtml(unclear)}`;
   if (beat){ R.coins += 5; addCoins(5,'new best'); }
   confetti(20);
 }
@@ -1743,6 +1754,8 @@ function vGrown(){
         <span class="chip">${tot ? Math.round(ok/tot*100) : '–'}% right on first try</span><span class="chip">${p.vault.length} in memory vault</span>
         <span class="chip">${Object.values(p.games||{}).reduce((a,g)=>a+g.plays,0)} games played</span></div>
 
+      ${speedCard(p)}
+
       <div><h3>Focus areas</h3><p class="mut" style="font-size:.9rem">Tick the areas where school reports show ${esc(p.name)} below grade level. Each one adds daily practice to Today's Quest and changes which stories come first.</p>
         <div class="pick words" style="margin-top:8px">${FOCUS.map(([k,l]) => `<button class="${f[k]?'on':''}" aria-pressed="${!!f[k]}" data-a="${A(()=>{ p.focus = Object.assign({}, p.focus, {[k]: !f[k]}); save(); render(); })}">${f[k]?'✓ ':''}${l}</button>`).join('')}</div></div>
 
@@ -1763,9 +1776,9 @@ function vGrown(){
       <div><h3>Fluency Gym</h3>${gym.length ? `<p>First read → third read, words correct per minute:</p><p>${gym.map(x => `<span class="chip">${x.w[0]} → <b>${x.w[2]}</b></span>`).join(' ')}</p>` : '<p class="mut">No sessions yet.</p>'}</div>
 
       <div><h3>Monthly check-in</h3>
-        <p class="mut" style="font-size:.9rem">A one-minute read of a new passage, once a month. The typical (50th percentile) reader in grade ${p.grade} reads about ${benchFor(p.grade, today())} words correct per minute at this time of year (Hasbrouck & Tindal, 2017).</p>
-        ${checks.length ? `<div class="tablewrap"><table><tr><th>Date</th><th>Words correct per minute</th><th>Typical for grade</th><th>Scored by</th></tr>
-          ${checks.map(c => `<tr><td>${c.d}</td><td><b>${c.w}</b></td><td>${benchFor(p.grade, c.d)}</td><td>${c.m==='mic'?'Microphone':'Grown-up'}</td></tr>`).join('')}</table></div>` : ''}
+        <p class="mut" style="font-size:.9rem">A one-minute read of a new passage, once a month. The typical (50th percentile) reader in grade ${p.grade} reads about ${normAt(p.grade, 50)} words correct per minute at this time of year, and the top 25% read ${normAt(p.grade, 75)} or more (Hasbrouck & Tindal, 2017).</p>
+        ${checks.length ? `<div class="tablewrap"><table><tr><th>Date</th><th>Words correct per minute</th><th>Typical for grade</th><th>Level</th><th>Scored by</th></tr>
+          ${checks.map(c => `<tr><td>${c.d}</td><td><b>${c.w}</b></td><td>${normAt(p.grade, 50, c.d)}</td><td>${bandOf(p.grade, c.w, c.d).ic} ${bandOf(p.grade, c.w, c.d).lab}</td><td>${c.m==='mic'?'Microphone':'Grown-up'}</td></tr>`).join('')}</table></div>` : ''}
         <div style="margin-top:8px"><button class="btn small ${checkDue(p)?'sun':'ghost'}" data-a="${A(()=>{ S.cur = p.id; save(); go({name:'checkin'}); })}">${checkDue(p) ? 'Start this month\'s check-in' : 'Do another check-in'}</button></div></div>
 
       <div><h3>Focus words and word bank</h3><p class="mut" style="font-size:.9rem">Words ${esc(p.name)} tapped for help, got stuck on, that the microphone did not hear clearly, or that you marked. A word flagged on two different pages or days becomes a 🎯 focus word: it is underlined in stories, comes first in warm-ups and games, and gets daily practice in Today's Quest. Reading a word correctly 3 times masters it. ${p.mastered ? `<b>${p.mastered} mastered so far.</b>` : ''}</p>
@@ -4100,7 +4113,7 @@ function gymDone(secsIn){
   addCoins(5, 'read ' + v.reads.length);
   if (v.reads.length === 3){
     p.gym = p.gym || []; p.gym.push({d:today(), w:v.reads.slice(), m:v.mode, s:v.psg.s}); if (p.gym.length > 60) p.gym.shift();
-    p.wpm.push({d:today(), w:v.reads[0], how:'gym'}); if (p.wpm.length > 60) p.wpm.shift();
+    p.wpm.push({d:today(), w:v.reads[0], how:'gym'}); if (p.wpm.length > 400) p.wpm.shift();
     save(); if (v.reads[2] > v.reads[0]){ addCoins(10, 'faster!'); confetti(60); }
     questMark('gym'); logEvent('gym', v.psg.title, {w:v.reads.slice()});
   }
@@ -4111,6 +4124,92 @@ function gymDone(secsIn){
 const BENCH = {2:[50,84,100], 3:[83,97,112], 4:[94,120,133], 5:[121,133,146], 6:[132,145,146]}; // Hasbrouck & Tindal (2017), 50th percentile words correct per minute: fall, winter, spring
 function season(d){ const m = +d.slice(5,7); return (m >= 8 && m <= 11) ? 0 : (m === 12 || m <= 2) ? 1 : 2; }
 function benchFor(grade, d){ const b = BENCH[Math.max(2, Math.min(6, grade))]; return b[season(d)]; }
+// ---------- Reading speed vs. national benchmarks ----------
+// Hasbrouck & Tindal (2017) oral reading fluency norms, words correct per minute at the 25th, 50th, 75th and
+// 90th percentile, fall / winter / spring. Bands: below the 25th = high risk, 25th-49th = some risk,
+// 50th-74th = on grade level, 75th and up = the upper band, which is the target.
+const NORMS = {
+  3:{25:[59,79,91],   50:[83,97,112],  75:[104,137,139], 90:[134,161,166]},
+  4:{25:[75,95,105],  50:[94,120,133], 75:[125,143,160], 90:[153,168,184]},
+  5:{25:[87,109,119], 50:[121,133,146],75:[153,160,169], 90:[179,183,194]}};
+const BANDS = [
+  {k:'high', min:0,  lab:'High risk',      kid:'Warm-up zone',  ic:'🔴', col:'var(--oops)'},
+  {k:'some', min:25, lab:'Some risk',      kid:'Getting there', ic:'🟠', col:'var(--sun)'},
+  {k:'on',   min:50, lab:'On grade level', kid:'On track',      ic:'✅', col:'var(--accent)'},
+  {k:'top',  min:75, lab:'Upper band (target)', kid:'Rocket zone', ic:'🚀', col:'var(--good)'}];
+// the benchmark for a percentile on a given day: fall is mid-September, winter mid-January, spring mid-May,
+// with a straight line between them, so the target rises a little every week the way real readers grow
+function normAt(grade, pc, d){
+  const n = NORMS[Math.max(3, Math.min(5, grade))][pc], t = new Date((d || today()) + 'T12:00');
+  const y = t.getMonth() >= 7 ? t.getFullYear() : t.getFullYear() - 1;
+  const pts = [[new Date(y, 8, 15), n[0]], [new Date(y+1, 0, 15), n[1]], [new Date(y+1, 4, 15), n[2]]];
+  if (t <= pts[0][0]) return n[0]; if (t >= pts[2][0]) return n[2];
+  const i = t < pts[1][0] ? 0 : 1, [a, va] = pts[i], [b, vb] = pts[i+1];
+  return Math.round(va + (vb - va) * (t - a) / (b - a));
+}
+function bandOf(grade, w, d){ const c = [25,50,75].map(pc => normAt(grade, pc, d)); return BANDS[w >= c[2] ? 3 : w >= c[1] ? 2 : w >= c[0] ? 1 : 0]; }
+function targetOf(p, d){ return normAt(p.grade, 75, d); }
+function median(a){ if (!a.length) return null; const b = a.slice().sort((x,y)=>x-y), m = b.length >> 1; return b.length % 2 ? b[m] : Math.round((b[m-1]+b[m])/2); }
+// reads that count toward speed: the microphone on a story page, and the first (cold) read in the Fluency Gym
+function speedReads(p, from, to){ return (p.wpm||[]).filter(x => (x.how === 'mic' || x.how === 'gym') && x.d >= from && (!to || x.d <= to)).map(x => x.w); }
+// current speed: the middle of the last 14 days of reads (one fast or slow page cannot swing it), or the
+// latest check-in if there are no reads yet
+function speedNow(p){
+  const r = speedReads(p, addDays(-13)); if (r.length >= 2) return {w: median(r), n: r.length, src:'reads'};
+  const c = (p.checks||[]).slice(-1)[0]; if (c) return {w: c.w, n: 1, src:'check-in'};
+  return r.length ? {w: r[0], n: 1, src:'reads'} : null;
+}
+function speedWeeks(p, n){
+  return [...Array(n)].map((_,i) => { const end = addDays(-7*(n-1-i)), start = addDays(-7*(n-1-i) - 6), r = speedReads(p, start, end);
+    return {end, w: median(r), n: r.length}; });
+}
+function speedChart(p){
+  const weeks = speedWeeks(p, 8), W = 640, H = 220, L = 40, R = 30, T = 12, B = 28;
+  const c = [25,50,75,90].map(pc => normAt(p.grade, pc));
+  const vals = weeks.map(w => w.w).filter(v => v != null), top = Math.max(c[3] + 15, ...vals);
+  const bot = Math.max(0, Math.floor((Math.min(c[0], ...vals) - 30) / 10) * 10);
+  const y = v => T + (H - T - B) * (1 - (Math.max(bot, Math.min(v, top)) - bot) / (top - bot)), x = i => L + i * (W - L - R) / (weeks.length - 1);
+  const zone = (a, b, col, lab) => `<rect x="${L}" y="${y(b)}" width="${W-L-R}" height="${y(a)-y(b)}" fill="${col}" opacity=".13"/><text x="${W-R-4}" y="${y(b)+13}" text-anchor="end" font-size="11" fill="${col}" font-weight="700">${lab}</text>`;
+  const pts = weeks.map((w, i) => w.w == null ? null : [x(i), y(w.w), w]).filter(Boolean);
+  const line = pts.length > 1 ? `<polyline points="${pts.map(q => q[0]+','+q[1]).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>` : '';
+  return `<svg class="speedchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Weekly reading speed for the last 8 weeks against grade ${p.grade} benchmarks">
+    ${zone(bot, c[0], 'var(--oops)', 'High risk')}${zone(c[0], c[1], 'var(--sun)', 'Some risk')}${zone(c[1], c[2], 'var(--accent)', 'On grade level')}${zone(c[2], top, 'var(--good)', '🚀 Target')}
+    <line x1="${L}" x2="${W-R}" y1="${y(c[2])}" y2="${y(c[2])}" stroke="var(--good)" stroke-width="2" stroke-dasharray="6 4"/>
+    ${[bot, c[0], c[1], c[2]].map(v => `<text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--mut)">${v}</text>`).join('')}
+    ${weeks.map((w, i) => `<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--mut)">${new Date(w.end+'T12:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})}</text>`).join('')}
+    ${line}${pts.map(q => `<circle cx="${q[0]}" cy="${q[1]}" r="5.5" fill="${bandOf(p.grade, q[2].w, q[2].end).col}" stroke="var(--panel)" stroke-width="2"><title>${q[2].w} words a minute (${q[2].n} reads)</title></circle>`).join('')}
+  </svg>`;
+}
+// grown-ups: where this reader is, the target, the high-risk line and the trend
+function speedCard(p){
+  const now = speedNow(p), c = [25,50,75,90].map(pc => normAt(p.grade, pc)), b = now && bandOf(p.grade, now.w);
+  const wk = speedWeeks(p, 8).filter(w => w.w != null), first = wk[0], last = wk[wk.length-1];
+  const trend = wk.length >= 2 ? last.w - first.w : null;
+  return `<div><h3>Reading speed vs. grade ${p.grade} benchmarks</h3>
+    <div class="speedbox">
+      <div class="speednow" style="border-color:${b ? b.col : 'var(--line)'}"><span class="mut">Now</span><b>${now ? now.w : '–'}</b><span class="mut">words / min</span>
+        ${b ? `<span class="chip" style="background:none;border:2px solid ${b.col};color:var(--ink)">${b.ic} ${b.lab}</span>` : ''}</div>
+      <div class="speednums">
+        <div><span>🚀 Target (top 25%)</span><b>${c[2]}+</b></div>
+        <div><span>✅ Typical for grade ${p.grade}</span><b>${c[1]}</b></div>
+        <div><span>🔴 High-risk line</span><b>below ${c[0]}</b></div>
+        <div><span>${now ? (now.w >= c[2] ? 'Above target by' : 'To reach target') : 'To reach target'}</span><b>${now ? (now.w >= c[2] ? '+' + (now.w - c[2]) : (c[2] - now.w) + ' more') : '–'}</b></div>
+        ${trend != null ? `<div><span>Last ${wk.length} weeks</span><b>${trend >= 0 ? '▲ +' : '▼ '}${trend}</b></div>` : ''}
+      </div></div>
+    ${speedChart(p)}
+    <p class="mut" style="font-size:.85rem">"Now" is the middle of ${now && now.src === 'reads' ? `the last ${now.n} microphone reads (14 days)` : 'the latest monthly check-in'}. Targets are for this week of the school year and rise each week. The monthly check-in, where you mark errors, is the most accurate words-correct-per-minute score. Benchmarks: Hasbrouck & Tindal (2017) national oral reading fluency norms; i-Ready does not publish its own cut points, so compare with the fluency score on ${esc(p.name)}'s i-Ready report.</p></div>`;
+}
+// kids: a friendly goal bar with no risk words
+function speedGoal(p){
+  const now = speedNow(p); if (!now) return '';
+  const c = [25,50,75,90].map(pc => normAt(p.grade, pc)), goal = c[2], max = c[3] + 10, b = bandOf(p.grade, now.w);
+  const pc = v => Math.min(100, v / max * 100);
+  return `<div class="card speedgoal"><div class="row spread"><h3>⚡ Reading speed</h3><span class="chip">${b.ic} ${b.kid}</span></div>
+    <p>${now.w >= goal ? `<b>${now.w} words a minute.</b> You are in the Rocket zone! 🚀 Keep it up.` : `<b>${now.w} words a minute.</b> Your goal is <b>${goal}</b>. Just <b>${goal - now.w}</b> more to reach the Rocket zone! 🚀`}</p>
+    <div class="sbar"><i class="z0" style="width:${pc(c[0])}%"></i><i class="z1" style="width:${pc(c[1])-pc(c[0])}%"></i><i class="z2" style="width:${pc(c[2])-pc(c[1])}%"></i><i class="z3" style="width:${100-pc(c[2])}%"></i>
+      <span class="sflag" style="left:${pc(goal)}%">🚩</span><span class="sme" style="left:${pc(now.w)}%">${p.av}</span></div>
+    <p class="mut" style="font-size:.85rem">Read stories out loud with the 🎤 microphone and do the Fluency Gym to get faster.</p></div>`;
+}
 function checkDue(p){ const m = today().slice(0,7); return !(p.checks||[]).some(c => c.d.slice(0,7) === m); }
 function vCheckin(){
   const p = me(), v = view;
@@ -4126,7 +4225,7 @@ function vCheckin(){
     ${v.stage==='run' && v.mode==='grown' ? `<p class="notice">Tap any word read wrong. It turns red.</p>` : ''}
     ${v.stage==='run' && v.mode==='mic' ? `<p class="notice">The minute starts when ${esc(p.name)} reads the first word.</p>` : ''}
     ${v.stage==='last' ? `<p class="notice">Time! Now tap the <b>last word</b> ${esc(p.name)} read.</p>` : ''}
-    ${v.stage==='done' ? `<div class="result">${esc(p.name)} read <b>${v.w} words correct per minute</b>. The typical reader in grade ${p.grade} reads about ${benchFor(p.grade, today())} at this time of year.</div>` : ''}
+    ${v.stage==='done' ? `<div class="result">${esc(p.name)} read <b>${v.w} words correct per minute</b>. That is ${bandOf(p.grade, v.w).ic} <b>${bandOf(p.grade, v.w).lab}</b>. Typical for grade ${p.grade} right now: ${normAt(p.grade, 50)}; target (top 25%): ${normAt(p.grade, 75)}+.</div>` : ''}
   </div>
   <div class="card"><p class="passage" id="passage">${words.map((w,i) => `<span class="w${v.errs.has(i)?' err':''}${v.last===i?' now':''}${v.mode==='mic' && v.stage!=='ready' && i < (v.ptr||0) ? ' read':''}" data-i="${i}">${esc(w.raw)}</span>`).join(' ')}</p></div>
   <div id="micOut"></div><span id="micState"></span>
@@ -4279,7 +4378,7 @@ function dayData(p, d){
   for (const r of reads){ const s = storyById(r.id); if (s) for (const t of s.tricky){ const def = defOf(t[0], s); if (!words.some(w => w[0] === t[0])) words.push([t[0], def]); } }
   const practise = Object.entries(p.bank||{}).filter(([,b]) => b.d === d).sort((a,b) => b[1].n - a[1].n).map(([k,b]) => ({k, focus: b.n >= FOCUS_N}));
   return {d, practise, aloud: Math.floor(((p.aloud||{})[d]) || 0), mins: Math.floor(((p.daily||{})[d]) || 0), reads, gym: log.filter(e => e.type === 'gym'), vault: log.filter(e => e.type === 'vault'),
-    games: log.filter(e => e.type === 'game'), breaks: log.filter(e => e.type === 'break'), checks: log.filter(e => e.type === 'checkin'), words};
+    games: log.filter(e => e.type === 'game'), breaks: log.filter(e => e.type === 'break'), checks: log.filter(e => e.type === 'checkin'), words, speed: (r => r.length ? {w: median(r), n: r.length} : null)(speedReads(p, d, d))};
 }
 function readLine(r){
   const s = storyById(r.id);
@@ -4291,6 +4390,7 @@ function journalText(p, d){
     lines.push('Read: ' + x.reads.map(readLine).join('; '));
     x.reads.forEach(r => { const s = storyById(r.id), sum = s && sumOf(s); if (sum) lines.push(`About ${s.series ? 'chapter ' + (s.chap+1) : r.title.split(':')[0]}: ${sum[0]}`); });
   } else lines.push('Read: practice passages and word games');
+  if (x.speed) lines.push(`Reading speed: ${x.speed.w} words per minute (grade ${p.grade} target ${normAt(p.grade, 75, d)}+)`);
   if (x.words.length) lines.push('New words: ' + x.words.map(w => w[0]).join(', '));
   if (x.practise.length) lines.push('Words to practise: ' + x.practise.map(w => w.k).join(', '));
   const extra = [];
@@ -4350,6 +4450,7 @@ function vReport(){
         ${x.games.length ? `<li>Games: ${[...new Set(x.games.map(g => g.title))].map(esc).join(', ')}</li>` : ''}
         ${x.breaks.length ? `<li>Break Zone (for fun): ${[...new Set(x.breaks.map(g => g.title))].map(esc).join(', ')}</li>` : ''}</ul></div>` : ''}
       ${x.practise.length ? `<div><h3>Words to practise</h3><p>${x.practise.map(w => `<span class="chip ${w.focus ? 'fwchip' : ''}">${w.focus ? '🎯 ' : ''}${esc(w.k)}</span>`).join(' ')}</p><p class="mut" style="font-size:.9rem">🎯 = flagged more than once, so it is a focus word.</p></div>` : ''}
+      ${x.speed ? `<div><h3>Reading speed</h3><p>${x.speed.w} words a minute (middle of ${x.speed.n} read${x.speed.n===1?'':'s'} out loud) · ${bandOf(p.grade, x.speed.w, v.d).ic} ${bandOf(p.grade, x.speed.w, v.d).lab} · target ${normAt(p.grade, 75, v.d)}+</p></div>` : ''}
       ${x.words.length ? `<div><h3>New words</h3><p>${x.words.map(w => `<span class="chip" title="${esc(w[1]||'')}">${esc(w[0])}</span>`).join(' ')}</p></div>` : ''}
       <div><h3>For the reading journal</h3><pre class="journal">${esc(txt)}</pre></div>
       <div class="row"><button class="btn small" data-a="${A(()=>copyText(txt, 'm'+n))}">Copy</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(txt, 'm'+n))}">Share…</button>` : ''}<span id="m${n}"></span></div>
