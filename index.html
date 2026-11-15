@@ -4661,7 +4661,7 @@ function breakApi(p, g){
 function loadBreakGame(id){
   return new Promise((ok, fail) => {
     if (window.BreakGames[id]) return ok(window.BreakGames[id]);
-    const s = document.createElement('script'); s.src = 'games/' + id + '.js?v=2';
+    const s = document.createElement('script'); s.src = 'games/' + id + '.js?v=3';
     s.onload = () => window.BreakGames[id] ? ok(window.BreakGames[id]) : fail(new Error('missing'));
     s.onerror = () => fail(new Error('load'));
     document.head.appendChild(s);
