@@ -259,6 +259,86 @@
       steps:[ clue, `Write it: ${fmt(a)} ${sym} ${fmt(b)}. Line up the places.`, `Work from the ones to the left${add ? ', carrying when needed' : ', regrouping when needed'}.`, `${fmt(a)} ${sym} ${fmt(b)} = ${fmt(c)}.`, `The answer is ${fmt(c)}.`] };
   }};
 
+  // ---- Homework-spiral problem types (the class's weekly "November Spiral" sheets) ----
+  M['g3.add3'] = { name:'Add three numbers', unit:'g3u2', gen(R, lvl){
+    const hi = lvl === 1 ? 39 : lvl === 2 ? 69 : 99, lo = lvl === 3 ? 25 : 11;
+    const a = R.int(lo, hi), b = R.int(lo, hi), c = R.int(lo, hi), s1 = a + b, t = s1 + c;
+    return { q:`What is ${a} + ${b} + ${c}?`, kind:'num', a:t,
+      hint: 'Add two numbers first, then add the third. Look for two ones digits that make 10!',
+      steps:[`Add the first two: ${a} + ${b} = ${s1}.`, `Now add the third: ${s1} + ${c} = ${t}.`, `Check another way: add in any order and you get the same total.`, `${a} + ${b} + ${c} = ${t}.`] };
+  }};
+
+  // Subtracting across zeros, e.g. 400 − 38. The slip to catch: regrouping the hundreds but forgetting the tens become 9.
+  M['g3.subzero'] = { name:'Subtract across zeros', unit:'g3u2', gen(R, lvl){
+    let a, b;
+    if (lvl === 1){ a = R.int(2, 9) * 100; do { b = R.int(12, 99); } while (b % 10 === 0); }
+    else if (lvl === 2){ const H = R.int(3, 9), d = R.int(0, 6); a = H * 100 + d; do { b = R.int(101, a - 50); } while (b % 10 <= d || Math.floor(b / 10) % 10 === 0); }
+    else { a = R.int(2, 9) * 1000 + R.pick([0, 0, R.int(1, 5)]); do { b = R.int(120, 999); } while (b % 10 <= a % 10); }
+    const c = a - b, big = a >= 1000, da = digitsOf(a), db = digitsOf(b);
+    // after regrouping across the zeros: the leading digit loses 1, every zero becomes 9, the ones get 10 more
+    const rg = da.map((x, i) => i === 0 ? x + 10 : i === da.length - 1 ? x - 1 : 9);
+    const names = big ? ['thousands', 'hundreds', 'tens', 'ones'] : ['hundreds', 'tens', 'ones'];
+    const parts = rg.slice().reverse().map((x, i) => `${x} ${x === 1 ? names[i].replace(/s$/, '') : names[i]}`).join(', ');
+    const steps = [`The ones digit is too small, and the place next to it is 0, so there is nothing to borrow there.`,
+      `Go to the ${names[0]}: regroup ${fmt(a)} as ${parts}. It is still ${fmt(a)}! Every 0 becomes 9.`];
+    for (let i = 0; i < da.length; i++){ const y = db[i] || 0; steps.push(`${PLACE_CAP[i]}: ${rg[i]} − ${y} = ${rg[i] - y}.`); }
+    steps.push(`${fmt(a)} − ${fmt(b)} = ${fmt(c)}.  Check: ${fmt(c)} + ${fmt(b)} = ${fmt(a)} ✓`);
+    const wrong = c + 10; // the answer you get if the tens never turn into 9
+    return { q:`What is ${fmt(a)} − ${fmt(b)}?`, kind:'num', a:c,
+      hint:`The zeros can't lend, so regroup from the ${names[0]}. Then each 0 becomes a 9. Watch out: the tens become 9, not 10! (A common slip gives ${fmt(wrong)}.)`,
+      steps };
+  }};
+
+  M['g3.missing'] = { name:'Missing numbers & balance', unit:'g3u2', gen(R, lvl){
+    const t = R.int(0, lvl === 1 ? 1 : 3);
+    if (t === 0){ const a = R.int(6, 9), b = R.int(5, 9), s = a + b, c = 10, d = s - c;
+      return { q:`What number goes in the box?  ${a} + ${b} = ${c} + ☐`, kind:'num', a:d,
+        hint:'The equal sign means BOTH sides are worth the same. Find what the left side equals first.',
+        steps:[`The = sign means the same amount on each side.`, `Left side: ${a} + ${b} = ${s}.`, `So ${c} + ☐ must also be ${s}.`, `${c} + ${d} = ${s}, so the box is ${d}.`] }; }
+    if (t === 1){ const total = R.int(30, 99), x = R.int(11, total - 11), r = total - x;
+      return { q:`What number goes in the box?  ${total} − ☐ = ${r}`, kind:'num', a:x,
+        hint:`What do you take away from ${total} to get ${r}? Think: ${r} + ☐ = ${total}.`,
+        steps:[`Turn it around: ${r} + ☐ = ${total}.`, `${total} − ${r} = ${x}.`, `Check: ${total} − ${x} = ${r} ✓`] }; }
+    if (t === 2){ const a = R.int(120, 600), x = R.int(25, 300), b = a + x;
+      return { q:`What number goes in the box?  ${a} + ☐ = ${b}`, kind:'num', a:x,
+        hint:`Subtract to find the missing part: ${b} − ${a}.`, steps:[`The missing part is the total minus the part you know.`, `${b} − ${a} = ${x}.`, `Check: ${a} + ${x} = ${b} ✓`] }; }
+    const a = R.int(15, 60), b = R.int(15, 60), c = R.int(10, Math.min(a + b - 5, 70)), d = a + b - c;
+    return { q:`What number goes in the box?  ${a} + ${b} = ${c} + ☐`, kind:'num', a:d,
+      hint:'Both sides of = are worth the same. Find the left side, then ask what you add to the right side.',
+      steps:[`Left side: ${a} + ${b} = ${a + b}.`, `So ${c} + ☐ = ${a + b}.`, `${a + b} − ${c} = ${d}.`, `The box is ${d}.`] };
+  }};
+
+  M['g3.twostep'] = { name:'Two-step word problems', unit:'g3u2', gen(R, lvl){
+    const [A, B] = names2(R), max = lvl === 1 ? 30 : lvl === 2 ? 80 : 400;
+    const t = R.int(0, 2);
+    if (t === 0){ const x = R.int(5, Math.floor(max / 3)), y = R.int(5, Math.floor(max / 3)), used = R.int(3, x + y - 2), left = x + y - used;
+      return { q:`${A} peeled ${x} potatoes and ${B} peeled ${y}. Their mom used ${used} to make mashed potatoes. How many peeled potatoes are left over?`, kind:'num', a:left, unit:'potatoes',
+        hint:'Two steps! First find how many were peeled in all. Then take away the ones that were used.',
+        steps:[`Step 1: peeled in all: ${x} + ${y} = ${x + y}.`, `Step 2: take away the ones used: ${x + y} − ${used} = ${left}.`, `${left} potatoes are left over.`] }; }
+    if (t === 1){ const total = R.int(Math.floor(max / 2), max), m = R.int(5, Math.floor(total / 3)), w = R.int(5, Math.floor(total / 3)), left = total - m - w;
+      return { q:`There were ${total} rolls in a basket. The kids ate ${m} rolls and the grown-ups ate ${w} rolls. How many rolls were left in the basket?`, kind:'num', a:left, unit:'rolls',
+        hint:'Two steps! Find how many were eaten in all, then subtract from the total. (Or subtract one group at a time.)',
+        steps:[`Step 1: rolls eaten: ${m} + ${w} = ${m + w}.`, `Step 2: ${total} − ${m + w} = ${left}.`, `${left} rolls were left.`] }; }
+    const have = R.int(10, Math.floor(max / 2)), more = R.int(5, Math.floor(max / 3)), gave = R.int(3, have + more - 2), left = have + more - gave;
+    return { q:`${A} had ${have} cans for the food drive. ${A} collected ${more} more, then gave ${gave} to the school. How many cans does ${A} have now?`, kind:'num', a:left, unit:'cans',
+      hint:'Two steps! First add the cans collected. Then subtract the ones given away.',
+      steps:[`Step 1: ${have} + ${more} = ${have + more}.`, `Step 2: ${have + more} − ${gave} = ${left}.`, `${A} has ${left} cans now.`] };
+  }};
+
+  M['g3.units'] = { name:'Choose the unit', unit:'g3u8', gen(R, lvl){
+    const L = [['a potato', 'inches', 'feet'], ['a pencil', 'inches', 'yards'], ['your classroom', 'feet', 'inches'], ['a soccer field', 'yards', 'inches'],
+      ['the drive to Grandma\'s house', 'miles', 'feet'], ['a crayon', 'centimeters', 'meters'], ['a swimming pool', 'meters', 'centimeters'], ['a bookshelf', 'feet', 'miles'],
+      ['a ladybug', 'centimeters', 'meters'], ['a hallway at school', 'yards', 'inches'], ['a school bus', 'feet', 'inches'], ['your thumb', 'inches', 'feet']];
+    const W = [['a turkey', 'pounds', 'ounces'], ['a slice of bread', 'ounces', 'pounds'], ['a bathtub of water', 'gallons', 'cups'], ['a glass of milk', 'cups', 'gallons'], ['a bag of apples', 'pounds', 'ounces']];
+    const it = lvl === 1 ? R.pick(L) : R.pick(R.chance(.7) ? L : W), word = L.includes(it) ? 'measure the length of' : 'measure';
+    return { q:`Would you ${word} ${it[0]} in ${R.chance(.5) ? it[1] + ' or ' + it[2] : it[2] + ' or ' + it[1]}?`, kind:'choice', a:it[1], choices:[it[1], it[2]],
+      hint:'Picture the object. Use small units for small things and big units for big things.',
+      steps:[`Think about how big ${it[0]} is.`, `${it[1][0].toUpperCase() + it[1].slice(1)} make sense for something that size.`, `So use ${it[1]}.`] };
+  }};
+
+  // the homework sheet always rounds to the nearest hundred
+  M['g3.round100'] = { name:'Round to the nearest hundred', unit:'g3u2', gen(R, lvl){ return M['g3.round'].gen(R, lvl === 3 ? 3 : 2); }};
+
   M['g3.estimate'] = { name:'Estimate sums & differences', unit:'g3u2', gen(R, lvl){
     const P = lvl === 1 ? 10 : lvl === 2 ? 100 : R.pick([100, 1000]);
     const word = P === 10 ? 'ten' : P === 100 ? 'hundred' : 'thousand';
