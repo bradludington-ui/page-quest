@@ -414,6 +414,10 @@ body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(
 .exgrid th.exkid{text-align:center;font-size:.85rem;color:var(--ink)}.exgrid td.num{text-align:center;width:auto;white-space:nowrap}.exgrid td:first-child{white-space:nowrap;font-weight:600}.exread{margin:4px 0;line-height:1.5}
 @media (max-width:600px){.exgrid{font-size:.82rem}.exgrid td,.exgrid th{padding:7px 3px!important}.exgrid td:first-child{white-space:normal;font-weight:600}.exgrid td.num{white-space:normal}}
 .exgrid{width:100%;table-layout:auto}
+.spellin{font-size:1.8rem;padding:14px 16px;border-radius:16px;border:3px solid var(--line);text-align:center;font-family:var(--display);letter-spacing:2px}
+.spellword{font-family:var(--display);font-size:1.6rem;letter-spacing:1px}.spellword .rc,.spellmiss .rc{color:#d6336c}.spellword .dot,.spellmiss .dot{color:var(--mut);padding:0 3px}
+.spellmiss{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font-family:var(--display);font-size:1.3rem}.spellmiss span{background:var(--soft);padding:6px 12px;border-radius:12px}
+.spellpeek{font-family:var(--display);font-size:2.4rem;text-align:center;margin:0}.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
 .schev{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
 .schev li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--bg);border:2px solid var(--line)}
 .schev li.soon{border-color:var(--sun);background:var(--sun-soft)}.schev .ic{font-size:1.5rem}.schev .sct{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -1052,7 +1056,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint, subject:vSubject, mathplay:vMathPlay, mystats:vMyStats, execsum:vExecSum})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint, subject:vSubject, spell:vSpell, mathplay:vMathPlay, mystats:vMyStats, execsum:vExecSum})[view.name]();
   // tables that turn into stacked cards on a phone: each cell is labelled with its column heading
   document.querySelectorAll('table.rtab').forEach(t => { const hs = [...t.rows[0].cells].map(c => c.textContent.trim()); [...t.rows].slice(1).forEach(r => [...r.cells].forEach((c, i) => c.dataset.l = hs[i] || '')); });
 }
@@ -1981,6 +1985,7 @@ const REAL5 = ['harbor','journey','enormous','distance','gravity','mountain','fe
 const FAKE5 = ['blandor','frestic','plantor','grivel','stombler','crandle','trefful','snorpish','dulvent','prestow','vambric','torvish','flimber','scarnet','hobrent','pleckon','drustle','marvent','quandel','brimmet','sprolic','gentrow','clavish','yorbent','morplet','faltrum','drebble','splonder'];
 // This week's 3rd-grade spelling patterns from class (newsletter, week of Nov 16): r-controlled vowels in longer words.
 const SPELL3 = [
+  {p:'This week\'s spelling test word', w:['a-part-ment','com-part-ment','dis-card','for-tu-nate-ly','me-mor-i-al','part-ner-ship','port-a-ble','re-born','re-sort-ed','trans-port','un-harmed']},
   {p:'r-controlled ar (as in car)', w:['gar-den','mar-ket','star-fish','car-toon','par-ty','far-mer','har-bor','tar-get','mar-ble','part-ner','car-pet','ar-tist','yard-stick','sharp-en','dark-ness','a-part-ment']},
   {p:'r-controlled or (as in fork)', w:['for-est','mor-ning','stor-my','cor-ner','or-bit','for-get','hor-net','or-der','short-stop','tor-na-do','pop-corn','for-ty','nor-mal','re-port','sup-port','or-ches-tra']}];
 REAL3.push(...SPELL3.flatMap(x => x.w.map(w => w.replace(/-/g,''))));
@@ -4173,6 +4178,7 @@ function questItems(p){
     {k:'story', icon:'📖', label: ch && !ch.locked ? `Read today's chapter of ${ch.se.title}` : 'Read a story', run:()=> ch && !ch.locked ? go({name:'intro', id:ch.story.id}) : go({name:'library', tab:'rec'})}];
   if ((typeof CHECKS !== 'undefined' && cpDue(p)) || q.check) items.unshift({k:'check', icon:'🎯', label:'Monthly checkpoint (about 15 minutes)', run:()=>go({name:'checkpoint'})});
   if (infoSet(p).length && (f.info || f.lit || q.info || Math.floor(Date.now() / 86400000) % 2 === 0)) items.push({k:'info', icon:'🔬', label:'Info Lab: read a real-world article', run:()=>go({name:'infolab'})});
+  if ((typeof SCHOOL !== 'undefined' && schoolUpcoming(p, 7).some(e => e.spell)) || q.spell) items.push({k:'spell', icon:'✏️', label:'Spelling: practise this week\'s test words', run:()=>go({name:'spell'})});
   if (vaultDue().length || q.vault) items.push({k:'vault', icon:'🔐', label:'Open the Memory Vault', run:()=>go({name:'vault', items:shuffle(vaultDue()).slice(0,6), i:0})});
   // matching games are the favourite, so they alternate day by day with the other practice games
   const odd = Math.floor(Date.now() / 86400000) % 2 === 1;
@@ -7651,11 +7657,13 @@ function mathPlan(p, kind){
 // ---- What is coming up at school, from the teachers' weekly newsletters ----
 // Refresh this from each week's newsletters: dates, what the class is learning, and what to practise for each test.
 const SCHOOL = {
-  3: {from:'Mrs. Malone and the 3rd grade team, week of Nov 16',
+  3: {from:'3rd grade newsletters, week of Nov 16',
+      teachers:{malone:{name:'Mrs. Malone', lib:4}, merani:{name:'Ms. Merani', lib:3}},
       learn:[['🔢', 'Math', 'Unit 4 Geometry: polygons with 3 to 8 sides, combining and cutting shapes'], ['📚', 'Reading', 'Unit 3: Government for the People (helping others, voting rights)'],
              ['✏️', 'Spelling', 'r-controlled vowels: ar (garden) and or (forest)'], ['💧', 'Science', 'The water cycle and keeping water clean']],
       events:[{d:'2026-11-19', ic:'📸', t:'Picture make-up day'},
               {d:'2026-11-23', ic:'📐', t:'Math test: Geometry (polygons)', math:['g3.polygons', 'g3.quads', 'g3.composepoly'], prep:'Practise for the geometry test'},
+              {d:'2026-11-20', when:'Later this week', ic:'✏️', t:'Spelling test: r-controlled ar and or words', spell:true, prep:'Practise the spelling words'},
               {d:'2026-11-23', ic:'📝', t:'Homework due: reading log and math spiral #5–6'},
               {d:'2026-11-24', ic:'🧱', t:'Field trip: LEGO Discovery Center'},
               {d:'2026-11-25', ic:'🦃', t:'Thanksgiving break, no school (Nov 25–27)'},
@@ -7672,10 +7680,16 @@ const SCHOOL = {
               {d:'2026-12-03', ic:'✨', t:'Literacy Glow Night and Book Fair, 6–8 PM'}]}};
 function schoolOf(p){ return SCHOOL[mathBand(p)]; }
 function daysTo(d){ return Math.round((new Date(d + 'T12:00') - new Date(today() + 'T12:00')) / 86400000); }
-function whenTxt(d){ const n = daysTo(d); return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : new Date(d + 'T12:00').toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'}) + ` · in ${n} days`; }
-function schoolUpcoming(p, days){ const S2 = schoolOf(p); return S2 ? S2.events.filter(e => { const n = daysTo(e.d); return n >= 0 && n <= (days || 21); }) : []; }
+function whenTxt(d, e){ if (e && e.when && daysTo(d) > 0) return e.when; const n = daysTo(d); return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : new Date(d + 'T12:00').toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'}) + ` · in ${n} days`; }
+function schoolUpcoming(p, days){ const S2 = schoolOf(p); if (!S2) return [];
+  const ev = S2.events.slice(), T = S2.teachers && S2.teachers[p.teacher];
+  // library day repeats every week, and each class has its own
+  if (T && T.lib != null){ const d = new Date(today() + 'T12:00'); d.setDate(d.getDate() + ((T.lib - d.getDay() + 7) % 7)); const ds = d.toISOString().slice(0, 10);
+    if (!ev.some(e => e.d === ds && /no school/i.test(e.t))) ev.push({d:ds, ic:'📚', t:'Library day: bring your library book back'}); }
+  return ev.filter(e => { const n = daysTo(e.d); return n >= 0 && n <= (days || 21); }).sort((a, b) => a.d.localeCompare(b.d)); }
 // a practice run aimed at one test: the test's skills, weakest first, eight problems
 function schoolPrep(p, e){
+  if (e.spell){ go({name:'spell'}); return; }
   if (e.info){ const set = infoSet(p), done = p.infoDone || {}, ids = Array.isArray(e.info) ? e.info : null;
     const a = ids ? ids.map(id => set.find(x => x.id === id)).filter(Boolean).find(x => !done[x.id]) || set.find(x => x.id === ids[0]) : null;
     go(a ? {name:'info', id:a.id} : {name:'infolab'}); return; }
@@ -7688,10 +7702,59 @@ function schoolPrep(p, e){
 function schoolCard(p, mathOnly){
   const S2 = schoolOf(p); if (!S2 || isParent(p)) return '';
   const ev = schoolUpcoming(p, 21).filter(e => !mathOnly || e.math || !e.prep).slice(0, 6);
-  return `<div class="card schoolcard"><div class="row spread"><h2>📅 Coming up at school</h2><span class="mut" style="font-size:.85rem">${esc(S2.from)}</span></div>
-    ${ev.length ? `<ul class="schev">${ev.map(e => `<li class="${daysTo(e.d) <= 2 ? 'soon' : ''}"><span class="ic">${e.ic}</span><span class="sct"><b>${esc(e.t)}</b><span class="mut">${whenTxt(e.d)}</span></span>${e.prep ? `<button class="btn small ${daysTo(e.d) <= 7 ? 'sun' : 'ghost'}" data-a="${A(() => schoolPrep(p, e))}">${esc(e.prep)}</button>` : ''}</li>`).join('')}</ul>` : '<p class="mut">Nothing on the calendar in the next three weeks.</p>'}
+  const tch = S2.teachers ? (S2.teachers[p.teacher] ? `<span class="mut" style="font-size:.85rem">${esc(S2.teachers[p.teacher].name)}'s class · <button class="linkbtn" data-a="${A(() => { delete p.teacher; save(); render(); })}">change</button></span>`
+    : `<div class="row" style="gap:6px;margin-top:6px"><span class="mut">Whose class are you in?</span>${Object.keys(S2.teachers).map(k => `<button class="btn small ghost" data-a="${A(() => { p.teacher = k; save(); render(); })}">${esc(S2.teachers[k].name)}</button>`).join('')}</div>`) : `<span class="mut" style="font-size:.85rem">${esc(S2.from)}</span>`;
+  return `<div class="card schoolcard"><div class="row spread"><h2>📅 Coming up at school</h2>${tch}</div>
+    ${ev.length ? `<ul class="schev">${ev.map(e => `<li class="${daysTo(e.d) <= 2 ? 'soon' : ''}"><span class="ic">${e.ic}</span><span class="sct"><b>${esc(e.t)}</b><span class="mut">${whenTxt(e.d, e)}</span></span>${e.prep ? `<button class="btn small ${daysTo(e.d) <= 7 ? 'sun' : 'ghost'}" data-a="${A(() => schoolPrep(p, e))}">${esc(e.prep)}</button>` : ''}</li>`).join('')}</ul>` : '<p class="mut">Nothing on the calendar in the next three weeks.</p>'}
     ${mathOnly ? '' : `<details class="schlearn"><summary>What we are learning in class</summary><ul>${S2.learn.map(l => `<li><span>${l[0]}</span> <b>${esc(l[1])}:</b> ${esc(l[2])}</li>`).join('')}</ul></details>`}
   </div>`;
+}
+// ---- Spelling test practice: hear the word, type it, fix it ----
+// Words from this week's class list, with a sentence each. The iPad's own voice says them (works offline).
+const SPELL_WEEK = {from:'2026-11-16', words:[['apartment','We live in an apartment on the third floor.'],['compartment','Put your pencil in the small compartment of your backpack.'],
+  ['discard','Discard the trash in the bin.'],['fortunately','Fortunately, the rain stopped before the game.'],['memorial','We visited the memorial for the soldiers.'],
+  ['partnership','The two classes formed a partnership to clean the park.'],['portable','A portable speaker is easy to carry.'],['reborn','The old garden was reborn in the spring.'],
+  ['resorted','When the bus was late, we resorted to walking.'],['transport','Trucks transport food to the store.'],['unharmed','The kitten was found unharmed.']]};
+function sayIt(t, slow){ try { const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = slow ? .6 : .85; speechSynthesis.cancel(); speechSynthesis.speak(u); return true; } catch (e) { return false; } }
+const canSay = () => typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined';
+function spellChunks(w){ const m = SPELL3[0].w.find(x => x.replace(/-/g, '') === w); return (m || w).split('-'); }
+// the ar / or part of each chunk, highlighted
+function spellMark(w){ return spellChunks(w).map(c => esc(c).replace(/(ar|or)/, '<b class="rc">$1</b>')).join('<span class="dot">·</span>'); }
+function vSpell(){
+  const p = me(); let v = view;
+  if (!v.q){ const ws = SPELL_WEEK.words.map(x => x[0]); v.q = shuffle(ws); v.first = {}; v.miss = []; v.i = 0; v.state = 'ask'; v.t0 = Date.now(); }
+  const w = v.q[v.i], sent = (SPELL_WEEK.words.find(x => x[0] === w) || [])[1] || '';
+  if (!w){ // finished
+    const right = SPELL_WEEK.words.filter(x => v.first[x[0]] === true).length, total = SPELL_WEEK.words.length;
+    if (!v.saved){ v.saved = true; p.spell = p.spell || {}; p.spell[today()] = {right, total, missed: SPELL_WEEK.words.map(x => x[0]).filter(x => v.first[x] !== true)}; addCoins(right + 5, 'spelling'); save(); questMark('spell');
+      if (right === total) cheer('team', `Spelling star, ${fname(p)}!`, `All ${total} spelling words right on the first try!`, 60); else confetti(30); }
+    const missed = p.spell[today()].missed;
+    app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center">
+      <span class="big-emoji">${right === total ? '🏆' : '✏️'}</span><h1>${right} of ${total} on the first try</h1>
+      ${missed.length ? `<p>Practise these again:</p><div class="spellmiss">${missed.map(m => `<span>${spellMark(m)}</span>`).join('')}</div>` : '<p>Every word right the first time. You are ready for the test!</p>'}
+      <div class="row"><button class="btn sun" data-a="${A(()=>go({name:'spell'}))}">Practise again</button><button class="btn ghost" data-a="${A(()=>go({name:'hub'}))}">Done</button></div></div>`;
+    return;
+  }
+  const speak = !canSay() ? '' : `<div class="row" style="justify-content:center;gap:10px"><button class="btn sun" data-a="${A(()=>sayIt(w))}">🔊 Hear the word</button><button class="btn ghost" data-a="${A(()=>sayIt(w + '. ' + sent + ' ' + w + '.'))}">💬 In a sentence</button><button class="btn ghost" data-a="${A(()=>sayIt(w, true))}">🐢 Slowly</button></div>`;
+  const peek = !canSay() && v.state === 'ask' ? `<p class="spellpeek" id="spPeek">${esc(w)}</p><p class="mut">Look at the word, then it hides. Spell it from memory.</p>` : '';
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <div class="row spread"><h1>✏️ Spelling practice</h1><span class="chip">Word ${Math.min(v.i + 1, v.q.length)} of ${v.q.length}</span></div>
+  <p class="mut">This week's class words: r-controlled <b>ar</b> (like car) and <b>or</b> (like fork).</p>
+  <div class="card" style="display:flex;flex-direction:column;gap:14px">
+    ${speak}${peek}
+    ${v.state === 'ask' || v.state === 'again' ? `<input id="spIn" class="spellin" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${v.state === 'again' ? 'Type it again, the right way' : 'Type the word'}">
+      <button class="btn" data-a="${A(()=>{ const val = (document.getElementById('spIn').value || '').trim().toLowerCase(); if (!val) return;
+        if (val === w){ if (v.state === 'ask' && v.first[w] === undefined) v.first[w] = true; v.state = 'right'; addCoins(v.first[w] === true ? 2 : 1, ''); }
+        else if (v.state === 'again'){ v.tryWrong = val; }
+        else { if (v.first[w] === undefined) v.first[w] = false; v.tryWrong = val; v.state = 'wrong'; v.q.push(w); }
+        render(); })}">Check ✓</button>` : ''}
+    ${v.state === 'right' ? `<div class="result">✓ Correct! <span class="spellword">${spellMark(w)}</span></div><button class="btn sun" data-a="${A(()=>{ v.i++; v.state = 'ask'; v.tryWrong = ''; render(); })}">Next word →</button>` : ''}
+    ${v.state === 'wrong' ? `<div class="result miss">Not quite. You wrote <b>${esc(v.tryWrong)}</b>.<br>The word is <span class="spellword">${spellMark(w)}</span><br><span class="mut">Look at the chunks. The pink part is the r-controlled sound.</span></div>
+      <button class="btn" data-a="${A(()=>{ v.state = 'again'; render(); })}">Type it again</button>` : ''}
+    ${v.state === 'again' && v.tryWrong ? `<p class="mut">Look carefully: <span class="spellword">${spellMark(w)}</span></p>` : ''}
+  </div>`;
+  const inp = document.getElementById('spIn'); if (inp){ inp.focus({preventScroll: true}); inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.nextElementSibling.click(); }); }
+  if (v.state === 'ask' && v.said !== v.i){ v.said = v.i; if (canSay()) setTimeout(() => { if (view === v) sayIt(w); }, 350); else setTimeout(() => { const pk = document.getElementById('spPeek'); if (pk) pk.style.visibility = 'hidden'; }, 3000); }
 }
 // ---- the math home screen ----
 function vMathHub(){
