@@ -582,6 +582,32 @@
       steps:[`Step 1: the 4 sides are equal: ${P4} ÷ 4 = ${s} ft per side.`, `Step 2: area = side × side = ${s} × ${s}`, `${s} × ${s} = ${s * s}`, `The area is ${s * s} square feet.`] };
   }};
 
+  // Real-life square problems in the style of the class worksheet "Perfect Squares and Square Roots
+  // Practical Problems" (fence around a square yard, lace around a pillow, tiles on a square floor, carpet).
+  M['g5.sqword'] = { name:'Square roots in real life', unit:'g5u5', gen(R, lvl){
+    const s = lvl === 1 ? R.int(3, 10) : lvl === 2 ? R.int(6, 15) : R.int(11, 20), A = s * s, P4 = 4 * s, nm = R.pick(NAMES);
+    const draw = `Draw a square and label the area ${A} inside it.`;
+    const find = [`Area of a square = side × side, so ask: what number times ITSELF makes ${A}?`, `${s} × ${s} = ${A} ✓  (√${A} = ${s}), so each side is ${s}.`];
+    const t = R.int(0, 3);
+    if (t === 0){ const who = R.pick(['Mr. Nice', 'Ms. Lopez', nm + "'s family", 'Coach Reed']);
+      return { q:`${who} has a SQUARE backyard with an area of ${A} square feet. How many feet of fence are needed to go all the way around it?`, kind:'num', a:P4, unit:'ft',
+        hint:'Two steps! First find one side (the square root of the area). Then the fence goes around all 4 sides.',
+        steps:[draw, ...find, `The fence goes around 4 equal sides: 4 × ${s} = ${P4}.`, `${who} needs ${P4} feet of fence.`] }; }
+    if (t === 1){
+      return { q:`${nm} made a SQUARE pillowcase with an area of ${A} square centimeters. ${nm} wants to sew lace trim all the way around the edge. How many centimeters of lace are needed?`, kind:'num', a:P4, unit:'cm',
+        hint:'Lace goes AROUND the edge, so this is perimeter. First find one side with the square root.',
+        steps:[draw, ...find, `"Around the edge" means perimeter: add all 4 sides, or 4 × ${s} = ${P4}.`, `${nm} needs ${P4} cm of lace.`] }; }
+    if (t === 2){ const who = R.pick(['Mrs. Wong', 'Mr. Patel', nm]);
+      return { q:`${who} has ${A} tiles. Each tile is 1 foot by 1 foot. ${who} uses ALL the tiles to cover a SQUARE floor. The room is ? feet by ? feet. How long is each side of the room?`, kind:'num', a:s, unit:'ft',
+        hint:`Each tile covers 1 square foot, so the floor's area is ${A} square feet. A square's sides are equal: which number times itself is ${A}?`,
+        model: s <= 10 ? { type:'array', rows:s, cols:s } : undefined,
+        steps:[`Each tile is 1 square foot, so the floor is ${A} square feet.`, ...find, `The room is ${s} feet by ${s} feet.`, `Answer: ${s}`] }; }
+    return { q:`${nm} wants new carpet for a SQUARE bedroom. Each wall is ${s} feet long. How many square feet of carpet are needed?`, kind:'num', a:A, unit:'ft²',
+      hint:'Carpet covers the floor, so this is AREA. Area of a square = side × side.',
+      model:{ type:'rect', w:s, h:s, unit:'ft', grid: s <= 10 },
+      steps:[`Carpet covers the whole floor, so find the AREA (not the perimeter).`, `The room is a square, so every side is ${s} ft.`, `Area = side × side = ${s} × ${s} = ${A}.`, `${nm} needs ${A} square feet of carpet.`] };
+  }};
+
   // ======================= UNIT 6: EXPRESSIONS & EQUATIONS =======================
   const VARS = ['n', 'x', 'y', 'a', 'm', 'k'];
   M['g5.expr'] = { name:'Expressions with variables', unit:'g5u6', gen(R, lvl){
