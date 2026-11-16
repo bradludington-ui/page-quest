@@ -414,6 +414,17 @@ body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(
 .exgrid th.exkid{text-align:center;font-size:.85rem;color:var(--ink)}.exgrid td.num{text-align:center;width:auto;white-space:nowrap}.exgrid td:first-child{white-space:nowrap;font-weight:600}.exread{margin:4px 0;line-height:1.5}
 @media (max-width:600px){.exgrid{font-size:.82rem}.exgrid td,.exgrid th{padding:7px 3px!important}.exgrid td:first-child{white-space:normal;font-weight:600}.exgrid td.num{white-space:normal}}
 .exgrid{width:100%;table-layout:auto}
+.myday{border:3px solid var(--sun);display:flex;flex-direction:column;gap:10px}.mdlead{margin:0;font-size:1.1rem}
+.mdsteps{display:flex;flex-direction:column;gap:8px}.mdstep{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:var(--bg);border:2px solid var(--line)}
+.mdstep.done{background:var(--good-soft);border-color:var(--good)}.mdnum{flex:0 0 40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.3rem;background:var(--accent);color:#fff}
+.mdstep.done .mdnum{background:var(--good)}.mdtx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.mdtx b{font-size:1.1rem}
+.mdbar{display:block;height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:3px}.mdbar>i{display:block;height:100%;background:var(--accent);border-radius:99px}.mdstep.done .mdbar>i{background:var(--good)}
+.mddue{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:16px;background:var(--sun-soft)}
+.mdduei{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;text-align:left;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px 12px;font:inherit;color:inherit;cursor:pointer}.mdduei:disabled{cursor:default;opacity:1}
+.mdweek{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.mdday{display:flex;flex-direction:column;align-items:center;padding:8px 2px;border-radius:12px;background:var(--bg);border:2px solid var(--line);font-size:.85rem}
+.mdday b{font-size:1.3rem;line-height:1.3}.mdday small{min-height:1.1em}.mdday.ok{background:var(--good-soft);border-color:var(--good)}.mdday.today{border-color:var(--accent);border-width:3px}.mdday.fut{opacity:.5}
+.mdkey{font-size:.8rem;margin:0}.mtopicbox summary{cursor:pointer;list-style:none}.mtopicbox summary::-webkit-details-marker{display:none}.mtopicbox[open] summary{margin-bottom:10px}
+@media (max-width:560px){.mdstep{flex-wrap:wrap}.mdstep .btn{width:100%}}
 .spellin{font-size:1.8rem;padding:14px 16px;border-radius:16px;border:3px solid var(--line);text-align:center;font-family:var(--display);letter-spacing:2px}
 .spellword{font-family:var(--display);font-size:1.6rem;letter-spacing:1px}.spellword .rc,.spellmiss .rc{color:#d6336c}.spellword .dot,.spellmiss .dot{color:var(--mut);padding:0 3px}
 .spellmiss{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font-family:var(--display);font-size:1.3rem}.spellmiss span{background:var(--soft);padding:6px 12px;border-radius:12px}
@@ -1184,20 +1195,17 @@ function vHub(){
   app.innerHTML = `${topbar(null)}
   ${installBanner(false)}
   ${subjectSwitch(p)}
-  ${isParent(p) ? parentCard() : ''}
+  ${isParent(p) ? parentCard() : myDayCard(p, 'read')}
   <div class="card quest">
-    <div class="row spread"><div style="min-width:0"><h2>Today's quest</h2><p class="mut">${qdone === qi.length ? '🎉 All done today! Bonus ticket and 20 coins earned.' : `Finish all ${qi.length} for a bonus ticket and 20 coins.`}</p></div>
-      <div class="ring" title="Minutes spent reading today, any way">${ringSvg(p)}<span class="mut">min reading today<br>(goal ${goalOf(p)})</span></div></div>
-    <div class="aloudline ${breakOpen(p) ? 'open' : ''}"><span>🎤 Out loud with the microphone: <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min</b></span>${breakOpen(p) ? '<span>🎉 Brain Break open!</span>' : `<span class="mut">${!MATH_ON || mathToday(p) >= MATH_GOAL ? 'opens Brain Break' : 'plus ' + MATH_GOAL + ' min of math opens Brain Break'}</span>`}<div class="abar"><i style="width:${Math.min(100, aloudToday(p)/BREAK_ALOUD*100)}%"></i></div></div>
+    <div class="row spread"><div style="min-width:0"><h2>🏅 Bonus quest</h2><p class="mut">${qdone === qi.length ? '🎉 All done today! Bonus ticket and 20 coins earned.' : `Extra, not required: finish all ${qi.length} for a bonus ticket and 20 coins. ${qdone} of ${qi.length} done.`}</p></div></div>
+    ${isParent(p) ? `<div class="aloudline ${breakOpen(p) ? 'open' : ''}"><span>🎤 Out loud with the microphone: <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min</b></span>${breakOpen(p) ? '<span>🎉 Brain Break open!</span>' : `<span class="mut">${!MATH_ON || mathToday(p) >= MATH_GOAL ? 'opens Brain Break' : 'plus ' + MATH_GOAL + ' min of math opens Brain Break'}</span>`}<div class="abar"><i style="width:${Math.min(100, aloudToday(p)/BREAK_ALOUD*100)}%"></i></div></div>` : ''}
     <div class="qlist">${qi.map(i => `<button class="qitem ${i.done?'done':''}" ${i.done?'disabled':''} data-a="${A(i.run)}"><span class="qcheck">${i.done?'✓':''}</span><span>${i.icon} ${esc(i.label)}</span></button>`).join('')}</div>
   </div>
   ${schoolCard(p)}
   ${ch ? `<div class="card row spread"><div class="row" style="min-width:0"><span class="big-emoji">${ch.se.icon}</span><div style="min-width:0"><h3>${esc(ch.se.title)}</h3><p class="mut">${ch.locked ? `Chapter ${ch.n+1} unlocks tomorrow. What do you think will happen?` : `Chapter ${ch.n+1} of ${ch.se.chapters.length} is ready!`}</p></div></div>
     <button class="btn ${ch.locked?'ghost':''}" data-a="${A(()=>go({name:'series', id:ch.se.id}))}">${ch.locked ? 'See chapters' : 'Read chapter ' + (ch.n+1)}</button></div>` : ''}
   ${speedGoal(p)}
-  <div class="card"><div class="row spread" style="margin-bottom:8px"><h2>Your story path</h2><span class="chip">${p.completed} stor${p.completed===1?'y':'ies'} read</span></div>
-    ${mapSvg(p)}
-    <p class="mut" style="margin-top:6px">Every story or chapter moves you one stop. Treasure chests wait at stops 5, 10 and 15.</p></div>
+
   <div class="tiles">
     <button class="tile" data-a="${A(()=>go({name:'library', tab:'rec'}))}"><span class="ic">📚</span><span><b>Pick a story</b><span class="mut">Read, answer, earn coins</span></span></button>
     ${infoSet(p).length ? `<button class="tile" data-a="${A(()=>go({name:'infolab'}))}"><span class="ic">🔬</span><span><b>Info Lab</b><span class="mut">Real-world articles, test-style questions</span></span></button>` : ''}
@@ -1209,8 +1217,39 @@ function vHub(){
     ${isParent(p) ? '' : `<button class="tile" data-a="${A(()=>go({name:'mystats'}))}"><span class="ic">📊</span><span><b>My stats</b><span class="mut">What I read, minutes, speed</span></span></button>`}
     <button class="tile" data-a="${A(()=>{S.cur=null; save(); go({name:'profiles'});})}"><span class="ic">👋</span><span><b>Switch reader</b><span class="mut">Back to the start</span></span></button>
   </div>
+  <div class="card"><div class="row spread" style="margin-bottom:8px"><h2>Your story path</h2><span class="chip">${p.completed} stor${p.completed===1?'y':'ies'} read</span></div>
+    ${mapSvg(p)}
+    <p class="mut" style="margin-top:6px">Every story or chapter moves you one stop. Treasure chests wait at stops 5, 10 and 15.</p></div>
   ${checkDue(p) ? `<p class="mut">📏 This month's reading check-in is ready. Ask a grown-up to start it from the Grown-ups page.</p>` : ''}
   ${isParent(p) ? '' : `<button class="tile myqrtile" data-a="${A(()=>go({name:'myqr'}))}"><span class="ic">📱</span><span><b>Show my reading report code</b><span class="mut">Your grown-up scans it with their phone</span></span></button>`}`;
+}
+// ---------- My day: the one place a child sees what is due today, what is left, and how the week is going ----------
+function readNow(p){ const ch = nextChapter(p); p.subject = 'read'; save(); if (ch && !ch.locked) go({name:'intro', id:ch.story.id}); else go({name:'library', tab:'rec'}); }
+function mathNow(p){ p.subject = 'math'; save(); go({name:'hub'}); }
+function weekDays(){ const t = new Date(today() + 'T12:00'), mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return [...Array(7)].map((_, i) => { const d = new Date(mon); d.setDate(mon.getDate() + i); return d.toISOString().slice(0, 10); }); }
+function dayDone(p, d){ const r = (((p.aloud || {})[d]) || 0) >= BREAK_ALOUD, m = !MATH_ON || mathToday(p, d) >= MATH_GOAL; return {r, m, all: r && m}; }
+function myDayCard(p, here){
+  if (isParent(p)) return '';
+  const ra = Math.floor(aloudToday(p)), mm = Math.floor(mathToday(p)), rDone = ra >= BREAK_ALOUD, mDone = !MATH_ON || mm >= MATH_GOAL, open = breakOpen(p);
+  const bar = (v, g) => `<span class="mdbar"><i style="width:${Math.min(100, v / g * 100)}%"></i></span>`;
+  const step = (n, done, icon, title, sub, v, g, btn) => `<div class="mdstep ${done ? 'done' : ''}"><span class="mdnum">${done ? '✓' : n}</span><span class="mdtx"><b>${icon} ${title}</b><span class="mut">${sub}</span>${g ? bar(v, g) : ''}</span>${btn}</div>`;
+  const btn = (txt, fn, hot) => `<button class="btn small ${hot ? 'sun' : 'ghost'}" data-a="${A(fn)}">${txt}</button>`;
+  const due = typeof SCHOOL !== 'undefined' ? schoolUpcoming(p, 7).filter(e => e.prep || /homework|due/i.test(e.t)) : [];
+  const days = weekDays(), t = today();
+  const nextHot = !rDone ? 'r' : !mDone ? 'm' : 'b';
+  return `<div class="card myday">
+    <div class="row spread"><h2>⭐ My day</h2><span class="mut">${new Date(t + 'T12:00').toLocaleDateString(undefined, {weekday:'long', month:'short', day:'numeric'})}</span></div>
+    <p class="mdlead">${open ? '🎉 You did everything due today! Brain Break is open.' : `Still to do today: <b>${[rDone ? '' : `${BREAK_ALOUD - ra} min reading out loud`, mDone ? '' : `${MATH_GOAL - mm} min of math`].filter(Boolean).join(' and ')}</b>`}</p>
+    <div class="mdsteps">
+      ${step(1, rDone, '🎤', 'Read out loud', rDone ? `Done! ${ra} of ${BREAK_ALOUD} minutes` : `${ra} of ${BREAK_ALOUD} minutes · ${BREAK_ALOUD - ra} to go`, ra, BREAK_ALOUD, here === 'read' && !rDone ? btn('Read now ▶', () => readNow(p), nextHot === 'r') : here !== 'read' ? btn(rDone ? 'Reading' : 'Go read ▶', () => { p.subject = 'read'; save(); go({name:'hub'}); }, nextHot === 'r') : '')}
+      ${MATH_ON ? step(2, mDone, '🔢', 'Math', mDone ? `Done! ${mm} of ${MATH_GOAL} minutes` : `${mm} of ${MATH_GOAL} minutes · ${MATH_GOAL - mm} to go`, mm, MATH_GOAL, here !== 'math' ? btn(mDone ? 'Math' : 'Go do math ▶', () => mathNow(p), nextHot === 'm') : '') : ''}
+      ${step(MATH_ON ? 3 : 2, open, open ? '🎉' : '🔒', 'Brain Break', open ? 'Open! Play any game you like.' : 'Opens when steps 1 and 2 are done', 0, 0, btn(open ? 'Play ▶' : 'See games', () => go({name:'break'}), open))}
+    </div>
+    ${due.length ? `<div class="mddue"><b>📌 Due soon</b>${due.slice(0, 3).map(e => `<button class="mdduei" ${e.prep ? `data-a="${A(() => schoolPrep(p, e))}"` : 'disabled'}><span>${e.ic} ${esc(e.t)}</span><span class="mut">${whenTxt(e.d, e)}${e.prep ? ' · tap to practise' : ''}</span></button>`).join('')}</div>` : ''}
+    <div class="mdweek" aria-label="This week">${days.map(d => { const x = dayDone(p, d), fut = d > t, isT = d === t;
+      return `<div class="mdday ${isT ? 'today' : ''} ${fut ? 'fut' : x.all ? 'ok' : ''}"><span>${new Date(d + 'T12:00').toLocaleDateString(undefined, {weekday:'short'})}</span><b>${fut ? '·' : x.all ? '⭐' : isT ? '…' : (x.r || x.m) ? '½' : '–'}</b><small>${fut ? '' : `${x.r ? '🎤' : ''}${x.m && MATH_ON ? '🔢' : ''}`}</small></div>`; }).join('')}</div>
+    <p class="mut mdkey">⭐ both done that day · ½ one of the two done · – missed · 🎤 reading done · 🔢 math done</p>
+  </div>`;
 }
 function mapSvg(p){
   const W = 700, H = 210, pts = [];
@@ -7768,15 +7807,14 @@ function vMathHub(){
   const q = questToday(p), items = mathQuest(p);
   app.innerHTML = `${topbar(null)}
   ${subjectSwitch(p)}
+  ${myDayCard(p, 'math')}
   <div class="card quest">
-    <div class="row spread"><div style="min-width:0"><h2>Today's math</h2><p class="mut">This week at school: <b>${esc(u.name)}</b></p></div>
-      <div class="ring" title="Minutes of math today">${ringFor(mins, MATH_GOAL)}<span class="mut">min of math<br>(goal ${MATH_GOAL})</span></div></div>
-    <div class="aloudline ${mins >= MATH_GOAL ? 'open' : ''}"><span>⏱ Math time counts while you are working</span><span class="mut">${breakOpen(p) ? '🎉 Brain Break open!' : 'Brain Break needs ' + breakNeed(p)}</span></div>
+    <div class="row spread"><div style="min-width:0"><h2>🔢 Pick your math</h2><p class="mut">Any of these counts toward your ${MATH_GOAL} minutes. Start at the top. This week at school: <b>${esc(u.name)}</b></p></div></div>
     <div class="qlist">${items.map(i => `<button class="qitem ${i.done?'done':''}" data-a="${A(i.run)}"><span class="qcheck">${i.done?'✓':''}</span><span>${i.icon} ${esc(i.label)}</span></button>`).join('')}</div>
   </div>
   ${schoolCard(p, true)}
-  <div class="card"><h2>Practise a topic</h2><div class="mtopics">${mathUnits(p).map(un => `<div class="mtunit ${un.id === u.id ? 'now' : ''}"><b>${un.id === u.id ? '⭐ ' : ''}${esc(un.name)}</b>${un.exp ? ' <span class="mut">(coming later)</span>' : ''}
-      <div class="row" style="gap:6px;margin-top:6px">${mathSkillsOf(p, un.id).map(k => { const s = mathState(p).stat[k]; return `<button class="btn small ghost" data-a="${A(()=>mathStart(p, [k], window.MathSkills[k].name, 'topic'))}">${esc(window.MathSkills[k].name)}${s && s[1] ? ` · ${Math.round(s[0]/s[1]*100)}%` : ''}</button>`; }).join('') || '<span class="mut">Loading…</span>'}</div></div>`).join('')}</div></div>
+  <details class="card mtopicbox"><summary><h2 style="display:inline">📚 Practise any topic</h2> <span class="mut">tap to open</span></summary><div class="mtopics">${mathUnits(p).map(un => `<div class="mtunit ${un.id === u.id ? 'now' : ''}"><b>${un.id === u.id ? '⭐ ' : ''}${esc(un.name)}</b>${un.exp ? ' <span class="mut">(coming later)</span>' : ''}
+      <div class="row" style="gap:6px;margin-top:6px">${mathSkillsOf(p, un.id).map(k => { const s = mathState(p).stat[k]; return `<button class="btn small ghost" data-a="${A(()=>mathStart(p, [k], window.MathSkills[k].name, 'topic'))}">${esc(window.MathSkills[k].name)}${s && s[1] ? ` · ${Math.round(s[0]/s[1]*100)}%` : ''}</button>`; }).join('') || '<span class="mut">Loading…</span>'}</div></div>`).join('')}</div></details>
   <div class="tiles">
     <button class="tile ${breakOpen(p) ? 'bopen' : ''}" data-a="${A(()=>go({name:'break'}))}"><span class="ic">${breakOpen(p) ? '🎉' : '🔒'}</span><span><b>Brain Break</b><span class="mut">${breakOpen(p) ? 'Open! Play all you like' : breakNeed(p) + ' to go'}</span></span></button>
     <button class="tile" data-a="${A(()=>go({name:'mystats'}))}"><span class="ic">📊</span><span><b>My stats</b><span class="mut">What I did, minutes, speed</span></span></button>
@@ -7810,7 +7848,7 @@ function vSubject(){
   app.innerHTML = `${topbar(null)}<h1 style="text-align:center">What do you want to work on, ${esc(p.name)}?</h1>
   <div class="subjpick"><button class="subjtile read" data-a="${A(()=>{ p.subject = 'read'; save(); go({name:'hub'}); })}"><span>📚</span><b>Reading</b><span class="mut">🎤 ${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min out loud today</span></button>
     <button class="subjtile math" data-a="${A(()=>{ p.subject = 'math'; save(); go({name:'hub'}); })}"><span>🔢</span><b>Math</b><span class="mut">⏱ ${Math.floor(mathToday(p))} of ${MATH_GOAL} min today</span></button></div>
-  <p class="mut" style="text-align:center">Brain Break opens after ${BREAK_ALOUD} minutes of reading out loud and ${MATH_GOAL} minutes of math.</p>`;
+  <p class="mut" style="text-align:center">${breakOpen(p) ? '🎉 Everything due today is done. Brain Break is open!' : `Still to do today: ${[aloudToday(p) >= BREAK_ALOUD ? '' : `${Math.ceil(BREAK_ALOUD - aloudToday(p))} min reading out loud`, mathToday(p) >= MATH_GOAL ? '' : `${Math.ceil(MATH_GOAL - mathToday(p))} min of math`].filter(Boolean).join(' and ')}. Then Brain Break opens.`}</p>`;
 }
 
 // ---- the problem player ----
