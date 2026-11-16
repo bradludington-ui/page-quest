@@ -7679,10 +7679,16 @@ const SCHOOL = {
               {d:'2026-11-25', ic:'🦃', t:'Thanksgiving break, no school (Nov 25–27)'},
               {d:'2026-12-03', ic:'✨', t:'Literacy Glow Night and Book Fair, 6–8 PM'}]}};
 function schoolOf(p){ return SCHOOL[mathBand(p)]; }
+// Which 3rd-grade class each child is in, keyed by a short code made from the first name so no names sit in this public file.
+// Both classes share one calendar and nearly the same work; the class decides library day and whose name shows on the card.
+// Mrs. Malone's newsletter usually arrives first, so the shared 3rd-grade dates are taken from whichever comes first.
+const CLASS_OF = {n1zjw5:'malone', yjbhk1:'merani'};
+function kidKey(p){ let x = 5381; for (const c of String(p.name || '').trim().toLowerCase()) x = ((x * 33) ^ c.charCodeAt(0)) >>> 0; return x.toString(36); }
+function teacherOf(p){ if (!p.teacher && CLASS_OF[kidKey(p)] && mathBand(p) === 3){ p.teacher = CLASS_OF[kidKey(p)]; save(); } return p.teacher; }
 function daysTo(d){ return Math.round((new Date(d + 'T12:00') - new Date(today() + 'T12:00')) / 86400000); }
 function whenTxt(d, e){ if (e && e.when && daysTo(d) > 0) return e.when; const n = daysTo(d); return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : new Date(d + 'T12:00').toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'}) + ` · in ${n} days`; }
 function schoolUpcoming(p, days){ const S2 = schoolOf(p); if (!S2) return [];
-  const ev = S2.events.slice(), T = S2.teachers && S2.teachers[p.teacher];
+  const ev = S2.events.slice(), T = S2.teachers && S2.teachers[teacherOf(p)];
   // library day repeats every week, and each class has its own
   if (T && T.lib != null){ const d = new Date(today() + 'T12:00'); d.setDate(d.getDate() + ((T.lib - d.getDay() + 7) % 7)); const ds = d.toISOString().slice(0, 10);
     if (!ev.some(e => e.d === ds && /no school/i.test(e.t))) ev.push({d:ds, ic:'📚', t:'Library day: bring your library book back'}); }
@@ -7702,7 +7708,7 @@ function schoolPrep(p, e){
 function schoolCard(p, mathOnly){
   const S2 = schoolOf(p); if (!S2 || isParent(p)) return '';
   const ev = schoolUpcoming(p, 21).filter(e => !mathOnly || e.math || !e.prep).slice(0, 6);
-  const tch = S2.teachers ? (S2.teachers[p.teacher] ? `<span class="mut" style="font-size:.85rem">${esc(S2.teachers[p.teacher].name)}'s class · <button class="linkbtn" data-a="${A(() => { delete p.teacher; save(); render(); })}">change</button></span>`
+  const tch = S2.teachers ? (S2.teachers[teacherOf(p)] ? `<span class="mut" style="font-size:.85rem">${esc(S2.teachers[p.teacher].name)}'s class · <button class="linkbtn" data-a="${A(() => { delete p.teacher; save(); render(); })}">change</button></span>`
     : `<div class="row" style="gap:6px;margin-top:6px"><span class="mut">Whose class are you in?</span>${Object.keys(S2.teachers).map(k => `<button class="btn small ghost" data-a="${A(() => { p.teacher = k; save(); render(); })}">${esc(S2.teachers[k].name)}</button>`).join('')}</div>`) : `<span class="mut" style="font-size:.85rem">${esc(S2.from)}</span>`;
   return `<div class="card schoolcard"><div class="row spread"><h2>📅 Coming up at school</h2>${tch}</div>
     ${ev.length ? `<ul class="schev">${ev.map(e => `<li class="${daysTo(e.d) <= 2 ? 'soon' : ''}"><span class="ic">${e.ic}</span><span class="sct"><b>${esc(e.t)}</b><span class="mut">${whenTxt(e.d, e)}</span></span>${e.prep ? `<button class="btn small ${daysTo(e.d) <= 7 ? 'sun' : 'ghost'}" data-a="${A(() => schoolPrep(p, e))}">${esc(e.prep)}</button>` : ''}</li>`).join('')}</ul>` : '<p class="mut">Nothing on the calendar in the next three weeks.</p>'}
