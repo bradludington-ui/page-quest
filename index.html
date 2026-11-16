@@ -7482,10 +7482,15 @@ function mathUnitNow(p){
 function mathState(p){ const m = p.math || (p.math = {}); ['lvl','stat','facts','min','streak','miss'].forEach(k => m[k] = m[k] || {}); return m; }
 function mathToday(p, d){ return ((p.math || {}).min || {})[d || today()] || 0; }
 let _mathLoad = null;
+// each grade loads its base file, then the bigger question banks that extend or replace its skills
+const MATH_FILES = {3: ['g3', 'g3geo', 'g3x', 'g3y'], 5: ['g5', 'g5x', 'g5y']}, MATH_V = 4;
 function loadMath(p){
-  const f = `math/g${mathBand(p)}.js?v=3`;
-  if (window.MathSkills && Object.keys(window.MathSkills).some(k => k.startsWith('g' + mathBand(p) + '.'))) return Promise.resolve(window.MathSkills);
-  return _mathLoad || (_mathLoad = new Promise((ok, bad) => { const s = document.createElement('script'); s.src = f; s.onload = () => { _mathLoad = null; ok(window.MathSkills || {}); }; s.onerror = () => { _mathLoad = null; bad(); }; document.head.appendChild(s); }));
+  const b = mathBand(p), files = MATH_FILES[b];
+  if (window.MathSkills && window.MathSkills._loaded && window.MathSkills._loaded[b]) return Promise.resolve(window.MathSkills);
+  const one = f => new Promise((ok, bad) => { const s = document.createElement('script'); s.src = `math/${f}.js?v=${MATH_V}`; s.onload = ok; s.onerror = bad; document.head.appendChild(s); });
+  return _mathLoad || (_mathLoad = files.reduce((pr, f, i) => pr.then(() => one(f).catch(e => { if (!i) throw e; })), Promise.resolve())
+    .then(() => { _mathLoad = null; const M = window.MathSkills || {}; Object.defineProperty(M, '_loaded', {value: Object.assign(M._loaded || {}, {[b]: true}), configurable: true, enumerable: false}); return M; },
+          e => { _mathLoad = null; throw e; }));
 }
 function mathSkillsOf(p, unit){ const M = window.MathSkills || {}, pre = 'g' + mathBand(p) + '.'; return Object.keys(M).filter(k => k.startsWith(pre) && (!unit || M[k].unit === unit)); }
 function mkR(seed){ let a = seed >>> 0 || 1; const r = () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -7536,14 +7541,36 @@ function mathModel(m){
     x += 8; for (let i = 0; i < (m.o || 0); i++){ b += `<rect x="${x + (i % 3) * (u + 4)}" y="${20 + Math.floor(i / 3) * (u + 4)}" width="${u}" height="${u}" fill="var(--oops)" stroke="var(--ink)" stroke-width="1.5"/>`; } x += 3 * (u + 4);
     return svg(Math.max(x + 10, 120), H, b);
   }
-  if (m.type === 'polygon'){
+  // polygon: a named shape, or your own points (m.pts in a 200 x 195 box). Extras: m.cuts (dashed cut lines [x1,y1,x2,y2]),
+  // m.right (vertex numbers that get a right-angle mark), m.open (not closed), m.circle, m.curve (an SVG path), m.labels ([x, y, text]).
+  if (m.type === 'polygon' || m.type === 'shapes'){
     const P = {triangle:[[100,20],[180,170],[20,170]], 'right-triangle':[[30,20],[30,170],[180,170]], square:[[35,25],[165,25],[165,155],[35,155]], rectangle:[[10,45],[190,45],[190,145],[10,145]],
       rhombus:[[100,15],[175,95],[100,175],[25,95]], parallelogram:[[55,40],[195,40],[145,150],[5,150]], trapezoid:[[60,40],[140,40],[190,150],[10,150]], 'irregular-quad':[[30,40],[160,20],[185,160],[50,140]],
-      'irregular-pentagon':[[40,30],[150,20],[190,110],[110,175],[15,130]], 'irregular-hexagon':[[30,50],[110,15],[180,60],[170,150],[90,175],[20,130]]};
-    const reg = {pentagon:5, hexagon:6, heptagon:7, octagon:8}[m.shape]; let pts = P[m.shape];
-    if (reg) pts = [...Array(reg)].map((_, i) => [100 + 82 * Math.cos(-Math.PI/2 + i * 2 * Math.PI / reg), 98 + 82 * Math.sin(-Math.PI/2 + i * 2 * Math.PI / reg)]);
-    if (!pts) return '';
-    return svg(200, 195, `<polygon points="${pts.map(p2 => p2.join(',')).join(' ')}" fill="color-mix(in srgb, var(--accent) 22%, transparent)" stroke="var(--accent)" stroke-width="4" stroke-linejoin="round"/>${pts.map(p2 => `<circle cx="${p2[0]}" cy="${p2[1]}" r="4.5" fill="var(--ink)"/>`).join('')}`, 'narrow');
+      'irregular-pentagon':[[40,30],[150,20],[190,110],[110,175],[15,130]], 'irregular-hexagon':[[30,50],[110,15],[180,60],[170,150],[90,175],[20,130]],
+      'right-trapezoid':[[20,40],[120,40],[185,150],[20,150]], kite:[[100,15],[165,75],[100,180],[35,75]], 'irregular-triangle':[[20,160],[70,25],[190,140]],
+      'irregular-heptagon':[[60,20],[140,25],[185,80],[165,150],[100,180],[30,150],[15,80]], 'irregular-octagon':[[60,15],[135,20],[180,60],[185,125],[140,175],[65,180],[20,135],[15,65]],
+      arrow:[[10,75],[120,75],[120,30],[190,100],[120,170],[120,125],[10,125]], house:[[100,15],[175,80],[175,180],[25,180],[25,80]], 'l-shape':[[20,20],[90,20],[90,110],[180,110],[180,180],[20,180]],
+      star:[[100,10],[122,70],[188,72],[136,110],[154,175],[100,138],[46,175],[64,110],[12,72],[78,70]], cross:[[70,10],[130,10],[130,70],[190,70],[190,130],[130,130],[130,190],[70,190],[70,130],[10,130],[10,70],[70,70]]};
+    const regN = {pentagon:5, hexagon:6, heptagon:7, octagon:8};
+    const ptsOf = d => d.pts || P[d.shape] || (regN[d.shape] ? [...Array(regN[d.shape])].map((_, i) => [100 + 82 * Math.cos(-Math.PI/2 + i * 2 * Math.PI / regN[d.shape]), 98 + 82 * Math.sin(-Math.PI/2 + i * 2 * Math.PI / regN[d.shape])]) : null);
+    const fill = 'color-mix(in srgb, var(--accent) 22%, transparent)';
+    const draw = d => {
+      if (d.circle) return `<circle cx="100" cy="98" r="80" fill="${fill}" stroke="var(--accent)" stroke-width="4"/>`;
+      if (d.curve) return `<path d="${d.curve}" fill="${d.open ? 'none' : fill}" stroke="var(--accent)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+      const pts = ptsOf(d); if (!pts) return '';
+      const ps = pts.map(p2 => p2.map(v => Math.round(v * 10) / 10).join(',')).join(' ');
+      let b = d.open ? `<polyline points="${ps}" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`
+                     : `<polygon points="${ps}" fill="${fill}" stroke="var(--accent)" stroke-width="4" stroke-linejoin="round"/>`;
+      (d.right || []).forEach(i => { const a = pts[i], p0 = pts[(i + pts.length - 1) % pts.length], p1 = pts[(i + 1) % pts.length], u = (q) => { const dx = q[0] - a[0], dy = q[1] - a[1], l = Math.hypot(dx, dy) || 1; return [dx / l * 16, dy / l * 16]; }, s1 = u(p0), s2 = u(p1);
+        b += `<path d="M${a[0] + s1[0]},${a[1] + s1[1]} L${a[0] + s1[0] + s2[0]},${a[1] + s1[1] + s2[1]} L${a[0] + s2[0]},${a[1] + s2[1]}" fill="none" stroke="var(--ink)" stroke-width="2.5"/>`; });
+      (d.cuts || []).forEach(c => { b += `<line x1="${c[0]}" y1="${c[1]}" x2="${c[2]}" y2="${c[3]}" stroke="var(--oops)" stroke-width="4" stroke-dasharray="9 7" stroke-linecap="round"/>`; });
+      if (!d.noDots && !d.open) b += pts.map(p2 => `<circle cx="${p2[0]}" cy="${p2[1]}" r="4.5" fill="var(--ink)"/>`).join('');
+      (d.labels || []).forEach(l => { b += T(l[0], l[1], l[2], {fs:15}); });
+      return b; };
+    if (m.type === 'shapes'){ const n = m.items.length, cw = 210;
+      return svg(n * cw, 235, m.items.map((d, i) => `<g transform="translate(${i * cw + 5} 0)">${draw(d)}${d.label ? T(100, 225, d.label, {fs:22}) : ''}</g>`).join('')); }
+    const body = draw(m); if (!body) return '';
+    return svg(200, 195, body, 'narrow');
   }
   if (m.type === 'grid'){
     const N = m.range || 5, q1 = !!m.quad1, lo = q1 ? 0 : -N, W = 360, pad = 22, cell = (W - 2 * pad) / (N - lo), X = v => pad + (v - lo) * cell, Y = v => W - pad - (v - lo) * cell;
@@ -7655,7 +7682,7 @@ function schoolPrep(p, e){
   if (!e.math) return;
   loadMath(p).then(() => { const st = mathState(p).stat, acc = k => { const s2 = st[k]; return s2 && s2[1] ? s2[0] / s2[1] : .5; };
     let ks = e.math === 'review' ? mathUnits(p).slice(0, mathUnits(p).indexOf(mathUnitNow(p)) + 1).flatMap(u => mathSkillsOf(p, u.id)) : e.math.filter(k => window.MathSkills[k]);
-    ks = ks.slice().sort((a, b) => acc(a) - acc(b)); const run = [...Array(8)].map((_, i) => ks[i % ks.length]).sort(() => Math.random() - .5);
+    ks = ks.slice().sort((a, b) => acc(a) - acc(b)); const run = [...Array(12)].map((_, i) => ks[i % ks.length]).sort(() => Math.random() - .5);
     mathStart(p, run, 'Test prep: ' + e.t, 'mprep'); }).catch(() => alertBox('Math could not load. Check the internet connection and try again.'));
 }
 function schoolCard(p, mathOnly){
@@ -7727,9 +7754,14 @@ function mathStart(p, skills, title, questKey, factsOnly){
 function mathNext(v){
   const p = me(), k = v.skills[v.i], M = window.MathSkills[k], R = mkR((Date.now() ^ (v.i * 7919)) % 1e9);
   let pr = null;
-  for (let tries = 0; tries < 12; tries++){ pr = M.gen(R, mathLvl(p, k));
+  // a question's "type" is its wording with the numbers and names taken out; a session never repeats a type while new ones are left
+  const tmpl = q => String(q).replace(/[\d,.−-]+/g, '#').replace(/\b[A-Z][a-z]+\b/g, 'N');
+  v.seen = v.seen || {};
+  for (let tries = 0; tries < 25; tries++){ pr = M.gen(R, mathLvl(p, k));
     if (v.factsOnly && pr.fact){ const f = mathState(p).facts[pr.fact]; if (f && f.n > (f.ok || 0)) break; if (tries < 11) continue; }
-    if (!v.prob || pr.q !== v.prob.q) break; }
+    if ((v.prob && pr.q === v.prob.q) || (tries < 24 && (v.seen[k] || []).includes(tmpl(pr.q)))) continue;
+    break; }
+  (v.seen[k] = v.seen[k] || []).push(tmpl(pr.q));
   v.prob = pr; v.k = k; v.tries = 0; v.input = ''; v.scratch = null; v.state = null; v.showHint = false; v.showSteps = false; v.plot = null;
   if (pr.kind === 'choice') v.order = R.shuffle(pr.choices.slice());
 }
