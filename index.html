@@ -416,8 +416,8 @@ body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(
 .exgrid{width:100%;table-layout:auto}
 .myday{border:3px solid var(--sun);display:flex;flex-direction:column;gap:10px}.mdlead{margin:0;font-size:1.1rem}
 .mdsteps{display:flex;flex-direction:column;gap:8px}.mdstep{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:var(--bg);border:2px solid var(--line)}
-.mdstep.done{background:var(--good-soft);border-color:var(--good)}.mdnum{flex:0 0 40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.3rem;background:var(--accent);color:#fff}
-.mdstep.done .mdnum{background:var(--good)}.mdtx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.mdtx b{font-size:1.1rem}
+.mdstep.done{background:var(--good-soft);border-color:var(--good)}.mdnum{flex:0 0 36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.3rem;background:var(--panel);border:3px solid var(--line);color:#fff}
+.mdstep.done .mdnum{background:var(--good);border-color:var(--good)}.mdtx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.mdtx b{font-size:1.1rem}
 .mdbar{display:block;height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:3px}.mdbar>i{display:block;height:100%;background:var(--accent);border-radius:99px}.mdstep.done .mdbar>i{background:var(--good)}
 .mddue{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:16px;background:var(--sun-soft)}
 .mdduei{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;text-align:left;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px 12px;font:inherit;color:inherit;cursor:pointer}.mdduei:disabled{cursor:default;opacity:1}
@@ -1232,18 +1232,18 @@ function myDayCard(p, here){
   if (isParent(p)) return '';
   const ra = Math.floor(aloudToday(p)), mm = Math.floor(mathToday(p)), rDone = ra >= BREAK_ALOUD, mDone = !MATH_ON || mm >= MATH_GOAL, open = breakOpen(p);
   const bar = (v, g) => `<span class="mdbar"><i style="width:${Math.min(100, v / g * 100)}%"></i></span>`;
-  const step = (n, done, icon, title, sub, v, g, btn) => `<div class="mdstep ${done ? 'done' : ''}"><span class="mdnum">${done ? '✓' : n}</span><span class="mdtx"><b>${icon} ${title}</b><span class="mut">${sub}</span>${g ? bar(v, g) : ''}</span>${btn}</div>`;
+  const step = (n, done, icon, title, sub, v, g, btn) => `<div class="mdstep ${done ? 'done' : ''}"><span class="mdnum">${done ? '✓' : ''}</span><span class="mdtx"><b>${icon} ${title}</b><span class="mut">${sub}</span>${g ? bar(v, g) : ''}</span>${btn}</div>`;
   const btn = (txt, fn, hot) => `<button class="btn small ${hot ? 'sun' : 'ghost'}" data-a="${A(fn)}">${txt}</button>`;
   const due = typeof SCHOOL !== 'undefined' ? schoolUpcoming(p, 7).filter(e => e.prep || /homework|due/i.test(e.t)) : [];
   const days = weekDays(), t = today();
-  const nextHot = !rDone ? 'r' : !mDone ? 'm' : 'b';
+  // reading and math can be done in any order, a bit of each, back and forth: both buttons stay bright until done
   return `<div class="card myday">
     <div class="row spread"><h2>⭐ My day</h2><span class="mut">${new Date(t + 'T12:00').toLocaleDateString(undefined, {weekday:'long', month:'short', day:'numeric'})}</span></div>
-    <p class="mdlead">${open ? '🎉 You did everything due today! Brain Break is open.' : `Still to do today: <b>${[rDone ? '' : `${BREAK_ALOUD - ra} min reading out loud`, mDone ? '' : `${MATH_GOAL - mm} min of math`].filter(Boolean).join(' and ')}</b>`}</p>
+    <p class="mdlead">${open ? '🎉 You did everything due today! Brain Break is open.' : `Do these in any order. Switch back and forth whenever you like. Still to do: <b>${[rDone ? '' : `${BREAK_ALOUD - ra} min reading out loud`, mDone ? '' : `${MATH_GOAL - mm} min of math`].filter(Boolean).join(' and ')}</b>`}</p>
     <div class="mdsteps">
-      ${step(1, rDone, '🎤', 'Read out loud', rDone ? `Done! ${ra} of ${BREAK_ALOUD} minutes` : `${ra} of ${BREAK_ALOUD} minutes · ${BREAK_ALOUD - ra} to go`, ra, BREAK_ALOUD, here === 'read' && !rDone ? btn('Read now ▶', () => readNow(p), nextHot === 'r') : here !== 'read' ? btn(rDone ? 'Reading' : 'Go read ▶', () => { p.subject = 'read'; save(); go({name:'hub'}); }, nextHot === 'r') : '')}
-      ${MATH_ON ? step(2, mDone, '🔢', 'Math', mDone ? `Done! ${mm} of ${MATH_GOAL} minutes` : `${mm} of ${MATH_GOAL} minutes · ${MATH_GOAL - mm} to go`, mm, MATH_GOAL, here !== 'math' ? btn(mDone ? 'Math' : 'Go do math ▶', () => mathNow(p), nextHot === 'm') : '') : ''}
-      ${step(MATH_ON ? 3 : 2, open, open ? '🎉' : '🔒', 'Brain Break', open ? 'Open! Play any game you like.' : 'Opens when steps 1 and 2 are done', 0, 0, btn(open ? 'Play ▶' : 'See games', () => go({name:'break'}), open))}
+      ${step(1, rDone, '🎤', 'Read out loud', rDone ? `Done! ${ra} of ${BREAK_ALOUD} minutes` : `${ra} of ${BREAK_ALOUD} minutes · ${BREAK_ALOUD - ra} to go`, ra, BREAK_ALOUD, here === 'read' && !rDone ? btn('Read now ▶', () => readNow(p), true) : here !== 'read' ? btn(rDone ? 'Reading' : 'Go read ▶', () => { p.subject = 'read'; save(); go({name:'hub'}); }, !rDone) : '')}
+      ${MATH_ON ? step(2, mDone, '🔢', 'Math', mDone ? `Done! ${mm} of ${MATH_GOAL} minutes` : `${mm} of ${MATH_GOAL} minutes · ${MATH_GOAL - mm} to go`, mm, MATH_GOAL, here !== 'math' ? btn(mDone ? 'Math' : 'Go do math ▶', () => mathNow(p), !mDone) : '') : ''}
+      ${step(MATH_ON ? 3 : 2, open, open ? '🎉' : '🔒', 'Brain Break', open ? 'Open! Play any game you like.' : 'Opens when reading and math are both done', 0, 0, btn(open ? 'Play ▶' : 'See games', () => go({name:'break'}), open))}
     </div>
     ${due.length ? `<div class="mddue"><b>📌 Due soon</b>${due.slice(0, 3).map(e => `<button class="mdduei" ${e.prep ? `data-a="${A(() => schoolPrep(p, e))}"` : 'disabled'}><span>${e.ic} ${esc(e.t)}</span><span class="mut">${whenTxt(e.d, e)}${e.prep ? ' · tap to practise' : ''}</span></button>`).join('')}</div>` : ''}
     <div class="mdweek" aria-label="This week">${days.map(d => { const x = dayDone(p, d), fut = d > t, isT = d === t;
@@ -7848,7 +7848,7 @@ function vSubject(){
   app.innerHTML = `${topbar(null)}<h1 style="text-align:center">What do you want to work on, ${esc(p.name)}?</h1>
   <div class="subjpick"><button class="subjtile read" data-a="${A(()=>{ p.subject = 'read'; save(); go({name:'hub'}); })}"><span>📚</span><b>Reading</b><span class="mut">🎤 ${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min out loud today</span></button>
     <button class="subjtile math" data-a="${A(()=>{ p.subject = 'math'; save(); go({name:'hub'}); })}"><span>🔢</span><b>Math</b><span class="mut">⏱ ${Math.floor(mathToday(p))} of ${MATH_GOAL} min today</span></button></div>
-  <p class="mut" style="text-align:center">${breakOpen(p) ? '🎉 Everything due today is done. Brain Break is open!' : `Still to do today: ${[aloudToday(p) >= BREAK_ALOUD ? '' : `${Math.ceil(BREAK_ALOUD - aloudToday(p))} min reading out loud`, mathToday(p) >= MATH_GOAL ? '' : `${Math.ceil(MATH_GOAL - mathToday(p))} min of math`].filter(Boolean).join(' and ')}. Then Brain Break opens.`}</p>`;
+  <p class="mut" style="text-align:center">${breakOpen(p) ? '🎉 Everything due today is done. Brain Break is open!' : `Still to do today: ${[aloudToday(p) >= BREAK_ALOUD ? '' : `${Math.ceil(BREAK_ALOUD - aloudToday(p))} min reading out loud`, mathToday(p) >= MATH_GOAL ? '' : `${Math.ceil(MATH_GOAL - mathToday(p))} min of math`].filter(Boolean).join(' and ')}, in any order. Then Brain Break opens.`}</p>`;
 }
 
 // ---- the problem player ----
