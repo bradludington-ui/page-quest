@@ -1225,6 +1225,8 @@ function vHub(){
 }
 // ---------- My day: the one place a child sees what is due today, what is left, and how the week is going ----------
 function readNow(p){ const ch = nextChapter(p); p.subject = 'read'; save(); if (ch && !ch.locked) go({name:'intro', id:ch.story.id}); else go({name:'library', tab:'rec'}); }
+// starts the first math practice not yet done today (any of them counts toward the 10 minutes)
+function mathGo(p){ const items = mathQuest(p), it = items.find(i => !i.done) || items[0]; if (it) it.run(); }
 function mathNow(p){ p.subject = 'math'; save(); go({name:'hub'}); }
 function weekDays(){ const t = new Date(today() + 'T12:00'), mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return [...Array(7)].map((_, i) => { const d = new Date(mon); d.setDate(mon.getDate() + i); return d.toISOString().slice(0, 10); }); }
 function dayDone(p, d){ const r = (((p.aloud || {})[d]) || 0) >= BREAK_ALOUD, m = !MATH_ON || mathToday(p, d) >= MATH_GOAL; return {r, m, all: r && m}; }
@@ -1242,7 +1244,7 @@ function myDayCard(p, here){
     <p class="mdlead">${open ? '🎉 You did everything due today! Brain Break is open.' : `Do these in any order. Switch back and forth whenever you like. Still to do: <b>${[rDone ? '' : `${BREAK_ALOUD - ra} min reading out loud`, mDone ? '' : `${MATH_GOAL - mm} min of math`].filter(Boolean).join(' and ')}</b>`}</p>
     <div class="mdsteps">
       ${step(1, rDone, '🎤', 'Read out loud', rDone ? `Done! ${ra} of ${BREAK_ALOUD} minutes` : `${ra} of ${BREAK_ALOUD} minutes · ${BREAK_ALOUD - ra} to go`, ra, BREAK_ALOUD, here === 'read' && !rDone ? btn('Read now ▶', () => readNow(p), true) : here !== 'read' ? btn(rDone ? 'Reading' : 'Go read ▶', () => { p.subject = 'read'; save(); go({name:'hub'}); }, !rDone) : '')}
-      ${MATH_ON ? step(2, mDone, '🔢', 'Math', mDone ? `Done! ${mm} of ${MATH_GOAL} minutes` : `${mm} of ${MATH_GOAL} minutes · ${MATH_GOAL - mm} to go`, mm, MATH_GOAL, here !== 'math' ? btn(mDone ? 'Math' : 'Go do math ▶', () => mathNow(p), !mDone) : '') : ''}
+      ${MATH_ON ? step(2, mDone, '🔢', 'Math', mDone ? `Done! ${mm} of ${MATH_GOAL} minutes` : `${mm} of ${MATH_GOAL} minutes · ${MATH_GOAL - mm} to go`, mm, MATH_GOAL, here !== 'math' ? btn(mDone ? 'Math' : 'Go do math ▶', () => mathNow(p), !mDone) : btn(mDone ? 'More math' : 'Start math ▶', () => mathGo(p), !mDone)) : ''}
       ${step(MATH_ON ? 3 : 2, open, open ? '🎉' : '🔒', 'Brain Break', open ? 'Open! Play any game you like.' : 'Opens when reading and math are both done', 0, 0, btn(open ? 'Play ▶' : 'See games', () => go({name:'break'}), open))}
     </div>
     ${due.length ? `<div class="mddue"><b>📌 Due soon</b>${due.slice(0, 3).map(e => `<button class="mdduei" ${e.prep ? `data-a="${A(() => schoolPrep(p, e))}"` : 'disabled'}><span>${e.ic} ${esc(e.t)}</span><span class="mut">${whenTxt(e.d, e)}${e.prep ? ' · tap to practise' : ''}</span></button>`).join('')}</div>` : ''}
