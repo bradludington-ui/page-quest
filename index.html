@@ -1077,6 +1077,7 @@ function render(){
     gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint, subject:vSubject, spell:vSpell, book:vBook, mathplay:vMathPlay, mystats:vMyStats, execsum:vExecSum})[view.name]();
   // tables that turn into stacked cards on a phone: each cell is labelled with its column heading
   document.querySelectorAll('table.rtab').forEach(t => { const hs = [...t.rows[0].cells].map(c => c.textContent.trim()); [...t.rows].slice(1).forEach(r => [...r.cells].forEach((c, i) => c.dataset.l = hs[i] || '')); });
+  if (typeof cheerFlush === 'function') cheerFlush();
 }
 function topbar(back){
   const p = me(), L = level(p);
@@ -2379,11 +2380,23 @@ function hangNext(){
 // Falls back to confetti if the drawings have not loaded or the child turned them off.
 function cheerOpts(p, o){ return Object.assign({look: p.player, sound: !(p.player || {}).quiet, onSound: on => { p.player = Object.assign({}, p.player, {quiet: !on}); save(); }}, o); }
 function fname(p){ return String((p && p.name) || '').trim().split(/\s+/)[0] || 'Champ'; }
+// A celebration never interrupts work: while a child is mid-problem, mid-story or mid-reading it waits,
+// and plays as soon as that problem is answered or that reading is finished.
+let CHEER_WAIT = null;
+function cheerBusy(){ const v = view || {}, n = v.name;
+  if (n === 'mathplay') return !['right', 'rightAfter', 'shown'].includes(v.state);
+  if (n === 'book') return v.phase === 'reading';
+  if (n === 'info') return v.phase !== 'done';
+  if (n === 'spell') return !!(v.q && v.q[v.i]) && v.state !== 'right';
+  return ['read', 'seq', 'gym', 'checkpoint', 'checkin', 'vault', 'focus', 'sum', 'breakgame'].includes(n) || /^g_/.test(n); }
 function cheer(kind, title, sub, n){
   const p = me();
-  if (p && window.Cheer && !(p.player || {}).off && Cheer.play(kind, cheerOpts(p, {title, sub}))) return true;
-  confetti(n || 60); return false;
+  if (!p || !window.Cheer || (p.player || {}).off){ confetti(n || 60); return false; }
+  if (cheerBusy()){ if (!CHEER_WAIT) CHEER_WAIT = {kind, title, sub, who: p.id}; return true; }
+  return Cheer.play(kind, cheerOpts(p, {title, sub})) || (confetti(n || 60), false);
 }
+function cheerFlush(){ if (!CHEER_WAIT || cheerBusy()) return; const c = CHEER_WAIT, p = me(); CHEER_WAIT = null;
+  if (p && p.id === c.who && window.Cheer) setTimeout(() => { if (!cheerBusy()) Cheer.play(c.kind, cheerOpts(p, {title: c.title, sub: c.sub})); else CHEER_WAIT = c; }, 500); }
 function floatText(t){ const d = document.createElement('div'); d.className = 'float'; d.textContent = t; document.body.appendChild(d); setTimeout(()=>d.remove(), 1200); }
 const fx = document.getElementById('fx'), ctx = fx.getContext('2d'); let parts = [], fxOn = false;
 function confetti(n){
