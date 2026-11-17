@@ -414,6 +414,10 @@ body.scopen{overflow:hidden}.scbtn{width:100%;background:var(--panel);color:var(
 .exgrid th.exkid{text-align:center;font-size:.85rem;color:var(--ink)}.exgrid td.num{text-align:center;width:auto;white-space:nowrap}.exgrid td:first-child{white-space:nowrap;font-weight:600}.exread{margin:4px 0;line-height:1.5}
 @media (max-width:600px){.exgrid{font-size:.82rem}.exgrid td,.exgrid th{padding:7px 3px!important}.exgrid td:first-child{white-space:normal;font-weight:600}.exgrid td.num{white-space:normal}}
 .exgrid{width:100%;table-layout:auto}
+.bkcard{display:flex;flex-direction:column;gap:14px}.bkstate{padding:12px 14px;border-radius:14px;font-weight:700;background:var(--soft)}.bkstate.on{background:var(--good-soft)}.bkstate.quiet{background:var(--sun-soft)}
+.bkstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}.bkstats>div{display:flex;flex-direction:column;align-items:center;padding:12px 6px;border-radius:16px;background:var(--bg);border:2px solid var(--line)}
+.bkstats b{font-family:var(--display);font-size:2rem;line-height:1.2}.bktitle{display:block;width:100%;margin-top:6px;font-size:1.3rem;padding:12px 14px;border-radius:14px;border:3px solid var(--line);box-sizing:border-box}
+.mdstep .btn+.btn{margin-left:6px}
 .myday{border:3px solid var(--sun);display:flex;flex-direction:column;gap:10px}.mdlead{margin:0;font-size:1.1rem}
 .mdsteps{display:flex;flex-direction:column;gap:8px}.mdstep{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:var(--bg);border:2px solid var(--line)}
 .mdstep.done{background:var(--good-soft);border-color:var(--good)}.mdnum{flex:0 0 36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.3rem;background:var(--panel);border:3px solid var(--line);color:#fff}
@@ -1067,7 +1071,7 @@ function render(){
   ({profiles:vProfiles, newProfile:vNewProfile, hub:vHub, library:vLibrary, make:vMake, intro:vIntro,
     read:vRead, seq:vSeq, finish:vFinish, vault:vVault, shop:vShop, grownups:vGrown,
     arcade:vArcade, gameOver:vGameOver, g_catch:vCatch, g_smash:vSmash, g_match:vMatch, g_meaning:vMatch, g_hang:vHang, g_chunks:vMatch, g_prefix:vMatch,
-    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint, subject:vSubject, spell:vSpell, mathplay:vMathPlay, mystats:vMyStats, execsum:vExecSum})[view.name]();
+    gym:vGym, checkin:vCheckin, report:vReport, sum:vSum, series:vSeries, g_parts:vParts, focus:vFocus, break:vBreak, breakgame:vBreakGame, phonerep:vPhoneRep, scan:vScan, wordgame:vWordGame, myqr:vMyQR, kidlog:vKidLog, infolab:vInfoLab, info:vInfo, checkpoint:vCheckpoint, subject:vSubject, spell:vSpell, book:vBook, mathplay:vMathPlay, mystats:vMyStats, execsum:vExecSum})[view.name]();
   // tables that turn into stacked cards on a phone: each cell is labelled with its column heading
   document.querySelectorAll('table.rtab').forEach(t => { const hs = [...t.rows[0].cells].map(c => c.textContent.trim()); [...t.rows].slice(1).forEach(r => [...r.cells].forEach((c, i) => c.dataset.l = hs[i] || '')); });
 }
@@ -1207,6 +1211,7 @@ function vHub(){
   ${speedGoal(p)}
 
   <div class="tiles">
+    ${isParent(p) ? '' : `<button class="tile" data-a="${A(()=>go({name:'book'}))}"><span class="ic">📖</span><span><b>Read my own book</b><span class="mut">A real book, out loud. Counts toward ${BREAK_ALOUD} min</span></span></button>`}
     <button class="tile" data-a="${A(()=>go({name:'library', tab:'rec'}))}"><span class="ic">📚</span><span><b>Pick a story</b><span class="mut">Read, answer, earn coins</span></span></button>
     ${infoSet(p).length ? `<button class="tile" data-a="${A(()=>go({name:'infolab'}))}"><span class="ic">🔬</span><span><b>Info Lab</b><span class="mut">Real-world articles, test-style questions</span></span></button>` : ''}
     <button class="tile" data-a="${A(()=>go({name:'gym'}))}"><span class="ic">🏋️</span><span><b>Fluency Gym</b><span class="mut">Read it 3 times, get faster</span></span></button>
@@ -1243,7 +1248,7 @@ function myDayCard(p, here){
     <div class="row spread"><h2>⭐ My day</h2><span class="mut">${new Date(t + 'T12:00').toLocaleDateString(undefined, {weekday:'long', month:'short', day:'numeric'})}</span></div>
     <p class="mdlead">${open ? '🎉 You did everything due today! Brain Break is open.' : `Do these in any order. Switch back and forth whenever you like. Still to do: <b>${[rDone ? '' : `${BREAK_ALOUD - ra} min reading out loud`, mDone ? '' : `${MATH_GOAL - mm} min of math`].filter(Boolean).join(' and ')}</b>`}</p>
     <div class="mdsteps">
-      ${step(1, rDone, '🎤', 'Read out loud', rDone ? `Done! ${ra} of ${BREAK_ALOUD} minutes` : `${ra} of ${BREAK_ALOUD} minutes · ${BREAK_ALOUD - ra} to go`, ra, BREAK_ALOUD, here === 'read' && !rDone ? btn('Read now ▶', () => readNow(p), true) : here !== 'read' ? btn(rDone ? 'Reading' : 'Go read ▶', () => { p.subject = 'read'; save(); go({name:'hub'}); }, !rDone) : '')}
+      ${step(1, rDone, '🎤', 'Read out loud', rDone ? `Done! ${ra} of ${BREAK_ALOUD} minutes` : `${ra} of ${BREAK_ALOUD} minutes · ${BREAK_ALOUD - ra} to go`, ra, BREAK_ALOUD, here === 'read' && !rDone ? btn('Read in the app ▶', () => readNow(p), true) + btn('📖 My own book', () => go({name:'book'}), true) : here !== 'read' ? btn(rDone ? 'Reading' : 'Go read ▶', () => { p.subject = 'read'; save(); go({name:'hub'}); }, !rDone) : '')}
       ${MATH_ON ? step(2, mDone, '🔢', 'Math', mDone ? `Done! ${mm} of ${MATH_GOAL} minutes` : `${mm} of ${MATH_GOAL} minutes · ${MATH_GOAL - mm} to go`, mm, MATH_GOAL, here !== 'math' ? btn(mDone ? 'Math' : 'Go do math ▶', () => mathNow(p), !mDone) : btn(mDone ? 'More math' : 'Start math ▶', () => mathGo(p), !mDone)) : ''}
       ${step(MATH_ON ? 3 : 2, open, open ? '🎉' : '🔒', 'Brain Break', open ? 'Open! Play any game you like.' : 'Opens when reading and math are both done', 0, 0, btn(open ? 'Play ▶' : 'See games', () => go({name:'break'}), open))}
     </div>
@@ -1554,7 +1559,7 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
 let micBlocked = false;
 const mic = {on:false, rec:null, ptr:0, seg:0, t0:0, done:false};
 const pace = {timer:null, i:0, run:false};
-function stopAll(){ if (typeof closeScratch === 'function') closeScratch(); scanStop(); stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); breakStop(); }
+function stopAll(){ if (typeof bookStop === 'function') bookStop(true); if (typeof closeScratch === 'function') closeScratch(); scanStop(); stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); breakStop(); }
 function setupMode(){
   const p = me();
   let mode = p.mode || 'pace'; if (mode === 'mic' && (!SR || micBlocked)) mode = 'pace';
@@ -4378,7 +4383,7 @@ function bandOf(grade, w, d){ const c = [25,50,75].map(pc => normAt(grade, pc, d
 function targetOf(p, d){ return normAt(p.grade, 75, d); }
 function median(a){ if (!a.length) return null; const b = a.slice().sort((x,y)=>x-y), m = b.length >> 1; return b.length % 2 ? b[m] : Math.round((b[m-1]+b[m])/2); }
 // reads that count toward speed: the microphone on a story page, and the first (cold) read in the Fluency Gym
-function speedReads(p, from, to){ return (p.wpm||[]).filter(x => (x.how === 'mic' || x.how === 'gym') && x.d >= from && (!to || x.d <= to)).map(x => x.w); }
+function speedReads(p, from, to){ return (p.wpm||[]).filter(x => (x.how === 'mic' || x.how === 'gym' || x.how === 'book') && x.d >= from && (!to || x.d <= to)).map(x => x.w); }
 // current speed: the middle of the last 14 days of reads (one fast or slow page cannot swing it), or the
 // latest check-in if there are no reads yet
 function speedNow(p){
@@ -7802,6 +7807,79 @@ function vSpell(){
   </div>`;
   const inp = document.getElementById('spIn'); if (inp){ inp.focus({preventScroll: true}); inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.nextElementSibling.click(); }); }
   if (v.state === 'ask' && v.said !== v.i){ v.said = v.i; if (canSay()) setTimeout(() => { if (view === v) sayIt(w); }, 350); else setTimeout(() => { const pk = document.getElementById('spPeek'); if (pk) pk.style.visibility = 'hidden'; }, 3000); }
+}
+// ---- Read my own book: a real paper book, read out loud next to the iPad ----
+// The microphone listens the whole time. Only seconds when it can hear reading count (a gap of more than 6 seconds stops
+// the clock), so a book left open does not count. Words heard / minutes heard = words per minute (an estimate: the
+// microphone misses some words, so this usually reads a little LOW, never high).
+let BK = null;
+function bookStop(leaving){ if (!BK) return; BK.on = false; clearInterval(BK.tick); try { BK.rec && (BK.rec.onend = null, BK.rec.abort()); } catch (e) {} try { BK.lock && BK.lock.release(); } catch (e) {}
+  bookFlush(); if (leaving) bookSave(); }
+function bookFlush(){ if (!BK || !BK.pend) return; const s2 = BK.pend; BK.pend = 0; addAloud(s2); addMinutes(s2 / 60, BK.title); }
+function bookSave(){ if (!BK || BK.saved || BK.active < 30) return; BK.saved = true; const p = me(), mins = Math.round(BK.active / 6) / 10, w = BK.active >= 120 && BK.words >= 40 ? Math.round(BK.words / (BK.active / 60)) : 0;
+  if (w >= 15 && w <= 300){ p.wpm.push({d:today(), w, how:'book', t:BK.title}); if (p.wpm.length > 400) p.wpm.shift(); }
+  p.books = [BK.title].concat((p.books || []).filter(x => x !== BK.title)).slice(0, 8);
+  logEvent('book', BK.title, {mins, w, words:BK.words}); save(); }
+function bookStart(title){
+  const p = me(); title = (title || '').trim() || 'My own book';
+  BK = {title, on:true, words:0, active:0, pend:0, last:0, heardAt:0, t0:Date.now(), interim:''};
+  const listen = () => { if (!BK || !BK.on) return; let rec; try { rec = new SR(); } catch (e) { BK.err = 'nomic'; bookPaint(); return; }
+    BK.rec = rec; rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true;
+    rec.onresult = e => { BK.heardAt = Date.now(); for (let i = e.resultIndex; i < e.results.length; i++){ const t = String(e.results[i][0].transcript || '').trim();
+        if (e.results[i].isFinal){ BK.words += t ? t.split(/\s+/).length : 0; BK.interim = ''; } else BK.interim = t; } bookPaint(); };
+    rec.onerror = e => { if (['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){ micBlocked = true; BK.err = 'blocked'; BK.on = false; bookPaint(); } };
+    rec.onend = () => { if (BK && BK.on){ if (BK.interim){ BK.words += BK.interim.split(/\s+/).length; BK.interim = ''; } setTimeout(listen, 250); } }; // the iPad stops listening now and then: start again
+    try { rec.start(); } catch (e) { setTimeout(listen, 500); } };
+  listen();
+  try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => { if (BK) BK.lock = l; }).catch(() => {}); } catch (e) {}
+  BK.tick = setInterval(() => { if (!BK || !BK.on) return; const hearing = Date.now() - BK.heardAt < 6000;
+    if (hearing){ BK.active++; BK.pend++; if (BK.pend >= 30) bookFlush(); } BK.hearing = hearing; bookPaint(); }, 1000);
+  view.phase = 'reading'; render();
+}
+const mmss = s2 => Math.floor(s2 / 60) + ':' + String(Math.floor(s2 % 60)).padStart(2, '0');
+function bookPaint(){ if (!BK || view.name !== 'book') return; const p = me(), $ = id => document.getElementById(id); if (!$('bkTime')) { if (BK.err) render(); return; }
+  if (BK.err){ render(); return; }
+  const today20 = aloudToday(p) + BK.pend / 60, wpm = BK.active >= 60 && BK.words >= 20 ? Math.round(BK.words / (BK.active / 60)) : null;
+  $('bkTime').textContent = mmss(BK.active); $('bkWords').textContent = BK.words + (BK.interim ? BK.interim.split(/\s+/).length : 0);
+  $('bkWpm').textContent = wpm == null ? '…' : wpm; $('bkGoal').textContent = `${Math.min(BREAK_ALOUD, Math.floor(today20))} of ${BREAK_ALOUD} min today`;
+  $('bkBar').style.width = Math.min(100, today20 / BREAK_ALOUD * 100) + '%';
+  const st = $('bkState'); st.className = 'bkstate ' + (BK.on ? (BK.hearing ? 'on' : 'quiet') : 'paused');
+  st.textContent = !BK.on ? '⏸ Paused' : BK.hearing ? '🎤 I can hear you reading. Keep going!' : (BK.active ? '🤫 I can\'t hear you. Read out loud a little louder.' : '🎤 Start reading out loud. The clock starts when I hear you.'); }
+function vBook(){
+  const p = me(), v = view;
+  if (!SR || micBlocked) { app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card"><h1>📖 Read my own book</h1><p>This needs the microphone so it can hear you read. ${micBlocked ? 'The microphone is turned off for Page Quest. Ask a grown-up to allow it in Settings › Safari › Microphone, then try again.' : 'This browser cannot listen. Ask a grown-up for help.'}</p></div>`; return; }
+  if (v.phase === 'reading' && BK){
+    app.innerHTML = `${topbar(()=>{ bookStop(true); go({name:'hub'}); })}
+    <div class="card bkcard"><p class="mut" style="margin:0">📖 Reading</p><h1 style="margin:0">${esc(BK.title)}</h1>
+      <div id="bkState" class="bkstate">🎤 Start reading out loud. The clock starts when I hear you.</div>
+      <div class="bkstats"><div><span class="mut">Reading time</span><b id="bkTime">0:00</b></div><div><span class="mut">Words heard</span><b id="bkWords">0</b></div><div><span class="mut">Words a minute</span><b id="bkWpm">…</b></div></div>
+      <div><div class="row spread"><b>🎤 Read out loud</b><span id="bkGoal" class="mut"></span></div><span class="mdbar" style="height:14px"><i id="bkBar" style="width:0%"></i></span></div>
+      <p class="mut" style="margin:0">Keep the iPad close, with the screen on. Only the time I can hear you reading counts.</p>
+      <div class="row" style="justify-content:center;gap:10px">${BK.on ? `<button class="btn ghost" data-a="${A(()=>{ bookStop(false); render(); })}">⏸ Pause</button>` : `<button class="btn sun" data-a="${A(()=>{ const t = BK.title, keep = BK; bookStart(t); BK.words = keep.words; BK.active = keep.active; BK.saved = false; })}">▶ Keep reading</button>`}
+        <button class="btn" data-a="${A(()=>{ bookStop(false); bookSave(); v.phase = 'done'; render(); })}">✓ I'm done</button></div>
+    </div>`;
+    bookPaint(); return;
+  }
+  if (v.phase === 'done' && BK){
+    const mins = Math.floor(BK.active / 60), secs = BK.active % 60, w = BK.active >= 120 && BK.words >= 40 ? Math.round(BK.words / (BK.active / 60)) : null, tgt = targetOf(p);
+    app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center">
+      <span class="big-emoji">📖</span><h1>Great reading!</h1><p><b>${esc(BK.title)}</b></p>
+      <div class="bkstats"><div><span class="mut">Read out loud</span><b>${mins}:${String(secs).padStart(2, '0')}</b></div><div><span class="mut">Words heard</span><b>${BK.words}</b></div><div><span class="mut">Words a minute</span><b>${w == null ? '–' : w}</b></div></div>
+      ${w == null ? '<p class="mut">Read at least 2 minutes out loud to get your words a minute.</p>' : `<p>${w >= tgt ? '🚀 That is at or above your goal of ' + tgt + '!' : 'Your goal is ' + tgt + ' words a minute. Keep practising!'}</p>`}
+      <p>Today: <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min</b> read out loud${aloudToday(p) >= BREAK_ALOUD ? ' ✓' : ''}</p>
+      <div class="row"><button class="btn sun" data-a="${A(()=>{ const t = BK.title; go({name:'book', phase:'reading'}); bookStart(t); })}">Keep reading</button><button class="btn ghost" data-a="${A(()=>go({name:'hub'}))}">Done</button></div></div>`;
+    return;
+  }
+  const recent = p.books || [];
+  app.innerHTML = `${topbar(()=>go({name:'hub'}))}
+  <h1>📖 Read my own book</h1>
+  <div class="card" style="display:flex;flex-direction:column;gap:14px">
+    <p style="margin:0">Got a real book? Read it <b>out loud</b> next to the iPad. It listens, counts your reading time toward your <b>${BREAK_ALOUD} minutes</b>, and works out your words a minute.</p>
+    <label><b>What book are you reading?</b><input id="bkTitle" class="bktitle" placeholder="Type the book's title" value="${esc(v.title || recent[0] || '')}" autocomplete="off"></label>
+    ${recent.length ? `<div class="row" style="gap:6px"><span class="mut">Recent:</span>${recent.map(t => `<button class="btn small ghost" data-a="${A(()=>{ document.getElementById('bkTitle').value = t; })}">${esc(t)}</button>`).join('')}</div>` : ''}
+    <button class="btn sun big" data-a="${A(()=>{ const t = document.getElementById('bkTitle').value; bookStart(t); })}">🎤 Start reading</button>
+    <p class="mut" style="margin:0">The title goes in your reading log. Only time the microphone hears you reading counts, so keep reading out loud!</p>
+  </div>`;
 }
 // ---- the math home screen ----
 function vMathHub(){
