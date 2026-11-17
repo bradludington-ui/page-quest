@@ -806,3 +806,33 @@
       steps:[ `Area = length × width.`, `${w} × ${h} = ${A}.`, `The area is ${A} ${u}².`] };
   }};
 })();
+
+// ---- From the November Spiral #5–6 homework sheets ----
+(function(){
+  const M = window.MathSkills;
+  const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const NAMES = ['Sam','Maya','Leo','Ava','Ben','Lily','Max','Emma','Noah','Mia'];
+  const sym = (a, b) => a > b ? '>' : a < b ? '<' : '=';
+  // Use >, < or = to compare two sums or differences, e.g. 90 + 24 ○ 73 + 43
+  M['g3.cmpexpr'] = { name:'Compare expressions (>, <, =)', unit:'g3u2', gen(R, lvl){
+    const big = lvl === 1 ? 50 : lvl === 2 ? 99 : 499, mk = () => { const op = R.chance(lvl === 1 ? .2 : .45) ? '−' : '+', a = R.int(10, big), b = R.int(5, op === '−' ? a - 1 : big); return {t:`${fmt(a)} ${op} ${fmt(b)}`, v: op === '+' ? a + b : a - b}; };
+    let L = mk(), Rr = mk(); if (R.chance(.25)){ const d = R.int(-3, 3); const s = L.v + d; if (s > 10){ const a = R.int(5, s - 5); Rr = {t:`${fmt(a)} + ${fmt(s - a)}`, v:s}; } }
+    const t = R.int(0, 3), ans = sym(L.v, Rr.v), nm = R.pick(NAMES);
+    const steps = [`Work out the left side: ${L.t} = ${fmt(L.v)}.`, `Work out the right side: ${Rr.t} = ${fmt(Rr.v)}.`, L.v === Rr.v ? `They are the same, so use =.` : `${fmt(L.v)} is ${L.v > Rr.v ? 'greater than' : 'less than'} ${fmt(Rr.v)}, so use ${ans}.`, `${L.t} ${ans} ${Rr.t}`];
+    const hint = 'Solve each side first. Then compare the two answers. The open side of > or < faces the bigger number.';
+    if (t === 0) return { q:`Use >, < or = to compare:  ${L.t}  ○  ${Rr.t}`, kind:'choice', a:ans, choices:['>', '<', '='], hint, steps };
+    if (t === 1){ const st = `${L.t} ${R.pick(['>', '<', '='])} ${Rr.t}`, ok = st.includes(` ${ans} `) ? 'True' : 'False';
+      return { q:`True or false?  ${st}`, kind:'choice', a:ok, choices:['True', 'False'], hint, steps:steps.concat([`So the sentence is ${ok.toLowerCase()}.`]) }; }
+    if (t === 2){ if (L.v === Rr.v) Rr = {t: Rr.t + ' + 1', v: Rr.v + 1}; const a2 = L.v > Rr.v ? L.t : Rr.t;
+      return { q:`${nm} says one side is bigger. Which is greater?`, kind:'choice', a:a2, choices:[L.t, Rr.t], hint:'Work out both. The bigger answer is greater.', steps:[`${L.t} = ${fmt(L.v)}`, `${Rr.t} = ${fmt(Rr.v)}`, `${a2} is greater.`] }; }
+    const a = R.int(10, big), b = R.int(5, big), s = a + b, c = R.int(5, s - 5);
+    return { q:`What number makes this true?  ${fmt(a)} + ${fmt(b)} = ${fmt(c)} + ☐`, kind:'num', a:s - c, hint:'The = sign means both sides are worth the same. Find the left side first.', steps:[`${fmt(a)} + ${fmt(b)} = ${fmt(s)}.`, `${fmt(c)} + ☐ must also be ${fmt(s)}.`, `${fmt(s)} − ${fmt(c)} = ${fmt(s - c)}, so ☐ = ${fmt(s - c)}.`] };
+  }};
+  // Round to the nearest ten only (the sheet asks 650: a number that is already a ten stays the same)
+  M['g3.round10'] = { name:'Round to the nearest ten', unit:'g3u2', gen(R, lvl){
+    if (R.chance(.12)){ const n = R.int(lvl === 1 ? 2 : 11, lvl === 3 ? 99 : 79) * 10;
+      return { q:`Round ${fmt(n)} to the nearest ten.`, kind:'num', a:n, hint:'Look at the ones digit. What if it is already 0?', steps:[`The ones digit of ${fmt(n)} is 0.`, `${fmt(n)} is already a ten, so it does not change.`, `${fmt(n)} rounded to the nearest ten is ${fmt(n)}.`] }; }
+    for (let i = 0; i < 40; i++){ const p = M['g3.round'].gen(R, lvl === 3 ? 2 : lvl); if (/nearest ten\b|tens?\b/.test(p.q) && !/hundred|thousand/i.test(p.q)) return p; }
+    const n = R.int(11, 989); return { q:`Round ${fmt(n)} to the nearest ten.`, kind:'num', a:Math.round(n / 10) * 10, hint:'Look at the ones digit. 5 or more rounds up.', steps:[`The ones digit is ${n % 10}.`, n % 10 >= 5 ? 'That is 5 or more, so round up.' : 'That is less than 5, so round down.', `${fmt(n)} → ${fmt(Math.round(n / 10) * 10)}`] };
+  }};
+})();
