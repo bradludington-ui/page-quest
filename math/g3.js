@@ -836,3 +836,105 @@
     const n = R.int(11, 989); return { q:`Round ${fmt(n)} to the nearest ten.`, kind:'num', a:Math.round(n / 10) * 10, hint:'Look at the ones digit. 5 or more rounds up.', steps:[`The ones digit is ${n % 10}.`, n % 10 >= 5 ? 'That is 5 or more, so round up.' : 'That is less than 5, so round down.', `${fmt(n)} → ${fmt(Math.round(n / 10) * 10)}`] };
   }};
 })();
+
+// ---- From the Unit 4 Geometry study guide (test Monday 11/23): lines, rays & segments; congruent shapes;
+// polygon facts; ordering by sides; describing a set of figures ----
+(function(){
+  const M = window.MathSkills;
+  const pick = (R, a) => a[Math.floor(R.rand() * a.length)];
+  const shuf = (R, a) => R.shuffle(a.slice());
+  const L4 = ['A', 'B', 'C', 'D'];
+  // line pieces drawn as open paths: dots are endpoints, arrows go on forever
+  const dot = (x, y) => `M${x - 4},${y}a4,4 0 1,0 8,0a4,4 0 1,0 -8,0`;
+  const arrow = (x, y, dir) => `M${x},${y}l${-12 * dir},-7M${x},${y}l${-12 * dir},7`;
+  const piece = (kind, y, x0, x1) => `M${x0},${y}L${x1},${y}` + (kind === 'line' ? arrow(x0, y, -1) + arrow(x1, y, 1) : kind === 'ray' ? dot(x0, y) + arrow(x1, y, 1) : dot(x0, y) + dot(x1, y));
+  const box = kinds => ({curve: kinds.map((k, i) => piece(k, 45 + i * 52, 30, 170)).join(''), open:true});
+  const NAME = {line:'line', ray:'ray', seg:'line segment'}, PL = {line:'lines', ray:'rays', seg:'line segments'};
+  const desc = ks => { const c = {}; ks.forEach(k => c[k] = (c[k] || 0) + 1); return Object.keys(c).map(k => `${c[k]} ${c[k] === 1 ? NAME[k] : PL[k]}`).join(' and '); };
+  // shapes for congruence: an L-ish or triangle outline, moved, turned or flipped
+  const BASES = [[[0,0],[90,0],[0,50]], [[0,0],[110,0],[110,40]], [[0,0],[60,0],[60,30],[30,30],[30,60],[0,60]], [[0,0],[100,0],[70,50],[0,50]], [[0,0],[80,0],[100,60],[20,60]], [[0,20],[40,0],[90,20],[60,70]]];
+  const place = pts => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2; return pts.map(p => [Math.round(p[0] - cx + 100), Math.round(p[1] - cy + 98)]); };
+  const turn = (pts, deg) => { const a = deg * Math.PI / 180; return pts.map(([x, y]) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)]); };
+  const flip = pts => pts.map(([x, y]) => [-x, y]);
+  const scale = (pts, sx, sy) => pts.map(([x, y]) => [x * sx, y * (sy == null ? sx : sy)]);
+  const congruentSet = R => { const b = pick(R, BASES), same = place((R.chance(.5) ? flip : p => p)(turn(b, pick(R, [90, 180, 270, 45, 135])))),
+      d1 = place(turn(scale(b, .6), pick(R, [0, 90, 180]))), d2 = place(scale(b, 1, pick(R, [.5, 1.6])));
+    return {orig: place(b), same, wrong: [d1, d2]}; };
+
+  M['g3.geovocab'] = { name:'Lines, rays, segments & congruent shapes', unit:'g3u4', gen(R, lvl){
+    const t = R.int(0, 11), A = pick(R, ['Ash', 'Melanie', 'Sam', 'Maya', 'Leo', 'Ava']);
+    const hintL = 'A dot is an endpoint (it stops). An arrow means it goes on forever. Line: arrows on both ends. Ray: one dot and one arrow. Line segment: two dots.';
+    if (t === 0){ // which box has two line segments and a ray
+      const want = shuf(R, ['seg', 'seg', 'ray']), others = [shuf(R, ['line', 'line', 'seg']), shuf(R, ['ray', 'line', 'line']), shuf(R, ['seg', 'seg', 'line']), shuf(R, ['ray', 'ray', 'seg'])];
+      const sets = shuf(R, [want].concat(shuf(R, others).slice(0, 2))), k = sets.indexOf(want);
+      return { q:'Which box has two line segments and a ray?', kind:'choice', a:L4[k], choices:L4.slice(0, 3), model:{type:'shapes', items: sets.map((s, i) => Object.assign(box(s), {label:L4[i]}))},
+        hint:hintL, steps:[...sets.map((s, i) => `Box ${L4[i]}: ${desc(s)}.`), `Box ${L4[k]} has two line segments and a ray.`] }; }
+    if (t === 1){ const want = shuf(R, pick(R, [['line', 'line', 'seg'], ['ray', 'ray', 'seg'], ['seg', 'seg', 'line'], ['line', 'ray', 'seg']])), ans = desc(want);
+      const all = [ans, desc(['seg', 'seg', 'ray']), desc(['line', 'line', 'line']), desc(['ray', 'ray', 'ray']), desc(['seg', 'line', 'line'])].filter((x, i, a) => a.indexOf(x) === i);
+      return { q:'What is in this box?', kind:'choice', a:ans, choices:[ans].concat(shuf(R, all.slice(1)).slice(0, 3)), model:Object.assign({type:'polygon'}, box(want)), hint:hintL, steps:[`Look at each one from top to bottom.`, `This box has ${ans}.`] }; }
+    if (t === 2){ const k = pick(R, ['line', 'ray', 'seg']);
+      return { q:'What is this called?', kind:'choice', a:NAME[k], choices:['line', 'ray', 'line segment', 'angle'], model:Object.assign({type:'polygon'}, {curve: piece(k, 98, 25, 175), open:true}), hint:hintL,
+        steps:[k === 'line' ? 'It has arrows on both ends, so it goes on forever both ways.' : k === 'ray' ? 'It has one endpoint and one arrow.' : 'It has two endpoints, so it stops at both ends.', `It is a ${NAME[k]}.`] }; }
+    if (t === 3){ const k = pick(R, ['line', 'ray', 'seg']), n = {line:0, ray:1, seg:2}[k];
+      return { q:`How many endpoints does a ${NAME[k]} have?`, kind:'num', a:n, hint:hintL, steps:[`An endpoint is where it stops.`, `A ${NAME[k]} has ${n} endpoint${n === 1 ? '' : 's'}.`] }; }
+    if (t === 4){ const qs = [['goes on forever in both directions', 'line'], ['has one endpoint and goes on forever in one direction', 'ray'], ['has two endpoints', 'line segment']], it = pick(R, qs);
+      return { q:`Which one ${it[0]}?`, kind:'choice', a:it[1], choices:['line', 'ray', 'line segment'], hint:hintL, steps:[`Think about the ends.`, `The ${it[1]} ${it[0]}.`] }; }
+    if (t === 5){ const kinds = [...Array(R.int(3, 5))].map(() => pick(R, ['line', 'ray', 'seg'])), k = pick(R, kinds), n = kinds.filter(x => x === k).length;
+      return { q:`How many ${PL[k]} are in this box?`, kind:'num', a:n, model:Object.assign({type:'polygon'}, {curve: kinds.map((kk, i) => piece(kk, 25 + i * (150 / Math.max(1, kinds.length - 1)), 30, 170)).join(''), open:true}), hint:hintL, steps:[`Check every one.`, `There ${n === 1 ? 'is' : 'are'} ${n} ${n === 1 ? NAME[k] : PL[k]}.`] }; }
+    if (t === 6 || t === 7){ const s = congruentSet(R), opts = shuf(R, [s.same].concat(s.wrong)), k = opts.indexOf(s.same), nt = t === 7;
+      return { q: nt ? 'Shape ★ is shown first. Shapes A, B and C come next. Which one is congruent (exactly the same size and shape) to shape ★, even though it may be turned or flipped?' : 'The first shape is ★. Which shape is congruent (exactly the same size and shape) to ★?',
+        kind:'choice', a:L4[k], choices:L4.slice(0, 3), model:{type:'shapes', items:[{pts:s.orig, label:'★'}].concat(opts.map((p, i) => ({pts:p, label:L4[i]})))},
+        hint:'Congruent means exactly the same size and shape. Turning or flipping a shape does not change it. A bigger, smaller or stretched shape is NOT congruent.',
+        steps:['Compare each shape to ★. Turn it in your head.', 'A shape that is smaller, bigger or stretched is not congruent.', `Shape ${L4[k]} is the same size and shape, just turned or flipped.`] }; }
+    if (t === 8){ const s = congruentSet(R), same = R.chance(.5), other = same ? s.same : pick(R, s.wrong);
+      return { q:'Are these two shapes congruent?', kind:'choice', a: same ? 'Yes' : 'No', choices:['Yes', 'No'], model:{type:'shapes', items:[{pts:s.orig, label:'1'}, {pts:other, label:'2'}]},
+        hint:'Congruent = same size AND same shape. Turning or flipping is OK.', steps: same ? ['Shape 2 is shape 1 turned or flipped.', 'Same size, same shape: yes, they are congruent.'] : ['Shape 2 is a different size or stretched.', 'So they are not congruent.'] }; }
+    if (t === 9){ const st = pick(R, [['Congruent shapes are exactly the same size and shape.', 'True'], ['If you turn a shape, it is still congruent to the first shape.', 'True'], ['A big square and a small square are congruent.', 'False'], ['If you flip a triangle over, it is still congruent to the first triangle.', 'True'], ['Two shapes must face the same way to be congruent.', 'False'], ['A ray has two endpoints.', 'False'], ['A line goes on forever in both directions.', 'True'], ['A line segment has two endpoints.', 'True'], ['A ray goes on forever in both directions.', 'False']]);
+      return { q:`True or false? ${st[0]}`, kind:'choice', a:st[1], choices:['True', 'False'], hint:'Congruent: same size and shape (turning or flipping is OK). Line: 2 arrows. Ray: 1 dot, 1 arrow. Segment: 2 dots.', steps:[`${st[0]}`, `That is ${st[1].toLowerCase()}.`] }; }
+    if (t === 10){ const it = pick(R, [['exactly the same size and shape', 'congruent', ['similar', 'parallel', 'equal']], ['flat, with length and width only, like a drawing on paper', 'two-dimensional (plane)', ['three-dimensional (solid)', 'curved', 'open']], ['solid, like a cube or a ball', 'three-dimensional (solid)', ['two-dimensional (plane)', 'a polygon', 'a line']]]);
+      return { q:`Which word means "${it[0]}"?`, kind:'choice', a:it[1], choices:[it[1]].concat(it[2]), hint:'Think about what each word means.', steps:[`"${it[0]}" is the meaning of ${it[1]}.`] }; }
+    const solids = ['cube', 'ball (sphere)', 'cereal box', 'can (cylinder)'], flat = ['square', 'triangle', 'hexagon', 'rectangle', 'pentagon'], s1 = pick(R, solids), fl = shuf(R, flat).slice(0, 3);
+    return { q:`${A} sorted shapes. Which one is NOT a flat (two-dimensional) plane figure?`, kind:'choice', a:s1, choices:[s1].concat(fl), hint:'Plane figures are flat. Solid shapes like a cube are three-dimensional.', steps:[`${fl.join(', ')} are flat.`, `A ${s1} is solid, so it is not a plane figure.`] };
+  }};
+
+  const NM = {3:'triangle', 4:'quadrilateral', 5:'pentagon', 6:'hexagon', 7:'heptagon', 8:'octagon'};
+  const SIDES = {triangle:3, square:4, rectangle:4, rhombus:4, trapezoid:4, quadrilateral:4, pentagon:5, hexagon:6, heptagon:7, octagon:8};
+  const reg = (n, r) => [...Array(n)].map((_, i) => [Math.round(100 + (r || 75) * Math.cos(-Math.PI / 2 + i * 2 * Math.PI / n)), Math.round(98 + (r || 75) * Math.sin(-Math.PI / 2 + i * 2 * Math.PI / n))]);
+  const QUADS = [[[30,40],[170,40],[170,150],[30,150]], [[60,40],[190,40],[140,150],[10,150]], [[70,50],[150,50],[150,150],[40,150]], [[100,20],[175,95],[110,165],[35,90]], [[40,30],[160,30],[160,170],[40,170]], [[20,60],[180,60],[150,140],[50,140]]];
+  const TRIS = [[[100,20],[180,170],[20,170]], [[30,30],[30,170],[180,170]], [[20,160],[70,25],[190,140]], [[40,170],[100,30],[170,120]]];
+  const NONP = [{circle:true}, {curve:'M30,150 C30,40 170,40 170,150 Z'}, {pts:[[30,170],[100,30],[170,170]], open:true}, {curve:'M20,100 C60,20 140,180 180,100', open:true}, {pts:[[40,160],[40,40],[160,40],[160,160]], open:true}];
+  const TRUE_F = ['They are closed figures.', 'Their sides must all be line segments.', 'They have at least three sides.', 'They are flat (two-dimensional).', 'Each side meets another side at a vertex.', 'They have the same number of sides and vertices.'];
+  const FALSE_F = ['They can be made of one line segment.', 'Their sides can be curved.', 'They can have an opening.', 'They can have two sides.', 'A circle is a polygon.', 'All their sides must be the same length.'];
+  M['g3.polyfacts'] = { name:'Polygon facts & sorting shapes', unit:'g3u4', gen(R, lvl){
+    const t = R.int(0, 9);
+    if (t === 0 || t === 1){ const most = t === 1, names = shuf(R, Object.keys(SIDES).filter(n => n !== 'quadrilateral')), pickN = [];
+      for (const n of names){ if (!pickN.some(x => SIDES[x] === SIDES[n])) pickN.push(n); if (pickN.length === 4) break; }
+      const good = pickN.slice().sort((a, b) => most ? SIDES[b] - SIDES[a] : SIDES[a] - SIDES[b]), ans = good.join(', ');
+      const ds = [good.slice().reverse().join(', '), shuf(R, good).join(', '), [good[1], good[0], good[2], good[3]].join(', ')].filter(x => x !== ans);
+      return { q:`Which list gives the figures in order by the number of sides, starting with the ${most ? 'most' : 'fewest'} sides?`, kind:'choice', a:ans, choices:[ans].concat([...new Set(ds)].slice(0, 3)),
+        hint:'Write how many sides each figure has, then put the numbers in order.', steps:[good.map(n => `${n} = ${SIDES[n]}`).join(', '), `In order from ${most ? 'most' : 'fewest'}: ${ans}.`] }; }
+    if (t === 2 || t === 3){ // choose the three true statements
+      const tr = shuf(R, TRUE_F).slice(0, 3), fa = shuf(R, FALSE_F).slice(0, 2), all = shuf(R, tr.concat(fa)), L = ['A', 'B', 'C', 'D', 'E'];
+      const ans = all.map((s, i) => tr.includes(s) ? L[i] : '').filter(Boolean).join(', '), combos = new Set([ans]);
+      while (combos.size < 4){ const c = shuf(R, L).slice(0, 3).sort().join(', '); combos.add(c); }
+      return { q:`Which THREE statements about polygons are true?\n${all.map((s, i) => `${L[i]}. ${s}`).join('\n')}`, kind:'choice', a:ans, choices:[...combos],
+        hint:'A polygon is a closed, flat shape made only of straight line segments, with at least 3 sides.', steps:[...fa.map(s => `"${s}" is false.`), `The true ones are ${ans}.`] }; }
+    if (t === 4){ const f = pick(R, FALSE_F), tr = shuf(R, TRUE_F).slice(0, 3);
+      return { q:'Which statement about polygons is NOT true?', kind:'choice', a:f, choices:[f].concat(tr), hint:'A polygon is closed, flat, made of straight sides, with at least 3 sides.', steps:[`"${f}" is not true.`, 'The others describe every polygon.'] }; }
+    if (t === 5){ const kind = pick(R, ['quad', 'tri', 'mix']), items = kind === 'quad' ? shuf(R, QUADS).slice(0, 4).map(p => ({pts:p})) : kind === 'tri' ? shuf(R, TRIS).slice(0, 4).map(p => ({pts:p})) : [{pts:reg(5)}, {pts:pick(R, TRIS)}, {pts:pick(R, QUADS)}, {pts:reg(6)}];
+      const ans = kind === 'quad' ? 'All the shapes are quadrilaterals.' : kind === 'tri' ? 'All the shapes are triangles.' : 'All the shapes are polygons.';
+      const ds = ['All the shapes are three-dimensional.', 'All the shapes are non-polygons.', 'All the shapes have right angles.', 'All the shapes are pentagons.', 'All the shapes are quadrilaterals.', 'All the shapes are triangles.'].filter(x => x !== ans);
+      return { q:'Which statement is true about these shapes?', kind:'choice', a:ans, choices:[ans].concat(shuf(R, ds).slice(0, 3)), model:{type:'shapes', items}, hint:'Count the sides of each shape. Are they all closed with straight sides? Do they ALL have square corners?', steps:['Count each shape\'s sides.', kind === 'mix' ? 'They have different numbers of sides, but all are closed with straight sides.' : `Every shape has ${kind === 'quad' ? 4 : 3} sides.`, ans] }; }
+    if (t === 6){ const kind = pick(R, ['Polygons', 'Nonpolygons', 'Quadrilaterals', 'Triangles']);
+      const items = kind === 'Polygons' ? [{pts:reg(5)}, {pts:pick(R, QUADS)}, {pts:pick(R, TRIS)}, {pts:reg(8)}] : kind === 'Nonpolygons' ? shuf(R, NONP).slice(0, 4) : kind === 'Quadrilaterals' ? shuf(R, QUADS).slice(0, 4).map(p => ({pts:p})) : shuf(R, TRIS).slice(0, 4).map(p => ({pts:p}));
+      return { q:'Which ONE word best describes all the figures in this set?', kind:'choice', a:kind, choices:[kind].concat(shuf(R, ['Polygons', 'Nonpolygons', 'Quadrilaterals', 'Triangles', 'Circles', 'Angles'].filter(x => x !== kind)).slice(0, 3)), model:{type:'shapes', items},
+        hint:'Pick the word that fits EVERY figure, and is the most exact.', steps:[kind === 'Nonpolygons' ? 'Each figure is curved or open, so none is a polygon.' : kind === 'Polygons' ? 'They have different numbers of sides, but all are closed with straight sides.' : `Every figure has ${kind === 'Quadrilaterals' ? 4 : 3} sides.`, `The best word is ${kind}.`] }; }
+    if (t === 7){ const n = R.int(4, 8), words = ['pentagon', 'hexagon', 'octagon', 'quadrilateral', 'triangle', 'heptagon'], ans = NM[n];
+      return { q:`Use the word box to label this shape.\nWord box: ${shuf(R, words.includes(ans) ? words.slice(0, 4).concat(words.slice(0, 4).includes(ans) ? [] : [ans]) : words).join(', ')}`, kind:'choice', a:ans, choices:[ans].concat(shuf(R, words.filter(w => w !== ans)).slice(0, 3)), model:{type:'polygon', pts: n === 4 ? pick(R, QUADS) : reg(n, 80)},
+        hint:'Count the sides. 4 = quadrilateral, 5 = pentagon, 6 = hexagon, 7 = heptagon, 8 = octagon.', steps:[`It has ${n} sides.`, `A polygon with ${n} sides is a ${ans}.`] }; }
+    if (t === 8){ const k = R.int(1, 3), ps = shuf(R, [{pts:reg(5)}, {pts:pick(R, QUADS)}, {pts:pick(R, TRIS)}, {pts:reg(6)}]).slice(0, 4 - k), np = shuf(R, NONP).slice(0, k), items = shuf(R, ps.concat(np)).map((x, i) => Object.assign({}, x, {label:L4[i]}));
+      return { q:'How many of these figures are polygons?', kind:'num', a:4 - k, model:{type:'shapes', items}, hint:'A polygon is closed and made only of straight sides. Curved or open figures are not polygons.', steps:['Check each figure: closed? only straight sides?', `${4 - k} of them are polygons.`] }; }
+    const n = R.int(3, 8);
+    return { q:`A polygon has ${n} vertices. How many sides does it have?`, kind:'num', a:n, hint:'A polygon always has the same number of sides and vertices.', steps:[`Every side ends at a vertex.`, `${n} vertices means ${n} sides: a ${NM[n]}.`] };
+  }};
+})();

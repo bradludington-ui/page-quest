@@ -7532,7 +7532,7 @@ const MATH_UNITS = {
       {id:'g5u7', name:'Area and circles', from:'02-01', exp:true}, {id:'g5u8', name:'Probability', from:'04-12', exp:true}]};
 const MAP_DOMS = [['num','Number and number sense'],['comp','Computation and estimation'],['geo','Measurement and geometry'],['alg','Probability, statistics, patterns and algebra']];
 const SKILL_DOM = {'g3.graphs':'alg','g3.placevalue':'num','g3.compare':'num','g3.round':'num','g3.addsub':'comp','g3.estimate':'comp','g3.facts':'comp','g3.arrays':'comp','g3.inverse':'comp','g3.wordmd':'comp',
-  'g3.add3':'comp','g3.round100':'num','g3.round10':'num','g3.cmpexpr':'num','g3.subzero':'comp','g3.missing':'alg','g3.twostep':'comp','g3.units':'geo','g3.polygons':'geo','g3.quads':'geo','g3.composepoly':'geo','g3.multiples10':'comp','g3.fractions':'num','g3.time':'geo','g3.money':'comp','g3.perimeter':'geo','g3.area':'geo',
+  'g3.add3':'comp','g3.round100':'num','g3.round10':'num','g3.cmpexpr':'num','g3.geovocab':'geo','g3.polyfacts':'geo','g3.subzero':'comp','g3.missing':'alg','g3.twostep':'comp','g3.units':'geo','g3.polygons':'geo','g3.quads':'geo','g3.composepoly':'geo','g3.multiples10':'comp','g3.fractions':'num','g3.time':'geo','g3.money':'comp','g3.perimeter':'geo','g3.area':'geo',
   'g5.stats':'alg','g5.statq':'alg','g5.intcompare':'num','g5.absval':'num','g5.ineq':'alg','g5.ratio':'num','g5.fdp':'num','g5.order':'num','g5.quadrant':'geo','g5.plot':'geo','g5.distance':'geo','g5.congruent':'geo',
   'g5.intops':'comp','g5.orderops':'comp','g5.exponents':'num','g5.squares':'num','g5.sqword':'num','g5.expr':'alg','g5.onestep':'alg','g5.area':'geo','g5.circle':'geo','g5.prob':'alg'};
 function mapLatest(p){ return (p.map || []).slice().sort((a, b) => a.d.localeCompare(b.d)).pop() || null; }
@@ -7550,7 +7550,7 @@ function mathState(p){ const m = p.math || (p.math = {}); ['lvl','stat','facts',
 function mathToday(p, d){ return ((p.math || {}).min || {})[d || today()] || 0; }
 let _mathLoad = null;
 // each grade loads its base file, then the bigger question banks that extend or replace its skills
-const MATH_FILES = {3: ['g3', 'g3geo', 'g3x', 'g3y'], 5: ['g5', 'g5x', 'g5y']}, MATH_V = 5;
+const MATH_FILES = {3: ['g3', 'g3geo', 'g3x', 'g3y'], 5: ['g5', 'g5x', 'g5y']}, MATH_V = 6;
 function loadMath(p){
   const b = mathBand(p), files = MATH_FILES[b];
   if (window.MathSkills && window.MathSkills._loaded && window.MathSkills._loaded[b]) return Promise.resolve(window.MathSkills);
@@ -7723,7 +7723,7 @@ const SCHOOL = {
       learn:[['🔢', 'Math', 'Unit 4 Geometry: polygons with 3 to 8 sides, combining and cutting shapes'], ['📚', 'Reading', 'Unit 3: Government for the People (helping others, voting rights)'],
              ['✏️', 'Spelling', 'r-controlled vowels: ar (garden) and or (forest)'], ['💧', 'Science', 'The water cycle and keeping water clean']],
       events:[{d:'2026-11-19', ic:'📸', t:'Picture make-up day'},
-              {d:'2026-11-23', ic:'📐', t:'Math test: Geometry (polygons)', math:['g3.polygons', 'g3.quads', 'g3.composepoly'], prep:'Practise for the geometry test'},
+              {d:'2026-11-23', ic:'📐', t:'Math test: Unit 4 Geometry', info:'Study guide: polygons vs. nonpolygons, naming shapes by their sides (quadrilateral, pentagon, hexagon, octagon), lines, rays and line segments, congruent shapes, cutting and combining shapes.', math:['g3.polygons', 'g3.quads', 'g3.composepoly', 'g3.geovocab', 'g3.polyfacts', 'g3.geovocab'], prep:'Practise for the geometry test'},
               {d:'2026-11-20', when:'Later this week', ic:'✏️', t:'Spelling test: r-controlled ar and or words', spell:true, prep:'Practise the spelling words'},
               {d:'2026-11-23', ic:'📝', t:'Homework due: reading log and math spiral #5–6'},
               {d:'2026-11-24', ic:'🧱', t:'Field trip: LEGO Discovery Center'},
