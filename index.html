@@ -393,6 +393,9 @@ a{color:var(--accent)}
 .msteps{margin:0 0 0 22px;display:flex;flex-direction:column;gap:6px;font-size:1.05rem}.msteps li{padding:6px 10px;background:var(--sun-soft);border-radius:10px}
 .mopts .opt{font-size:1.25rem}.mtopics{display:flex;flex-direction:column;gap:12px}.mtunit{padding:10px 12px;border:2px solid var(--line);border-radius:14px}.mtunit.now{border-color:var(--sun)}
 .mtable td,.mtable th{text-align:center}
+/* the scratch pad is for drawing only: no text selection, copy/paste menu or magnifier on iPad */
+.scratch,.scratch *,body.scopen{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
+.scratch canvas{touch-action:none}
 .scratch{position:fixed;inset:0;z-index:2000;background:#fffef8;display:flex;flex-direction:column;color:#1f2937}
 .sctop{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:12px 16px;padding-top:max(12px, env(safe-area-inset-top));border-bottom:2px solid #e5e7eb;background:#fff}
 .scq{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:1.3rem;line-height:1.4}.scq .mut{font-size:.85rem;color:#64748b}.scq .mtable{font-size:1rem}
@@ -8021,6 +8024,11 @@ function openScratch(v){
     <div class="sctools">${['#1f2937','#2a5bd7','#d24a2f'].map((c, i) => `<button class="scpen ${i === 0 ? 'on' : ''}" data-c="${c}" style="--c:${c}" aria-label="pen"></button>`).join('')}
       <button class="sctool" data-t="eraser" aria-label="Eraser">🧽</button><button class="sctool" data-t="undo" aria-label="Undo">↶</button><button class="sctool" data-t="clear" aria-label="Clear">🗑</button></div>`;
   document.body.appendChild(ov); document.body.classList.add('scopen');
+  // stop the iPad's copy / look up / translate menu: no selecting, no long-press menu, and clear any selection that sneaks in
+  ['selectstart', 'contextmenu', 'dragstart'].forEach(ev => ov.addEventListener(ev, e => e.preventDefault()));
+  ov.addEventListener('touchstart', e => { if (e.target.closest('canvas')) e.preventDefault(); }, {passive:false});
+  const clearSel = () => { const sel = window.getSelection && window.getSelection(); if (sel && sel.rangeCount) sel.removeAllRanges(); };
+  document.addEventListener('selectionchange', clearSel); ov._unsel = () => document.removeEventListener('selectionchange', clearSel);
   const cv = ov.querySelector('canvas'), cx = cv.getContext('2d'), st = v.scratch || (v.scratch = {strokes:[], w:0});
   let pen = '#1f2937', eraser = false, cur = null, sawPen = false;
   const fit = () => { const r = cv.parentElement.getBoundingClientRect(), d = window.devicePixelRatio || 1; cv.width = r.width * d; cv.height = r.height * d; cv.style.width = r.width + 'px'; cv.style.height = r.height + 'px'; cx.setTransform(d, 0, 0, d, 0, 0); if (!st.w) st.w = r.width; draw(); };
@@ -8046,7 +8054,7 @@ function openScratch(v){
   ov.querySelector('.scdone').onclick = () => { closeScratch(); render(); };
   window.addEventListener('resize', fit); ov._fit = fit; requestAnimationFrame(fit);
 }
-function closeScratch(){ const ov = document.getElementById('scratch'); if (ov){ window.removeEventListener('resize', ov._fit); ov.remove(); } document.body.classList.remove('scopen'); }
+function closeScratch(){ const ov = document.getElementById('scratch'); if (ov){ if (ov._unsel) ov._unsel(); window.removeEventListener('resize', ov._fit); ov.remove(); } document.body.classList.remove('scopen'); }
 function mathFinish(v){
   const p = me(), mins = Math.max(0, mathToday(p) - (v.m0 || 0));
   logEvent('math', v.title, {right:v.right, total:v.skills.length, mins: Math.round(mins * 10) / 10, skills:[...new Set(v.skills)]});
