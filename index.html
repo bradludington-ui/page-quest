@@ -4680,7 +4680,7 @@ function vReport(){
       ${v.d !== today() ? `<button class="btn ghost small" data-a="${A(()=>{ v.d = today(); render(); })}">Today</button>` : ''}</div>
     <div class="modes"><button class="${v.range==='day'?'on':''}" data-a="${A(()=>{ v.range='day'; render(); })}">Day</button><button class="${v.range==='week'?'on':''}" data-a="${A(()=>{ v.range='week'; render(); })}">Week</button></div>
   </div>
-  <div class="card" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start"><button class="btn sun" data-a="${A(showReportQR)}">📱 Send to my phone (QR code)</button><div id="qrBox" style="display:flex;flex-direction:column;gap:8px"></div></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start"><button class="btn sun" data-a="${A(showReportQR)}">📱 Send everything to my phone (QR code)</button><span class="mut" style="font-size:.9rem">One code for every child: today, this week and the 4 weeks before.</span><div id="qrBox" style="display:flex;flex-direction:column;gap:8px"></div></div>
   ${S.profiles.length > 1 ? `<div class="row"><button class="btn small" data-a="${A(()=>copyText(all, 'allMsg'))}">Copy everyone's log</button>${navigator.share ? `<button class="btn ghost small" data-a="${A(()=>shareText(all, 'allMsg'))}">Share…</button>` : ''}<span id="allMsg"></span></div>` : ''}
   ${S.profiles.map((p, n) => {
     if (v.range === 'week'){ const txt = weekText(p, v.d);
@@ -5005,7 +5005,7 @@ function reportPack(d, range, who){
       return {d:dd, m:x.mins, gl:goalOf(p), al:x.aloud, s: sp ? sp.w : null, b: b ? b.k : null, tg: normAt(p.grade, 75, dd),
         rd: readTitles(p, dd, x), wp: x.practise.map(w => w.k).slice(0, 12), gy: x.gym.map(g => g.w), mm: x.mm, mt: mathTopics(x.math)}; };
     const inPack = new Set(range === 'day' ? [d] : [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return today(t); }));
-    const h = [...Array(28)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 1 - i); return today(t); }).filter(dd => !inPack.has(dd))
+    const h = [...Array(range === 'day' ? 28 : 35)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 1 - i); return today(t); }).filter(dd => !inPack.has(dd))
       .map(dd => { const x = dayData(p, dd); return (x.mins || x.reads.length || x.mm) ? [dd, x.mins, x.aloud, x.speed ? x.speed.w : 0, goalOf(p), readTitles(p, dd, x).map(r => [String(r[0]).slice(0, 70), r[1], r[4] || 0]), x.mm, mathTopics(x.math)] : null; }).filter(Boolean);
     if (range !== 'day') return {n:p.name, a:p.av, g:p.grade, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), ms: mathPack(p), dd: [...Array(7)].map((_,i) => { const t = new Date(d + 'T12:00'); t.setDate(t.getDate() - 6 + i); return day(today(t)); }).filter(x => x.m || x.rd.length || x.mm)};
     return Object.assign({n:p.name, a:p.av, g:p.grade, t:txt, h, ir:(p.iready||[]).slice(-4), map:(p.map||[]).slice(-4), cp:(p.cps||[]).slice(-8).map(c => ({d:c.d, dom:c.dom})), ms: mathPack(p)}, day(d));
@@ -5013,12 +5013,11 @@ function reportPack(d, range, who){
 }
 // a child's own code, from the bottom of their home screen: just their report, today or this week
 function vMyQR(){
-  const p = me(), v = view; v.range = v.range || 'day';
+  const p = me(), v = view; v.range = 'week';
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}
   <div class="card" style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
     <h1>📱 My reading report</h1>
-    <p>Show this code to your grown-up. They scan it with their phone to see what you read ${v.range === 'day' ? 'today' : 'this week'}.</p>
-    <div class="modes"><button class="${v.range==='day'?'on':''}" data-a="${A(()=>{ v.range='day'; render(); })}">Today</button><button class="${v.range==='week'?'on':''}" data-a="${A(()=>{ v.range='week'; render(); })}">This week</button></div>
+    <p>Show this code to your grown-up. One scan sends everything: today, this week, and the 4 weeks before, with your reading, math and scores.</p>
     <div id="myQR"><p class="mut">Making your code…</p></div>
     <button class="btn" data-a="${A(()=>go({name:'hub'}))}">Done</button>
   </div>`;
@@ -5032,7 +5031,7 @@ function vMyQR(){
 async function showReportQR(){
   const v = view, box = document.getElementById('qrBox'); if (!box) return;
   box.innerHTML = '<p class="mut">Making the code…</p>';
-  const code = await packReport(reportPack(v.d, v.range)), url = location.href.split('#')[0] + '#r=' + code;
+  const code = await packReport(reportPack(today(), 'week')), url = location.href.split('#')[0] + '#r=' + code;
   const svg = QR.svg(url);
   box.innerHTML = svg ? `<div class="qrwrap">${svg}</div>
       <p><b>Open the Camera on your phone and point it at the code</b>, then tap the link that pops up.</p>
@@ -5390,7 +5389,7 @@ function vPhoneRep(){
   if (pk){
     const all = pk.k.map(k => packText(k, pk.d, pk.r)).join('\n\n');
     app.innerHTML = `${head}<h1>Reading report</h1>
-      <div class="card row spread"><b style="font-family:var(--display);font-size:1.2rem">${pk.r === 'day' ? niceDate(pk.d, true) : `Week ending ${niceDate(pk.d)}`}</b>
+      <div class="card row spread"><b style="font-family:var(--display);font-size:1.2rem">${pk.r === 'day' ? niceDate(pk.d, true) : `Scanned ${niceDate(pk.d, true)} · the last 5 weeks`}</b>
         <span class="row">${saved ? '<span class="chip">✓ Saved on this phone</span>' : `<button class="btn small sun" data-a="${A(()=>{ phoneSave(pk); render(); })}">Save to this phone</button>`}
         ${list.length ? `<button class="btn ghost small" data-a="${A(()=>go({name:'phonerep'}))}">All saved (${list.length})</button>` : ''}</span></div>
       ${pk.k.length > 1 ? `<div class="row"><button class="btn small" data-a="${A(()=>copyText(all, 'pmAll'))}">Copy everyone's log</button><span id="pmAll"></span></div>` : ''}
@@ -5403,7 +5402,7 @@ function vPhoneRep(){
   const shown = rows.filter(x => !who || x.k.n === who);
   app.innerHTML = `${head}<h1>Saved reports</h1>
     ${names.length > 1 ? `<div class="tabs"><button class="${who?'':'on'}" data-a="${A(()=>{ v.who = ''; render(); })}">Everyone</button>${names.map(nm => `<button class="${who===nm?'on':''}" data-a="${A(()=>{ v.who = nm; render(); })}">${esc(nm)}</button>`).join('')}</div>` : ''}
-    ${shown.length ? shown.map((x, n) => `<p class="mut" style="margin:14px 0 -4px">${x.r === 'day' ? niceDate(x.d, true) : `Week ending ${niceDate(x.d)}`}</p>${phoneCard(x.k, x.d, x.r, n)}`).join('')
+    ${shown.length ? shown.map((x, n) => `<p class="mut" style="margin:14px 0 -4px">${x.r === 'day' ? niceDate(x.d, true) : `Scanned ${niceDate(x.d, true)} · the last 5 weeks`}</p>${phoneCard(x.k, x.d, x.r, n)}`).join('')
       : '<p class="mut">No reports saved yet. On each iPad, open Grown-ups → Daily reading report → 📱 Send to my phone, and scan the code with your phone camera.</p>'}
     ${list.length ? `<div class="row"><button class="btn ghost small" data-a="${A(()=>{ if (confirm('Delete all saved reports from this phone?')){ localStorage.removeItem(PHONE_KEY); render(); } })}">Delete saved reports</button></div>` : ''}`;
 }
