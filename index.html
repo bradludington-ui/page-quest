@@ -1216,7 +1216,7 @@ function vHub(){
   ${speedGoal(p)}
 
   <div class="tiles">
-    ${isParent(p) ? '' : `<button class="tile" data-a="${A(()=>go({name:'book'}))}"><span class="ic">📖</span><span><b>Read my own book</b><span class="mut">A real book, out loud. Counts toward ${BREAK_ALOUD} min</span></span></button>`}
+    ${isParent(p) ? '' : `<button class="tile" data-a="${A(()=>go({name:'book'}))}"><span class="ic">📖</span><span><b>Read my own book</b><span class="mut">A real book, out loud or quietly. Counts toward ${BREAK_ALOUD} min</span></span></button>`}
     <button class="tile" data-a="${A(()=>go({name:'library', tab:'rec'}))}"><span class="ic">📚</span><span><b>Pick a story</b><span class="mut">Read, answer, earn coins</span></span></button>
     ${infoSet(p).length ? `<button class="tile" data-a="${A(()=>go({name:'infolab'}))}"><span class="ic">🔬</span><span><b>Info Lab</b><span class="mut">Real-world articles, test-style questions</span></span></button>` : ''}
     <button class="tile" data-a="${A(()=>go({name:'gym'}))}"><span class="ic">🏋️</span><span><b>Fluency Gym</b><span class="mut">Read it 3 times, get faster</span></span></button>
@@ -1599,7 +1599,7 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => { if (document.hidden) rcFlush(); });
 addEventListener('pagehide', rcFlush);
 function rcLabel(){ const p = me(); if (!p) return ''; const m = Math.floor(readToday(p)), g = BREAK_ALOUD; return m >= g ? `📖 ${m} min today ✓` : `📖 ${m} of ${g} min`; }
-function stopAll(){ rcFlush(); if (typeof bookStop === 'function') bookStop(true); if (typeof closeScratch === 'function') closeScratch(); scanStop(); stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); breakStop(); }
+function stopAll(){ rcFlush(); if (typeof quietStop === 'function') quietStop(); if (typeof bookStop === 'function') bookStop(true); if (typeof closeScratch === 'function') closeScratch(); scanStop(); stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); breakStop(); }
 function setupMode(){
   const p = me();
   let mode = p.mode || 'pace'; if (mode === 'mic' && (!SR || micBlocked)) mode = 'pace';
@@ -7866,6 +7866,36 @@ function vSpell(){
 // the clock), so a book left open does not count. Words heard / minutes heard = words per minute (an estimate: the
 // microphone misses some words, so this usually reads a little LOW, never high).
 let BK = null;
+// ---- Reading a real book quietly (no microphone): Brad, Nov 2026, "I'd prefer out loud but I'll take any kind of reading".
+// The clock runs while the app is open; every 5 minutes it asks "Still reading?" and stops if nobody taps within a minute,
+// so a book left by the iPad does not keep counting. Counts toward the daily 20 (addMinutes), never toward out-loud minutes.
+let QB = null;
+const QB_ASK = 300, QB_WAIT = 60;
+function quietStart(title){
+  stopAll(); title = (title || '').trim() || 'My own book';
+  QB = {title, on:true, secs:0, pend:0, ask:false, askAt:0, saved:false};
+  try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => { if (QB) QB.lock = l; }).catch(() => {}); } catch (e) {}
+  QB.tick = setInterval(quietTick, 1000);
+  view = {name:'book', phase:'quiet'}; render();
+}
+function quietTick(){
+  if (!QB || !QB.on) return;
+  if (document.hidden) { quietFlush(); return; }
+  if (QB.ask){ if (Date.now() - QB.askAt > QB_WAIT * 1000){ QB.on = false; QB.ask = false; QB.paused = 'idle'; quietFlush(); render(); } else quietPaint(); return; }
+  QB.secs++; QB.pend++; QB.sinceAsk = (QB.sinceAsk || 0) + 1;
+  if (QB.pend >= 30) quietFlush();
+  if (QB.sinceAsk >= QB_ASK){ QB.ask = true; QB.askAt = Date.now(); QB.sinceAsk = 0; quietFlush(); render(); return; }
+  quietPaint();
+}
+function quietFlush(){ if (!QB || !QB.pend) return; const s2 = QB.pend; QB.pend = 0; addMinutes(s2 / 60, QB.title); }
+function quietStop(){ if (!QB) return; QB.on = false; clearInterval(QB.tick); try { QB.lock && QB.lock.release(); } catch (e) {} quietFlush(); }
+function quietSave(){ if (!QB || QB.saved || QB.secs < 30) return; QB.saved = true; const p = me();
+  p.books = [QB.title].concat((p.books || []).filter(x => x !== QB.title)).slice(0, 8);
+  logEvent('book', QB.title, {mins: Math.round(QB.secs / 6) / 10, w:0, quiet:true}); save(); }
+function quietPaint(){ if (!QB || view.name !== 'book') return; const p = me(), $ = id => document.getElementById(id); if (!$('qbTime')) return;
+  const t = readToday(p) + QB.pend / 60; $('qbTime').textContent = `${Math.floor(QB.secs / 60)}:${String(QB.secs % 60).padStart(2, '0')}`;
+  $('qbGoal').textContent = `${Math.min(BREAK_ALOUD, Math.floor(t))} of ${BREAK_ALOUD} min today`; $('qbBar').style.width = Math.min(100, t / BREAK_ALOUD * 100) + '%';
+  const w = $('qbWait'); if (w && QB.ask) w.textContent = Math.max(0, Math.ceil(QB_WAIT - (Date.now() - QB.askAt) / 1000)); }
 function bookStop(leaving){ if (!BK) return; BK.on = false; clearInterval(BK.tick); try { BK.rec && (BK.rec.onend = null, BK.rec.abort()); } catch (e) {} try { BK.lock && BK.lock.release(); } catch (e) {}
   bookFlush(); if (leaving) bookSave(); }
 function bookFlush(){ if (!BK || !BK.pend) return; const s2 = BK.pend; BK.pend = 0; addAloud(s2); addMinutes(s2 / 60, BK.title); }
@@ -7900,7 +7930,30 @@ function bookPaint(){ if (!BK || view.name !== 'book') return; const p = me(), $
   st.textContent = !BK.on ? '⏸ Paused' : BK.hearing ? '🎤 I can hear you reading. Keep going!' : (BK.active ? '🤫 I can\'t hear you. Read out loud a little louder.' : '🎤 Start reading out loud. The clock starts when I hear you.'); }
 function vBook(){
   const p = me(), v = view;
-  if (!SR || micBlocked) { app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card"><h1>📖 Read my own book</h1><p>This needs the microphone so it can hear you read. ${micBlocked ? 'The microphone is turned off for Page Quest. Ask a grown-up to allow it in Settings › Safari › Microphone, then try again.' : 'This browser cannot listen. Ask a grown-up for help.'}</p></div>`; return; }
+  if (v.phase === 'quiet' && QB){
+    const resume = () => { QB.on = true; QB.ask = false; QB.paused = ''; QB.sinceAsk = 0; clearInterval(QB.tick); QB.tick = setInterval(quietTick, 1000); render(); };
+    app.innerHTML = `${topbar(()=>{ quietStop(); quietSave(); go({name:'hub'}); })}
+    <div class="card bkcard"><p class="mut" style="margin:0">🤫 Reading quietly</p><h1 style="margin:0">${esc(QB.title)}</h1>
+      ${QB.ask ? `<div class="bkstate" style="font-size:1.3rem"><b>Still reading?</b> Tap the button so your time keeps counting. <span class="mut">(<span id="qbWait">${QB_WAIT}</span>s)</span></div>
+        <button class="btn sun big" data-a="${A(resume)}">✋ Yes, I'm still reading</button>`
+      : QB.paused ? `<div class="bkstate">${QB.paused === 'idle' ? '⏸ The clock stopped because nobody tapped "Still reading?".' : '⏸ Paused.'} Tap Keep reading when you start again.</div>` : `<div class="bkstate">⏱️ The clock is running. Every 5 minutes I'll ask if you're still reading, so tap the screen when I do.</div>`}
+      <div class="bkstats"><div><span class="mut">Reading time</span><b id="qbTime">0:00</b></div></div>
+      <div><div class="row spread"><b>📖 Reading</b><span id="qbGoal" class="mut"></span></div><span class="mdbar" style="height:14px"><i id="qbBar" style="width:0%"></i></span></div>
+      <p class="mut" style="margin:0">Reading out loud is even better: it also works out your words a minute. <button class="linkbtn" data-a="${A(()=>{ const t = QB.title; quietStop(); quietSave(); go({name:'book', title:t}); })}">Switch to out loud</button></p>
+      <div class="row" style="justify-content:center;gap:10px">${QB.on && !QB.ask ? `<button class="btn ghost" data-a="${A(()=>{ QB.on = false; QB.paused = 'me'; quietFlush(); render(); })}">⏸ Pause</button>` : !QB.ask ? `<button class="btn sun" data-a="${A(resume)}">▶ Keep reading</button>` : ''}
+        <button class="btn" data-a="${A(()=>{ quietStop(); quietSave(); v.phase = 'qdone'; render(); })}">✓ I'm done</button></div>
+    </div>`;
+    quietPaint(); return;
+  }
+  if (v.phase === 'qdone' && QB){
+    app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card" style="display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center">
+      <span class="big-emoji">📖</span><h1>Great reading!</h1><p><b>${esc(QB.title)}</b></p>
+      <div class="bkstats"><div><span class="mut">Read quietly</span><b>${Math.floor(QB.secs / 60)}:${String(QB.secs % 60).padStart(2, '0')}</b></div></div>
+      <p>Today: <b>${Math.floor(readToday(p))} of ${BREAK_ALOUD} min</b> of reading${readToday(p) >= BREAK_ALOUD ? ' ✓' : ''}</p>
+      <div class="row"><button class="btn sun" data-a="${A(()=>quietStart(QB.title))}">Keep reading</button><button class="btn ghost" data-a="${A(()=>go({name:'hub'}))}">Done</button></div></div>`;
+    return;
+  }
+  if (!SR || micBlocked) { app.innerHTML = `${topbar(()=>go({name:'hub'}))}<div class="card"><h1>📖 Read my own book</h1><p><button class="btn sun" data-a="${A(()=>quietStart(v.title || (p.books||[])[0] || ''))}">🤫 Read quietly instead</button></p><p>Reading out loud needs the microphone so it can hear you read. ${micBlocked ? 'The microphone is turned off for Page Quest. Ask a grown-up to allow it in Settings › Safari › Microphone, then try again.' : 'This browser cannot listen. Ask a grown-up for help.'}</p></div>`; return; }
   if (v.phase === 'reading' && BK){
     app.innerHTML = `${topbar(()=>{ bookStop(true); go({name:'hub'}); })}
     <div class="card bkcard"><p class="mut" style="margin:0">📖 Reading</p><h1 style="margin:0">${esc(BK.title)}</h1>
@@ -7927,11 +7980,12 @@ function vBook(){
   app.innerHTML = `${topbar(()=>go({name:'hub'}))}
   <h1>📖 Read my own book</h1>
   <div class="card" style="display:flex;flex-direction:column;gap:14px">
-    <p style="margin:0">Got a real book? Read it <b>out loud</b> next to the iPad. It listens, counts your reading time toward your <b>${BREAK_ALOUD} minutes</b>, and works out your words a minute.</p>
+    <p style="margin:0">Got a real book? Read it next to the iPad and it counts toward your <b>${BREAK_ALOUD} minutes</b>. Out loud is best: it listens and works out your words a minute. Quiet reading counts too.</p>
     <label><b>What book are you reading?</b><input id="bkTitle" class="bktitle" placeholder="Type the book's title" value="${esc(v.title || recent[0] || '')}" autocomplete="off"></label>
     ${recent.length ? `<div class="row" style="gap:6px"><span class="mut">Recent:</span>${recent.map(t => `<button class="btn small ghost" data-a="${A(()=>{ document.getElementById('bkTitle').value = t; })}">${esc(t)}</button>`).join('')}</div>` : ''}
-    <button class="btn sun big" data-a="${A(()=>{ const t = document.getElementById('bkTitle').value; bookStart(t); })}">🎤 Start reading</button>
-    <p class="mut" style="margin:0">The title goes in your reading log. Only time the microphone hears you reading counts, so keep reading out loud!</p>
+    <button class="btn sun big" data-a="${A(()=>{ const t = document.getElementById('bkTitle').value; bookStart(t); })}">🎤 Read out loud (best!)</button>
+    <button class="btn" data-a="${A(()=>quietStart(document.getElementById('bkTitle').value))}">🤫 Read quietly</button>
+    <p class="mut" style="margin:0">The title goes in your reading log. Both count toward your ${BREAK_ALOUD} minutes. Out loud also works out your words a minute.</p>
   </div>`;
 }
 // ---- the math home screen ----
