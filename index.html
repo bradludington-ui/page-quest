@@ -1087,6 +1087,7 @@ function topbar(back){
     <div class="grow"><b style="font-family:var(--display);font-size:1.3rem">${esc(p.name)}</b>
       <div class="mut" style="font-size:.9rem">Level ${L.lv+1} · ${L.title}${p.streak.n>1?` · 🔥 ${p.streak.n} days`:''}</div>
       <div class="xp"><i style="width:${Math.round(L.xp/L.need*100)}%"></i></div></div>
+    ${READ_VIEWS.has(view.name) ? `<span class="chip" id="rcMins" style="font-size:1rem" title="Reading minutes today">${rcLabel()}</span>` : ''}
     <span class="chip" style="font-size:1rem" title="Game tickets">🎟️ ${tix(p)}</span><span class="coins"><span class="coin"></span>${p.coins}</span></div>`;
 }
 
@@ -1206,7 +1207,7 @@ function vHub(){
   ${isParent(p) ? parentCard() : myDayCard(p, 'read')}
   <div class="card quest">
     <div class="row spread"><div style="min-width:0"><h2>🏅 Bonus quest</h2><p class="mut">${qdone === qi.length ? '🎉 All done today! Bonus ticket and 20 coins earned.' : `Extra, not required: finish all ${qi.length} for a bonus ticket and 20 coins. ${qdone} of ${qi.length} done.`}</p></div></div>
-    ${isParent(p) ? `<div class="aloudline ${breakOpen(p) ? 'open' : ''}"><span>🎤 Out loud with the microphone: <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min</b></span>${breakOpen(p) ? '<span>🎉 Brain Break open!</span>' : `<span class="mut">${!MATH_ON || mathToday(p) >= MATH_GOAL ? 'opens Brain Break' : 'plus ' + MATH_GOAL + ' min of math opens Brain Break'}</span>`}<div class="abar"><i style="width:${Math.min(100, aloudToday(p)/BREAK_ALOUD*100)}%"></i></div></div>` : ''}
+    ${isParent(p) ? `<div class="aloudline ${breakOpen(p) ? 'open' : ''}"><span>📖 Reading today: <b>${Math.floor(readToday(p))} of ${BREAK_ALOUD} min</b></span>${breakOpen(p) ? '<span>🎉 Brain Break open!</span>' : `<span class="mut">${!MATH_ON || mathToday(p) >= MATH_GOAL ? 'opens Brain Break' : 'plus ' + MATH_GOAL + ' min of math opens Brain Break'}</span>`}<div class="abar"><i style="width:${Math.min(100, readToday(p)/BREAK_ALOUD*100)}%"></i></div></div>` : ''}
     <div class="qlist">${qi.map(i => `<button class="qitem ${i.done?'done':''}" ${i.done?'disabled':''} data-a="${A(i.run)}"><span class="qcheck">${i.done?'✓':''}</span><span>${i.icon} ${esc(i.label)}</span></button>`).join('')}</div>
   </div>
   ${schoolCard(p)}
@@ -1238,10 +1239,10 @@ function readNow(p){ const ch = nextChapter(p); p.subject = 'read'; save(); if (
 function mathGo(p){ const items = mathQuest(p), it = items.find(i => !i.done) || items[0]; if (it) it.run(); }
 function mathNow(p){ p.subject = 'math'; save(); go({name:'hub'}); }
 function weekDays(){ const t = new Date(today() + 'T12:00'), mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return [...Array(7)].map((_, i) => { const d = new Date(mon); d.setDate(mon.getDate() + i); return d.toISOString().slice(0, 10); }); }
-function dayDone(p, d){ const r = (((p.aloud || {})[d]) || 0) >= BREAK_ALOUD, m = !MATH_ON || mathToday(p, d) >= MATH_GOAL; return {r, m, all: r && m}; }
+function dayDone(p, d){ const r = readToday(p, d) >= BREAK_ALOUD, m = !MATH_ON || mathToday(p, d) >= MATH_GOAL; return {r, m, all: r && m}; }
 function myDayCard(p, here){
   if (isParent(p)) return '';
-  const ra = Math.floor(aloudToday(p)), mm = Math.floor(mathToday(p)), rDone = ra >= BREAK_ALOUD, mDone = !MATH_ON || mm >= MATH_GOAL, open = breakOpen(p);
+  const ra = Math.floor(readToday(p)), mm = Math.floor(mathToday(p)), rDone = ra >= BREAK_ALOUD, mDone = !MATH_ON || mm >= MATH_GOAL, open = breakOpen(p);
   const bar = (v, g) => `<span class="mdbar"><i style="width:${Math.min(100, v / g * 100)}%"></i></span>`;
   const step = (n, done, icon, title, sub, v, g, btn) => `<div class="mdstep ${done ? 'done' : ''}"><span class="mdnum">${done ? '✓' : ''}</span><span class="mdtx"><b>${icon} ${title}</b><span class="mut">${sub}</span>${g ? bar(v, g) : ''}</span>${btn}</div>`;
   const btn = (txt, fn, hot) => `<button class="btn small ${hot ? 'sun' : 'ghost'}" data-a="${A(fn)}">${txt}</button>`;
@@ -1250,16 +1251,16 @@ function myDayCard(p, here){
   // reading and math can be done in any order, a bit of each, back and forth: both buttons stay bright until done
   return `<div class="card myday">
     <div class="row spread"><h2>⭐ My day</h2><span class="mut">${new Date(t + 'T12:00').toLocaleDateString(undefined, {weekday:'long', month:'short', day:'numeric'})}</span></div>
-    <p class="mdlead">${open ? '🎉 You did everything due today! Brain Break is open.' : `Do these in any order. Switch back and forth whenever you like. Still to do: <b>${[rDone ? '' : `${BREAK_ALOUD - ra} min reading out loud`, mDone ? '' : `${MATH_GOAL - mm} min of math`].filter(Boolean).join(' and ')}</b>`}</p>
+    <p class="mdlead">${open ? '🎉 You did everything due today! Brain Break is open.' : `Do these in any order. Switch back and forth whenever you like. Still to do: <b>${[rDone ? '' : `${BREAK_ALOUD - ra} min of reading`, mDone ? '' : `${MATH_GOAL - mm} min of math`].filter(Boolean).join(' and ')}</b>`}</p>
     <div class="mdsteps">
-      ${step(1, rDone, '🎤', 'Read out loud', rDone ? `Done! ${ra} of ${BREAK_ALOUD} minutes` : `${ra} of ${BREAK_ALOUD} minutes · ${BREAK_ALOUD - ra} to go`, ra, BREAK_ALOUD, here === 'read' && !rDone ? btn('Read in the app ▶', () => readNow(p), true) + btn('📖 My own book', () => go({name:'book'}), true) : here !== 'read' ? btn(rDone ? 'Reading' : 'Go read ▶', () => { p.subject = 'read'; save(); go({name:'hub'}); }, !rDone) : '')}
+      ${step(1, rDone, '📖', 'Read', rDone ? `Done! ${ra} of ${BREAK_ALOUD} minutes` : `${ra} of ${BREAK_ALOUD} minutes · ${BREAK_ALOUD - ra} to go`, ra, BREAK_ALOUD, here === 'read' && !rDone ? btn('Read in the app ▶', () => readNow(p), true) + btn('📖 My own book', () => go({name:'book'}), true) : here !== 'read' ? btn(rDone ? 'Reading' : 'Go read ▶', () => { p.subject = 'read'; save(); go({name:'hub'}); }, !rDone) : '')}
       ${MATH_ON ? step(2, mDone, '🔢', 'Math', mDone ? `Done! ${mm} of ${MATH_GOAL} minutes` : `${mm} of ${MATH_GOAL} minutes · ${MATH_GOAL - mm} to go`, mm, MATH_GOAL, here !== 'math' ? btn(mDone ? 'Math' : 'Go do math ▶', () => mathNow(p), !mDone) : btn(mDone ? 'More math' : 'Start math ▶', () => mathGo(p), !mDone)) : ''}
       ${step(MATH_ON ? 3 : 2, open, open ? '🎉' : '🔒', 'Brain Break', open ? 'Open! Play any game you like.' : 'Opens when reading and math are both done', 0, 0, btn(open ? 'Play ▶' : 'See games', () => go({name:'break'}), open))}
     </div>
     ${due.length ? `<div class="mddue"><b>📌 Due soon</b>${due.slice(0, 3).map(e => `<button class="mdduei" ${e.prep ? `data-a="${A(() => schoolPrep(p, e))}"` : 'disabled'}><span>${e.ic} ${esc(e.t)}</span><span class="mut">${whenTxt(e.d, e)}${e.prep ? ' · tap to practise' : ''}</span></button>`).join('')}</div>` : ''}
     <div class="mdweek" aria-label="This week">${days.map(d => { const x = dayDone(p, d), fut = d > t, isT = d === t;
-      return `<div class="mdday ${isT ? 'today' : ''} ${fut ? 'fut' : x.all ? 'ok' : ''}"><span>${new Date(d + 'T12:00').toLocaleDateString(undefined, {weekday:'short'})}</span><b>${fut ? '·' : x.all ? '⭐' : isT ? '…' : (x.r || x.m) ? '½' : '–'}</b><small>${fut ? '' : `${x.r ? '🎤' : ''}${x.m && MATH_ON ? '🔢' : ''}`}</small></div>`; }).join('')}</div>
-    <p class="mut mdkey">⭐ both done that day · ½ one of the two done · – missed · 🎤 reading done · 🔢 math done</p>
+      return `<div class="mdday ${isT ? 'today' : ''} ${fut ? 'fut' : x.all ? 'ok' : ''}"><span>${new Date(d + 'T12:00').toLocaleDateString(undefined, {weekday:'short'})}</span><b>${fut ? '·' : x.all ? '⭐' : isT ? '…' : (x.r || x.m) ? '½' : '–'}</b><small>${fut ? '' : `${x.r ? '📖' : ''}${x.m && MATH_ON ? '🔢' : ''}`}</small></div>`; }).join('')}</div>
+    <p class="mut mdkey">⭐ both done that day · ½ one of the two done · – missed · 📖 reading done · 🔢 math done</p>
   </div>`;
 }
 function mapSvg(p){
@@ -1414,7 +1415,7 @@ function modePicker(p){
   if (!p.mode) p.mode = SR ? 'mic' : 'pace';
   return `<div class="modes">${Object.entries(MODES).filter(([k]) => k !== 'mic' || SR).map(([k,m]) =>
     `<button class="${p.mode===k?'on':''}" data-a="${A(()=>{p.mode=k; save(); render();})}" title="${m.sub}">${m.label}</button>`).join('')}</div>
-    <p class="mut" style="font-size:.9rem">${p.mode === 'mic' ? '🎤 Counts toward Brain Break. ' : (SR && !micBlocked ? 'Only 🎤 Read out loud counts toward Brain Break. ' : '')}${MODES[p.mode].sub}${micBlocked && p.mode==='mic' ? ' (the microphone is not available on this page, so the highlighter will be used)' : ''}</p>`;
+    <p class="mut" style="font-size:.9rem">📖 Reading the story and answering its questions all count toward your ${BREAK_ALOUD} minutes. ${MODES[p.mode].sub}${micBlocked && p.mode==='mic' ? ' (the microphone is not available on this page, so the highlighter will be used)' : ''}</p>`;
 }
 
 // ---------- Reading ----------
@@ -1563,7 +1564,42 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
 let micBlocked = false;
 const mic = {on:false, rec:null, ptr:0, seg:0, t0:0, done:false};
 const pace = {timer:null, i:0, run:false};
-function stopAll(){ if (typeof bookStop === 'function') bookStop(true); if (typeof closeScratch === 'function') closeScratch(); scanStop(); stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); breakStop(); }
+
+// ---------- The reading clock ----------
+// Every reading activity counts toward the daily reading minutes for the whole time the kid is working on it: reading the
+// page, answering its questions, putting events in order, the summary, the Fluency Gym, Info Lab articles and their questions,
+// focus words, spelling, Word Detective and the check-ins. Before, only the reading part of a story counted, so 20 minutes of
+// reading took 40-50 minutes in the app. The clock pauses when the app is hidden or nobody has touched the screen for a while
+// (6 minutes on a page of text, which can take a while to read with no tap; 2 minutes everywhere else).
+// "Read my own book" keeps its own microphone clock and is not counted here. Arcade games and math never count.
+const READ_VIEWS = new Set(['intro', 'read', 'seq', 'finish', 'sum', 'series', 'focus', 'gym', 'info', 'infolab', 'checkin', 'checkpoint', 'spell', 'wordgame', 'g_parts']);
+const RC = {last: Date.now(), pend: 0, title: ''};
+['pointerdown', 'keydown', 'touchstart', 'scroll', 'input', 'wheel'].forEach(e => addEventListener(e, () => { RC.last = Date.now(); }, {passive:true, capture:true}));
+function rcTitle(){
+  const n = view && view.name;
+  if (n === 'gym') return 'Fluency Gym: ' + (view.psg && view.psg.title || 'practice passage');
+  if (n === 'info'){ const a = typeof infoSet === 'function' && me() ? infoSet(me()).find(x => x.id === view.id) : null; return a ? a.title : 'Info Lab'; }
+  if (n === 'infolab') return 'Info Lab';
+  if (n === 'checkin' || n === 'checkpoint') return 'Monthly checkpoint';
+  if (n === 'spell') return 'Spelling practice';
+  if (n === 'wordgame') return 'Word Detective';
+  if (n === 'focus' || n === 'g_parts') return 'Word practice';
+  return (typeof R !== 'undefined' && R && R.s && R.s.title) || 'Reading practice';
+}
+function rcReading(){ return (view.name === 'read' && !['q', 'look'].includes(view.phase)) || (view.name === 'info' && view.phase === 'read') || view.name === 'gym'; }
+function rcFlush(){ if (!RC.pend) return; const s2 = RC.pend; RC.pend = 0; addMinutes(s2 / 60, RC.title); }
+setInterval(() => {
+  if (typeof view === 'undefined' || !view || !READ_VIEWS.has(view.name) || document.hidden || !me()) { rcFlush(); return; }
+  if (Date.now() - RC.last > (rcReading() ? 6 : 2) * 60000) { rcFlush(); return; }
+  const t = rcTitle(); if (RC.pend && t !== RC.title) rcFlush();
+  RC.title = t; RC.pend += 1;
+  if (RC.pend >= 20) rcFlush();
+  const el = document.getElementById('rcMins'); if (el) el.textContent = rcLabel();
+}, 1000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) rcFlush(); });
+addEventListener('pagehide', rcFlush);
+function rcLabel(){ const p = me(); if (!p) return ''; const m = Math.floor(readToday(p)), g = BREAK_ALOUD; return m >= g ? `📖 ${m} min today ✓` : `📖 ${m} of ${g} min`; }
+function stopAll(){ rcFlush(); if (typeof bookStop === 'function') bookStop(true); if (typeof closeScratch === 'function') closeScratch(); scanStop(); stopMic(); stopPace(); closePop(); gameStop(); stopRetell(); gymStopTimer(); breakStop(); }
 function setupMode(){
   const p = me();
   let mode = p.mode || 'pace'; if (mode === 'mic' && (!SR || micBlocked)) mode = 'pace';
@@ -1594,7 +1630,7 @@ function readDone(){
   stopAll();
   if (mode === 'solo' && secs > 8){ logWpm(view.words.length, secs, 'solo'); }
   if (mode !== 'solo' && !view.readPaid){ view.readPaid = true; R.coins += 3; addCoins(3, 'read aloud'); }
-  addMinutes(secs/60, R && R.s ? R.s.title : ''); if (R) R.mins = (R.mins||0) + Math.min(secs/60, 15);
+  if (R) R.mins = (R.mins||0) + Math.min(secs/60, 15); // today's minutes come from the reading clock
   view.phase = 'q'; view.q = null; render();
 }
 function logWpm(n, secs, how){
@@ -1980,7 +2016,7 @@ function vGrown(){
         <div class="pick words" style="margin-top:8px">${FOCUS.map(([k,l]) => `<button class="${f[k]?'on':''}" aria-pressed="${!!f[k]}" data-a="${A(()=>{ p.focus = Object.assign({}, p.focus, {[k]: !f[k]}); save(); render(); })}">${f[k]?'✓ ':''}${l}</button>`).join('')}</div></div>
 
       <div><h3>Brain Break today</h3>
-        <p class="mut" style="font-size:.9rem">${esc(p.name)} has read <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} minutes</b> out loud${MATH_ON ? ` and done <b>${Math.floor(mathToday(p))} of ${MATH_GOAL} minutes</b> of math` : ''} today. ${breakOpen(p) ? (p.breakDay === today() && aloudToday(p) < BREAK_ALOUD ? 'You opened Brain Break for today.' : 'Brain Break is open.') : 'Brain Break is locked.'}</p>
+        <p class="mut" style="font-size:.9rem">${esc(p.name)} has read <b>${Math.floor(readToday(p))} of ${BREAK_ALOUD} minutes</b>${MATH_ON ? ` and done <b>${Math.floor(mathToday(p))} of ${MATH_GOAL} minutes</b> of math` : ''} today. ${breakOpen(p) ? (p.breakDay === today() && readToday(p) < BREAK_ALOUD ? 'You opened Brain Break for today.' : 'Brain Break is open.') : 'Brain Break is locked.'}</p>
         <div style="margin-top:8px">${p.breakDay === today()
           ? `<button class="btn ghost small" data-a="${A(()=>{ p.breakDay = ''; save(); render(); })}">Undo: lock it again</button>`
           : !breakOpen(p) ? `<button class="btn small sun" data-a="${A(()=>{ p.breakDay = today(); save(); render(); })}">🎉 Open Brain Break for today</button>` : ''}</div></div>
@@ -4166,7 +4202,7 @@ const BOOKS5 = [
 ];
 SERIES.push(...BOOKS1, ...BOOKS2, ...BOOKS3, ...BOOKS4, ...BOOKS5);
 
-// ---------- Out-loud minutes: only time the microphone heard the reader (opens Brain Break) ----------
+// ---------- Out-loud minutes: only time the microphone heard the reader (a stat; Brain Break counts all reading time, readToday) ----------
 // Counted from the first word the microphone heard to the last one, so pauses at the start and walking away do not count.
 const BREAK_ALOUD = 20;
 function countAloud(){
@@ -4179,17 +4215,19 @@ function addAloud(secs){
   const p = me(); if (!p || !(secs > 0)) return;
   p.aloud = p.aloud || {}; const t = today();
   for (const d of Object.keys(p.aloud)) if (d < addDays(-60)) delete p.aloud[d];
-  const was = aloudToday(p);
   p.aloud[t] = (p.aloud[t]||0) + Math.min(secs, 900)/60; save();
-  if (was < BREAK_ALOUD && aloudToday(p) >= BREAK_ALOUD) cheer('soccer', `GOAL, ${fname(p)}!`, breakOpen(p) ? '20 minutes of reading out loud. Brain Break is open!' : '20 minutes of reading out loud done!', 100);
 }
 function aloudToday(p){ return ((p.aloud||{})[today()]) || 0; }
+// The daily 20 minutes (My day, Brain Break, the week strip): every minute of reading work the reading clock counted, plus
+// "Read my own book". Until Nov 2026 only the seconds the microphone heard words counted, so 20 minutes took 40-50.
+function readToday(p, d){ return (((p.daily||{})[d || today()]) || 0) + (!d && typeof RC !== 'undefined' && p === me() ? RC.pend / 60 : 0); }
 
 // ---------- Daily reading minutes (matches the class reading logs) ----------
 function goalOf(p){ return p.goal || (p.grade >= 5 ? 20 : 15); }
 function minsToday(p){ return Math.floor(((p.daily||{})[today()]||0)); }
 function addMinutes(m, title){
   const p = me(); if (!p || !(m > 0)) return;
+  const wasR = ((p.daily||{})[today()]) || 0;
   m = Math.min(m, 15); // one sitting never counts more than 15 minutes (a page left open is not reading)
   p.minutes = (p.minutes||0) + m; p.daily = p.daily || {};
   const t = today(); p.daily[t] = (p.daily[t]||0) + m;
@@ -4197,7 +4235,8 @@ function addMinutes(m, title){
   p.readT = p.readT || {}; const day = p.readT[t] || (p.readT[t] = {}), k = title || 'Reading practice'; day[k] = (day[k] || 0) + m;
   Object.keys(p.readT).forEach(d => { if (d < addDays(-60)) delete p.readT[d]; });
   save();
-  if (p.goalPaid !== t && minsToday(p) >= goalOf(p)){ p.goalPaid = t; save(); giveTickets(1); addCoins(10, 'daily goal!'); cheer('soccer', `GOAL, ${fname(p)}!`, `You read ${goalOf(p)} minutes today. Daily goal done!`, 50); }
+  if (wasR < BREAK_ALOUD && p.daily[t] >= BREAK_ALOUD) cheer('soccer', `GOAL, ${fname(p)}!`, breakOpen(p) ? `${BREAK_ALOUD} minutes of reading today. Brain Break is open!` : `${BREAK_ALOUD} minutes of reading done!`, 100);
+  if (p.goalPaid !== t && minsToday(p) >= goalOf(p)){ p.goalPaid = t; save(); giveTickets(1); addCoins(10, 'daily goal!'); if (goalOf(p) !== BREAK_ALOUD) cheer('soccer', `GOAL, ${fname(p)}!`, `You read ${goalOf(p)} minutes today. Daily goal done!`, 50); }
 }
 function ringSvg(p){
   const done = Math.min(1, minsToday(p)/goalOf(p)), r = 26, c = 2*Math.PI*r;
@@ -4357,7 +4396,7 @@ function gymDone(secsIn){
   }
   v.note = '';
   v.errs.forEach(i => bankAdd(v.words[i].raw));
-  v.reads.push(w); addMinutes(secs/60, 'Fluency Gym: ' + (v.psg && v.psg.title || 'practice passage'));
+  v.reads.push(w);
   addCoins(5, 'read ' + v.reads.length);
   if (v.reads.length === 3){
     p.gym = p.gym || []; p.gym.push({d:today(), w:v.reads.slice(), m:v.mode, s:v.psg.s}); if (p.gym.length > 60) p.gym.shift();
@@ -4845,7 +4884,7 @@ window.BreakGames = window.BreakGames || {};
 let breakCleanup = null;
 function breakStop(){ if (breakCleanup){ try{ breakCleanup(); }catch(e){} breakCleanup = null; } }
 const BREAK_OPEN_DAYS = ['2026-11-14', '2026-11-15']; // days a grown-up opened the Brain Break for every child, on every iPad
-function breakOpen(p){ return isParent(p) || (aloudToday(p) >= BREAK_ALOUD && (!MATH_ON || mathToday(p) >= MATH_GOAL)) || p.breakDay === today() || BREAK_OPEN_DAYS.includes(today()); } // breakDay: a grown-up opened it for today
+function breakOpen(p){ return isParent(p) || (readToday(p) >= BREAK_ALOUD && (!MATH_ON || mathToday(p) >= MATH_GOAL)) || p.breakDay === today() || BREAK_OPEN_DAYS.includes(today()); } // breakDay: a grown-up opened it for today
 function breakApi(p, g){
   p.breakScores = p.breakScores || {}; p.breakStore = p.breakStore || {};
   const css = getComputedStyle(document.documentElement), c = n => css.getPropertyValue(n).trim();
@@ -4881,7 +4920,7 @@ function breakRing(v, goal, col, lab){ const pct = Math.min(100, v / goal * 100)
     <circle cx="60" cy="60" r="50" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${(pct/100*314).toFixed(1)} 314" transform="rotate(-90 60 60)"/>
     <text x="60" y="58" text-anchor="middle" font-size="30" font-weight="800" fill="#fff" font-family="Baloo 2, system-ui">${Math.floor(v)}</text><text x="60" y="80" text-anchor="middle" font-size="13" fill="#e0e7ff">${lab}</text></svg>`; }
 function vBreak(){
-  const p = me(), open = breakOpen(p), mins = Math.floor(aloudToday(p)), need = Math.max(1, Math.ceil(BREAK_ALOUD - aloudToday(p))), pct = Math.min(100, aloudToday(p)/BREAK_ALOUD*100);
+  const p = me(), open = breakOpen(p), mins = Math.floor(readToday(p)), need = Math.max(1, Math.ceil(BREAK_ALOUD - readToday(p))), pct = Math.min(100, readToday(p)/BREAK_ALOUD*100);
   const ring = `<svg viewBox="0 0 120 120" class="bbring"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="12"/>
     <circle cx="60" cy="60" r="50" fill="none" stroke="#fde047" stroke-width="12" stroke-linecap="round" stroke-dasharray="${(pct/100*314).toFixed(1)} 314" transform="rotate(-90 60 60)"/>
     <text x="60" y="58" text-anchor="middle" font-size="30" font-weight="800" fill="#fff" font-family="Baloo 2, system-ui">${mins}</text><text x="60" y="80" text-anchor="middle" font-size="13" fill="#e0e7ff">reading</text></svg>`;
@@ -4889,11 +4928,11 @@ function vBreak(){
   <div class="bbhero ${open ? 'open' : ''}">
     <div class="bbsparks" aria-hidden="true">${'✦✧✦✧✦✧'.split('').map((c,i) => `<i style="left:${8+i*16}%;animation-delay:${i*.7}s">${c}</i>`).join('')}</div>
     <div class="bbtext"><h1>🧠 Brain Break</h1>
-      <p>${open ? `${isParent(p) ? 'Grown-up account: <b>every game is always open</b> so you can try them out.' : `You read out loud for ${BREAK_ALOUD} minutes today. <b>Every game is open, play as much as you like!</b>`}` : `Unlock every game today with <b>${BREAK_ALOUD} minutes of reading out loud</b>${MATH_ON ? ` and <b>${MATH_GOAL} minutes of math</b>` : ''}. Still to go: <b>${breakNeed(p)}</b>.`}</p>
-      ${open ? '<span class="bbopen">🔓 Open all day today</span>' : `<div class="row">${aloudToday(p) < BREAK_ALOUD ? `<button class="btn sun" data-a="${A(()=>{ p.subject = 'read'; save(); go({name:'library', tab:'rec'}); })}">🎤 Read out loud</button>` : ''}${MATH_ON && mathToday(p) < MATH_GOAL ? `<button class="btn ${aloudToday(p) < BREAK_ALOUD ? 'ghost bbghost' : 'sun'}" data-a="${A(()=>{ p.subject = 'math'; save(); go({name:'hub'}); })}">🔢 Do math</button>` : ''}</div>`}</div>
+      <p>${open ? `${isParent(p) ? 'Grown-up account: <b>every game is always open</b> so you can try them out.' : `You read for ${BREAK_ALOUD} minutes today. <b>Every game is open, play as much as you like!</b>`}` : `Unlock every game today with <b>${BREAK_ALOUD} minutes of reading</b>${MATH_ON ? ` and <b>${MATH_GOAL} minutes of math</b>` : ''}. Still to go: <b>${breakNeed(p)}</b>.`}</p>
+      ${open ? '<span class="bbopen">🔓 Open all day today</span>' : `<div class="row">${readToday(p) < BREAK_ALOUD ? `<button class="btn sun" data-a="${A(()=>{ p.subject = 'read'; save(); go({name:'library', tab:'rec'}); })}">📖 Go read</button>` : ''}${MATH_ON && mathToday(p) < MATH_GOAL ? `<button class="btn ${readToday(p) < BREAK_ALOUD ? 'ghost bbghost' : 'sun'}" data-a="${A(()=>{ p.subject = 'math'; save(); go({name:'hub'}); })}">🔢 Do math</button>` : ''}</div>`}</div>
     ${open ? '<div class="bbbig" aria-hidden="true">🎮</div>' : `<div class="bbrings">${ring}${MATH_ON ? breakRing(mathToday(p), MATH_GOAL, '#67e8f9', 'math') : ''}</div>`}
   </div>
-  ${open ? '' : `<p class="mut" style="margin:-4px 4px 0">Reading counts when the microphone hears you read out loud (${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min). ${MATH_ON ? `Math counts while you are solving problems (${Math.floor(mathToday(p))} of ${MATH_GOAL} min).` : ''}</p>`}
+  ${open ? '' : `<p class="mut" style="margin:-4px 4px 0">Reading counts the whole time you work on a story, article or your own book: reading the pages and answering the questions (${Math.floor(readToday(p))} of ${BREAK_ALOUD} min). ${MATH_ON ? `Math counts while you are solving problems (${Math.floor(mathToday(p))} of ${MATH_GOAL} min).` : ''}</p>`}
   <div class="bbgrid ${open ? '' : 'locked'}">${BREAK_LIST.map(g => { const best = (p.breakScores||{})[g.id], c = BREAK_LOOK[g.id] || ['#334155','#64748b'];
     return `<button class="bbtile" style="--c1:${c[0]};--c2:${c[1]}" ${open ? '' : 'disabled'} data-a="${A(()=>go({name:'breakgame', id:g.id}))}">
       <span class="bbart" aria-hidden="true"><span>${g.icon}</span></span>
@@ -7410,7 +7449,7 @@ function vInfo(){
     app.innerHTML = `${topbar(()=>go({name:'infolab'}))}
     <div class="card"><p class="mut">Words to know</p>${words}</div>
     <div class="card iart">${art}</div>
-    <div class="row"><button class="btn sun" data-a="${A(()=>{ v.phase = 'q'; v.mins = Math.min(20, (Date.now() - v.t0) / 60000); addMinutes(v.mins, a.title); render(); window.scrollTo({top:0}); })}">I'm done reading → Questions</button></div>`;
+    <div class="row"><button class="btn sun" data-a="${A(()=>{ v.phase = 'q'; v.mins = Math.min(20, (Date.now() - v.t0) / 60000); render(); window.scrollTo({top:0}); })}">I'm done reading → Questions</button></div>`;
     return;
   }
   if (v.phase === 'q'){
@@ -7470,7 +7509,6 @@ function cpFinish(f){
   const p = me(), v = view, dom = {};
   f.items.forEach((it, i) => { const d = dom[it.dom] || (dom[it.dom] = [0, 0]); d[1]++; if (v.st[i].ok) d[0]++; });
   p.cps = p.cps || []; p.cps.push({d:today(), id:f.id, dom, mins: Math.round((Date.now() - (v.t0 || Date.now())) / 60000)});
-  addMinutes(Math.min(30, (Date.now() - (v.t0 || Date.now())) / 60000), 'Monthly checkpoint');
   logEvent('checkin', 'Monthly checkpoint', {w:0}); addCoins(30, 'checkpoint'); cheer('trophy', `Checkpoint champion, ${fname(p)}!`, 'Monthly checkpoint finished. Great focus!', 50); questMark('check'); save();
 }
 function cpTableHtml(cps){
@@ -7516,7 +7554,7 @@ function mathPack(p){
   return {u: mathUnitNow(p).name, s, f: Object.keys(m.facts).filter(k => m.facts[k].n > (m.facts[k].ok || 0)).slice(0, 16)};
 }
 function mathTopics(list){ const T = {}; (list || []).forEach(e => { const x = T[e.title] || (T[e.title] = [0, 0, 0]); x[0] += e.mins || 0; x[1] += e.right || 0; x[2] += e.total || 0; }); return Object.entries(T).map(([t, x]) => [t, Math.round(x[0]), x[1], x[2]]); }
-// Brain Break needs 20 minutes of out-loud reading AND 10 minutes of math, each counted only while actually working.
+// Brain Break needs 20 minutes of reading (readToday) AND 10 minutes of math, each counted only while actually working.
 // Problems come from generators in math/g3.js and math/g5.js (window.MathSkills), loaded when a child opens Math.
 const MATH_GOAL = 10;
 const MATH_ON = true;
@@ -7570,8 +7608,8 @@ function mathTick(){ const p = me(); if (!p) return; const now = Date.now(), m =
   if (was < MATH_GOAL && mathToday(p) >= MATH_GOAL) cheer(Math.random() < .5 ? 'slide' : 'team', `What a finish, ${fname(p)}!`, breakOpen(p) ? '10 minutes of math done. Brain Break is open!' : '10 minutes of math done!', 60);
 }
 function breakNeed(p){
-  const r = Math.max(0, Math.ceil(BREAK_ALOUD - aloudToday(p))), m = MATH_ON ? Math.max(0, Math.ceil(MATH_GOAL - mathToday(p))) : 0, out = [];
-  if (r) out.push(`${r} min reading out loud`); if (m) out.push(`${m} min of math`); return out.join(' and ');
+  const r = Math.max(0, Math.ceil(BREAK_ALOUD - readToday(p))), m = MATH_ON ? Math.max(0, Math.ceil(MATH_GOAL - mathToday(p))) : 0, out = [];
+  if (r) out.push(`${r} min of reading`); if (m) out.push(`${m} min of math`); return out.join(' and ');
 }
 
 // ---- pictures for problems ----
@@ -7723,7 +7761,7 @@ const SCHOOL = {
       learn:[['🔢', 'Math', 'Unit 4 Geometry: polygons with 3 to 8 sides, combining and cutting shapes'], ['📚', 'Reading', 'Unit 3: Government for the People (helping others, voting rights)'],
              ['✏️', 'Spelling', 'r-controlled vowels: ar (garden) and or (forest)'], ['💧', 'Science', 'The water cycle and keeping water clean']],
       events:[{d:'2026-11-19', ic:'📸', t:'Picture make-up day'},
-              {d:'2026-11-23', ic:'📐', t:'Math test: Unit 4 Geometry', info:'Study guide: polygons vs. nonpolygons, naming shapes by their sides (quadrilateral, pentagon, hexagon, octagon), lines, rays and line segments, congruent shapes, cutting and combining shapes.', math:['g3.polygons', 'g3.quads', 'g3.composepoly', 'g3.geovocab', 'g3.polyfacts', 'g3.geovocab'], prep:'Practise for the geometry test'},
+              {d:'2026-11-23', ic:'📐', t:'Math test: Unit 4 Geometry', about:'Study guide: polygons vs. nonpolygons, naming shapes by their sides (quadrilateral, pentagon, hexagon, octagon), lines, rays and line segments, congruent shapes, cutting and combining shapes.', math:['g3.polygons', 'g3.quads', 'g3.composepoly', 'g3.geovocab', 'g3.polyfacts', 'g3.geovocab'], prep:'Practise for the geometry test'},
               {d:'2026-11-20', when:'Later this week', ic:'✏️', t:'Spelling test: r-controlled ar and or words', spell:true, prep:'Practise the spelling words'},
               {d:'2026-11-23', ic:'📝', t:'Homework due: reading log and math spiral #5–6'},
               {d:'2026-11-24', ic:'🧱', t:'Field trip: LEGO Discovery Center'},
@@ -7772,7 +7810,7 @@ function schoolCard(p, mathOnly){
   const tch = S2.teachers ? (S2.teachers[teacherOf(p)] ? `<span class="mut" style="font-size:.85rem">${esc(S2.teachers[p.teacher].name)}'s class · <button class="linkbtn" data-a="${A(() => { delete p.teacher; save(); render(); })}">change</button></span>`
     : `<div class="row" style="gap:6px;margin-top:6px"><span class="mut">Whose class are you in?</span>${Object.keys(S2.teachers).map(k => `<button class="btn small ghost" data-a="${A(() => { p.teacher = k; save(); render(); })}">${esc(S2.teachers[k].name)}</button>`).join('')}</div>`) : `<span class="mut" style="font-size:.85rem">${esc(S2.from)}</span>`;
   return `<div class="card schoolcard"><div class="row spread"><h2>📅 Coming up at school</h2>${tch}</div>
-    ${ev.length ? `<ul class="schev">${ev.map(e => `<li class="${daysTo(e.d) <= 2 ? 'soon' : ''}"><span class="ic">${e.ic}</span><span class="sct"><b>${esc(e.t)}</b><span class="mut">${whenTxt(e.d, e)}</span></span>${e.prep ? `<button class="btn small ${daysTo(e.d) <= 7 ? 'sun' : 'ghost'}" data-a="${A(() => schoolPrep(p, e))}">${esc(e.prep)}</button>` : ''}</li>`).join('')}</ul>` : '<p class="mut">Nothing on the calendar in the next three weeks.</p>'}
+    ${ev.length ? `<ul class="schev">${ev.map(e => `<li class="${daysTo(e.d) <= 2 ? 'soon' : ''}"><span class="ic">${e.ic}</span><span class="sct"><b>${esc(e.t)}</b><span class="mut">${whenTxt(e.d, e)}</span>${e.about ? `<span class="mut" style="font-size:.85rem">${esc(e.about)}</span>` : ''}</span>${e.prep ? `<button class="btn small ${daysTo(e.d) <= 7 ? 'sun' : 'ghost'}" data-a="${A(() => schoolPrep(p, e))}">${esc(e.prep)}</button>` : ''}</li>`).join('')}</ul>` : '<p class="mut">Nothing on the calendar in the next three weeks.</p>'}
     ${mathOnly ? '' : `<details class="schlearn"><summary>What we are learning in class</summary><ul>${S2.learn.map(l => `<li><span>${l[0]}</span> <b>${esc(l[1])}:</b> ${esc(l[2])}</li>`).join('')}</ul></details>`}
   </div>`;
 }
@@ -7854,7 +7892,7 @@ function bookStart(title){
 const mmss = s2 => Math.floor(s2 / 60) + ':' + String(Math.floor(s2 % 60)).padStart(2, '0');
 function bookPaint(){ if (!BK || view.name !== 'book') return; const p = me(), $ = id => document.getElementById(id); if (!$('bkTime')) { if (BK.err) render(); return; }
   if (BK.err){ render(); return; }
-  const today20 = aloudToday(p) + BK.pend / 60, wpm = BK.active >= 60 && BK.words >= 20 ? Math.round(BK.words / (BK.active / 60)) : null;
+  const today20 = readToday(p) + BK.pend / 60, wpm = BK.active >= 60 && BK.words >= 20 ? Math.round(BK.words / (BK.active / 60)) : null;
   $('bkTime').textContent = mmss(BK.active); $('bkWords').textContent = BK.words + (BK.interim ? BK.interim.split(/\s+/).length : 0);
   $('bkWpm').textContent = wpm == null ? '…' : wpm; $('bkGoal').textContent = `${Math.min(BREAK_ALOUD, Math.floor(today20))} of ${BREAK_ALOUD} min today`;
   $('bkBar').style.width = Math.min(100, today20 / BREAK_ALOUD * 100) + '%';
@@ -7881,7 +7919,7 @@ function vBook(){
       <span class="big-emoji">📖</span><h1>Great reading!</h1><p><b>${esc(BK.title)}</b></p>
       <div class="bkstats"><div><span class="mut">Read out loud</span><b>${mins}:${String(secs).padStart(2, '0')}</b></div><div><span class="mut">Words heard</span><b>${BK.words}</b></div><div><span class="mut">Words a minute</span><b>${w == null ? '–' : w}</b></div></div>
       ${w == null ? '<p class="mut">Read at least 2 minutes out loud to get your words a minute.</p>' : `<p>${w >= tgt ? '🚀 That is at or above your goal of ' + tgt + '!' : 'Your goal is ' + tgt + ' words a minute. Keep practising!'}</p>`}
-      <p>Today: <b>${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min</b> read out loud${aloudToday(p) >= BREAK_ALOUD ? ' ✓' : ''}</p>
+      <p>Today: <b>${Math.floor(readToday(p))} of ${BREAK_ALOUD} min</b> of reading${readToday(p) >= BREAK_ALOUD ? ' ✓' : ''}</p>
       <div class="row"><button class="btn sun" data-a="${A(()=>{ const t = BK.title; go({name:'book', phase:'reading'}); bookStart(t); })}">Keep reading</button><button class="btn ghost" data-a="${A(()=>go({name:'hub'}))}">Done</button></div></div>`;
     return;
   }
@@ -7941,9 +7979,9 @@ function subjectSwitch(p){
 function vSubject(){
   const p = me();
   app.innerHTML = `${topbar(null)}<h1 style="text-align:center">What do you want to work on, ${esc(p.name)}?</h1>
-  <div class="subjpick"><button class="subjtile read" data-a="${A(()=>{ p.subject = 'read'; save(); go({name:'hub'}); })}"><span>📚</span><b>Reading</b><span class="mut">🎤 ${Math.floor(aloudToday(p))} of ${BREAK_ALOUD} min out loud today</span></button>
+  <div class="subjpick"><button class="subjtile read" data-a="${A(()=>{ p.subject = 'read'; save(); go({name:'hub'}); })}"><span>📚</span><b>Reading</b><span class="mut">📖 ${Math.floor(readToday(p))} of ${BREAK_ALOUD} min today</span></button>
     <button class="subjtile math" data-a="${A(()=>{ p.subject = 'math'; save(); go({name:'hub'}); })}"><span>🔢</span><b>Math</b><span class="mut">⏱ ${Math.floor(mathToday(p))} of ${MATH_GOAL} min today</span></button></div>
-  <p class="mut" style="text-align:center">${breakOpen(p) ? '🎉 Everything due today is done. Brain Break is open!' : `Still to do today: ${[aloudToday(p) >= BREAK_ALOUD ? '' : `${Math.ceil(BREAK_ALOUD - aloudToday(p))} min reading out loud`, mathToday(p) >= MATH_GOAL ? '' : `${Math.ceil(MATH_GOAL - mathToday(p))} min of math`].filter(Boolean).join(' and ')}, in any order. Then Brain Break opens.`}</p>`;
+  <p class="mut" style="text-align:center">${breakOpen(p) ? '🎉 Everything due today is done. Brain Break is open!' : `Still to do today: ${[readToday(p) >= BREAK_ALOUD ? '' : `${Math.ceil(BREAK_ALOUD - readToday(p))} min of reading`, mathToday(p) >= MATH_GOAL ? '' : `${Math.ceil(MATH_GOAL - mathToday(p))} min of math`].filter(Boolean).join(' and ')}, in any order. Then Brain Break opens.`}</p>`;
 }
 
 // ---- the problem player ----
@@ -8174,7 +8212,7 @@ function kidSummary(name, local){
   const td = rows.find(r => r.d === t), wk = rows.filter(r => r.d >= w0), pw = rows.filter(r => r.d >= p0 && r.d < w0);
   const sum = (a, k) => a.reduce((x, r) => x + (r[k] || 0), 0), g = kid.g || 3;
   const mright = a => a.reduce((x, r) => x + (r.mt || []).reduce((y, q) => y + (q[2] || 0), 0), 0), mtot = a => a.reduce((x, r) => x + (r.mt || []).reduce((y, q) => y + (q[3] || 0), 0), 0);
-  const sp = a => median(a.filter(r => r.s).map(r => r.s)), bb = r => (r.al || 0) >= BREAK_ALOUD && (r.mm || 0) >= MATH_GOAL;
+  const sp = a => median(a.filter(r => r.s).map(r => r.s)), bb = r => (r.m || 0) >= BREAK_ALOUD && (r.mm || 0) >= MATH_GOAL;
   const last = Math.max(0, ...rows.map(r => r.at || 0));
   return {name, g, a:kid.a, local: !!local, td, wk, last, days: wk.filter(r => (r.m || 0) > 0).length, read: sum(wk, 'm'), aloud: sum(wk, 'al'), math: sum(wk, 'mm'), met: wk.filter(r => (r.m || 0) >= (r.gl || 20)).length,
     bb: wk.filter(bb).length, titles: [...new Set(wk.flatMap(r => (r.rd || []).map(x => bookOf(x[0]).book)))], mR: mright(wk), mT: mtot(wk), sNow: sp(wk), sPrev: sp(pw), readPrev: sum(pw, 'm'), mathPrev: sum(pw, 'mm'), ms: kid.ms};
@@ -8208,11 +8246,11 @@ function vExecSum(){
     body = `<div class="card"><h2>📅 Today</h2><p class="mut">${niceDate(today(), true)}</p>
       <table class="daytab exgrid">${head}
         ${R('📖 Reading', k => `<b>${T(k).m || 0}</b>/${T(k).gl || (k.g >= 5 ? 20 : 15)}${ok(T(k).m || 0, T(k).gl || (k.g >= 5 ? 20 : 15))}`)}
-        ${R('🎤 Out loud', k => `<b>${T(k).al || 0}</b>/${BREAK_ALOUD}${ok(T(k).al || 0, BREAK_ALOUD)}`)}
+        ${R('📖 Reading', k => `<b>${T(k).m || 0}</b>/${BREAK_ALOUD}${ok(T(k).m || 0, BREAK_ALOUD)}`)}
         ${R('🔢 Math', k => `<b>${T(k).mm || 0}</b>/${MATH_GOAL}${ok(T(k).mm || 0, MATH_GOAL)}`)}
         ${R('✅ Math right', k => mt(T(k)) ? `${Math.round(mr(T(k)) / mt(T(k)) * 100)}%` : '–')}
         ${R('⚡ Speed', k => T(k).s ? `${bandOf(k.g, T(k).s).ic} ${T(k).s}` : '–')}
-        ${R('🧠 Brain Break', k => (T(k).al || 0) >= BREAK_ALOUD && (T(k).mm || 0) >= MATH_GOAL ? '✅' : '🔒')}
+        ${R('🧠 Brain Break', k => (T(k).m || 0) >= BREAK_ALOUD && (T(k).mm || 0) >= MATH_GOAL ? '✅' : '🔒')}
         ${local ? '' : R('📷 Scanned', k => `<span class="mut">${ago(k.last)}</span>`)}</table>
       <h3>What they read</h3>${K.map(k => `<p class="exread"><b>${esc(k.name)}:</b> ${k.td && (k.td.rd || []).length ? schoolDay(k.td).map(b => `${esc(b.book)}${b.mins ? ` <span class="mut">${b.mins} min</span>` : ''}`).join(' · ') : '<span class="mut">nothing yet</span>'}</p>`).join('')}
       ${exNotes(K, true)}</div>`;
