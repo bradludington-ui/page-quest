@@ -2028,6 +2028,10 @@ function vGrown(){
   app.innerHTML = `<div class="row"><button class="btn ghost small" data-a="${A(()=>go({name: me() ? 'hub' : 'profiles'}))}">← Back</button></div>
   <div class="row spread"><h1>Reading progress</h1><span class="row"><button class="btn sun" data-a="${A(()=>go({name:'execsum', local:true}))}">📋 Summary</button><button class="btn" data-a="${A(()=>go({name:'report'}))}">🗒 Daily reading report</button></span></div>
   ${S.profiles.length > 1 && S.profiles.some(p => !breakOpen(p)) ? `<div class="card row spread"><span>Did everyone make their reading time some other way?</span><button class="btn small sun" data-a="${A(()=>{ S.profiles.forEach(p => { if (!breakOpen(p)) p.breakDay = today(); }); save(); render(); })}">🎉 Open Brain Break for everyone today</button></div>` : ''}
+  ${SR ? `<details class="card"><summary><b>🎤 Stop the "allow microphone?" question</b></summary>
+    <p style="margin:8px 0 4px">Web pages cannot turn this on for themselves; it is a switch on each iPad. Do this once on every iPad:</p>
+    <ol style="margin:0 0 6px 20px;line-height:1.6"><li>Open the <b>Settings</b> app.</li><li>Tap <b>Apps</b>, then <b>Safari</b>. (On older iPads, Safari is in the main list.)</li><li>Scroll down to <b>Settings for Websites</b> and tap <b>Microphone</b>.</li><li>Choose <b>Allow</b>.</li></ol>
+    <p class="mut" style="margin:0">If it still asks: open Page Quest in Safari, tap the <b>aA</b> or page menu next to the address, tap <b>Website Settings</b>, and set <b>Microphone</b> to <b>Allow</b>. Then open Page Quest from the Home Screen again.</p></details>` : ''}
   ${S.profiles.length ? '' : '<p class="mut">No readers yet.</p>'}
   ${S.profiles.map(p => {
     const sk = Object.entries(p.skills); const tot = sk.reduce((a,[,v])=>a+v[1],0), ok = sk.reduce((a,[,v])=>a+v[0],0);
