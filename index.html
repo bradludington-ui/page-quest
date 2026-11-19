@@ -1450,7 +1450,10 @@ let R = null; // the story session
 function startStory(s){
   R = {s, page:0, firstTry:[], coins:0, t0:Date.now()};
   const sst = s.series && (me().series||{})[s.series], back = sst && sst.d < today() && chaptersRead(sst).includes(s.chap - 1);
-  go({name:'read', phase: s.recall && back ? 'recall' : 'text'});
+  // A chapter always opens on the story itself (Brad, Nov 2026: "we haven't read anything"). It used to open on a question
+  // about the last chapter; now the last chapter is a short recap above the first page.
+  R.back = !!back;
+  go({name:'read', phase:'text'});
 }
 function wordsOf(text){
   // split into display tokens with character offsets, and a normalised form for matching
@@ -1493,6 +1496,7 @@ function vRead(){
     <div class="readlay">
     <div class="card lv${s.lvl>=5?5:3}">
       ${phase==='look' ? `<p class="notice" style="margin-bottom:12px">Look back! The highlighted part has the answer. Read it again out loud.</p>` : ''}
+      ${R.back && R.page === 0 && s.prevSum ? `<p class="notice" style="margin-bottom:12px"><b>Last time:</b> ${esc(s.prevSum)}</p>` : ''}
       <p class="passage" id="passage">${words.map((w,i) => (i ? (pg.t.slice(words[i-1].end, w.at).includes('\n') ? '<br>' : ' ') : '') + `<span class="w${ev.has(i)?' ev':''}${isName(w.n) ? ' nm' : ''}${isFocus(p, bankKey(w.raw)) ? ' fw' : ''}${pg.t.includes('\n') && w.end <= pg.t.indexOf('\n') ? ' ptitle' : ''}" data-i="${i}">${esc(w.raw)}</span>`).join('')}</p>
       ${words.some(w => isFocus(p, bankKey(w.raw))) ? `<p class="mut" style="font-size:.9rem;margin-top:6px"><span class="w fw">Dotted words</span> are your focus words. Read them carefully!</p>` : ''}
     </div>
