@@ -240,6 +240,7 @@ a{color:var(--accent)}
 .hkey.hit{background:var(--good-soft);border-color:var(--good);color:var(--good);box-shadow:none}
 .hkey.miss{background:var(--soft);color:var(--mut);opacity:.5;box-shadow:none}
 @media (max-width:520px){.hkeys{grid-template-columns:repeat(7,1fr)}.hslot{width:1.7rem;font-size:1.4rem}}
+.w.nm{color:var(--accent);font-weight:700;text-decoration:underline solid var(--accent);text-decoration-thickness:2px;text-underline-offset:5px}
 .w.fw{text-decoration:underline dotted var(--sun);text-decoration-thickness:3px;text-underline-offset:5px}
 .w.unclear{background:var(--sun-soft);text-decoration:underline wavy var(--sun);text-underline-offset:5px}
 .fwchip{background:var(--sun-soft);border:1px solid var(--sun)}
@@ -1014,11 +1015,37 @@ const BIOS2 = [
 STORIES.push(...BIOS2);
 
 // How to say the few real names that have to stay in the stories (shown in the warm-up and when the name is tapped)
+// How to say the names in the "Real people" stories (and a few tales). They are real, so they stay; each one shows on the
+// story's start page, is marked in the text, and can be tapped while reading to see and hear it.
 const SAY = {
-  midas:[['Midas','MY-dus']], earhart:[['Earhart','AIR-hart']],
+  midas:[['Midas','MY-dus']], earhart:[['Amelia','uh-MEEL-yuh'],['Earhart','AIR-hart'],['Noonan','NOO-nun'],['Howland','HOW-lund']],
+  robinson:[['Robinson','ROB-in-sun'],['Pasadena','pass-uh-DEE-nuh'],['Rickey','RICK-ee'],['Dodgers','DOJ-erz']],
+  wright:[['Orville','OR-vil'],['Wilbur','WIL-bur'],['Dayton','DAY-tun']],
+  tubman:[['Harriet','HAIR-ee-ut'],['Tubman','TUB-mun'],['Minty','MIN-tee'],['Auburn','AW-burn']],
+  armstrong:[['Armstrong','ARM-strong'],['Aldrin','ALL-drin'],['Collins','COL-inz'],['Apollo','uh-POL-oh'],['Purdue','pur-DOO']],
+  anansi:[['Anansi','uh-NAHN-see'],['Ghana','GAH-nuh']],
+  parks:[['Montgomery','mont-GUM-ur-ee'],['Luther','LOO-thur']],
+  tut:[['Egyptians','ee-JIP-shunz'],['Carter','CAR-tur']],
+  williams:[['Serena','suh-REE-nuh'],['Compton','COMP-tun'],['Wimbledon','WIM-bul-dun']],
+  biles:[['Simone','sih-MOHN'],['Biles','BYLZ']],
+  ride:[['Stanford','STAN-furd'],['Challenger','CHAL-un-jur']],
+  goodall:[['Goodall','GOOD-all'],['Tanzania','tan-zuh-NEE-uh'],['Greybeard','GRAY-beard']],
+  disney:[['Oswald','OZ-wald'],['Anaheim','AN-uh-hime']],
+  keller:[['Keller','KEL-ur'],['Sullivan','SUL-ih-vun']],
+  lincoln:[['Lincoln','LINK-un'],['Emancipation','ee-man-sih-PAY-shun']],
+  mlk:[['Luther','LOO-thur'],['Montgomery','mont-GUM-ur-ee'],['Memphis','MEM-fis']],
+  curie:[['Curie','kyoo-REE'],['Manya','MAHN-yuh'],['Warsaw','WAR-saw'],['Pierre','pee-AIR'],['Nobel','no-BELL']],
+  einstein:[['Einstein','INE-stine'],['Switzerland','SWIT-zur-lund'],['Princeton','PRINS-tun'],['Nobel','no-BELL']],
+  kahlo:[['Frida','FREE-dah']],
+  malala:[['Pakistan','PACK-ih-stan'],['Nobel','no-BELL']],
+  hamm:[['Hamm','HAM'],['Garrett','GAIR-ut']],
+  franklin:[['Dogood','DOO-good'],['Almanack','ALL-muh-nak']],
   aryabhata:[['Aryabhata','AR-yah-BAH-tah']], cailun:[['Cai Lun','tsy LOON'],['Han','hahn']],
-  anning:[['ichthyosaur','IK-thee-oh-sor'],['plesiosaur','PLEE-zee-oh-sor'],['pterosaur','TAIR-oh-sor']]};
-function sayOf(s){ return s && (SAY[s.id] || s.say) || null; }
+  anning:[['Anning','AN-ing'],['ichthyosaur','IK-thee-oh-sor'],['plesiosaur','PLEE-zee-oh-sor'],['pterosaur','TAIR-oh-sor']]};
+function sayOf(s){ if (!s) return null; const a = (s.say || []).concat((SAY[s.id] || []).filter(([n]) => !(s.say || []).some(x => x[0] === n))); return a.length ? a : null; }
+// every word of every name above, for marking names in the text and letting the microphone go easy on them
+function isName(n){ return !!(view.names && n && (view.names.has(n) || (n.endsWith('s') && view.names.has(n.slice(0, -1))))); }
+function sayNames(s){ return new Set((sayOf(s) || []).filter(([n]) => /^[A-Z]/.test(n)).flatMap(([n]) => n.split(' ').map(norm))); }
 const CATS = {fun:'Fun stories', tales:'Tales, myths & poems', fiction:'Realistic fiction', people:'Real people', mine:'My new stories'};
 const SKILLS = ['detail','inference','vocabulary','main idea','character','figurative language','memory'];
 const SHOP = [
@@ -1393,8 +1420,8 @@ function vIntro(){
     <div class="row"><span class="big-emoji">${s.icon}</span><div style="min-width:0"><h1>${esc(s.title)}</h1><p class="mut">${s.pages.length} pages · a question after every page</p>
       ${s.school?`<p class="chip school" style="margin-top:6px">🏫 ${esc(s.school)}</p>`:''}${s.series?`<p class="chip" style="margin-top:6px">📖 Chapter ${s.chap+1} of ${s.chapters}</p>`:''}</div></div>
   </div>
-  ${sayOf(s) ? `<div class="card tw"><h2>Say it like this</h2><p class="mut">These names are real, so they stay. Here is how to say them:</p>
-    ${sayOf(s).map(([n, how]) => `<div class="twrow"><span class="twdone" style="color:var(--ink)">${esc(n)}</span><span class="syl lit">${esc(how)}</span></div>`).join('')}</div>` : ''}
+  ${sayOf(s) ? `<div class="card tw"><h2>Say it like this</h2><p class="mut">Practise these before you read. In the story, names are <span class="w nm">blue</span>: tap one any time to see and hear it.</p>
+    ${sayOf(s).map(([n, how]) => `<div class="twrow"><span class="twdone" style="color:var(--ink)">${esc(n)}</span><span class="syl lit">${esc(how)}</span>${'speechSynthesis' in window ? `<button class="btn ghost small" aria-label="Hear ${esc(n)}" data-a="${A(()=>sayIt(n, true))}">🔊</button>` : ''}</div>`).join('')}</div>` : ''}
   ${tw.length ? `<div class="card tw">
     <h2>Warm up: tricky words</h2>
     <p class="mut">Tap each chunk and say it out loud. Then say the whole word and read what it means.</p>
@@ -1461,12 +1488,12 @@ function vRead(){
   if (phase === 'text' || phase === 'look'){
     const words = wordsOf(pg.t);
     const ev = phase === 'look' ? evidenceIdx(pg.t, pg.e, words) : new Set();
-    view.words = words;
+    view.words = words; view.names = sayNames(s);
     app.innerHTML = `${head}
     <div class="readlay">
     <div class="card lv${s.lvl>=5?5:3}">
       ${phase==='look' ? `<p class="notice" style="margin-bottom:12px">Look back! The highlighted part has the answer. Read it again out loud.</p>` : ''}
-      <p class="passage" id="passage">${words.map((w,i) => (i ? (pg.t.slice(words[i-1].end, w.at).includes('\n') ? '<br>' : ' ') : '') + `<span class="w${ev.has(i)?' ev':''}${isFocus(p, bankKey(w.raw)) ? ' fw' : ''}${pg.t.includes('\n') && w.end <= pg.t.indexOf('\n') ? ' ptitle' : ''}" data-i="${i}">${esc(w.raw)}</span>`).join('')}</p>
+      <p class="passage" id="passage">${words.map((w,i) => (i ? (pg.t.slice(words[i-1].end, w.at).includes('\n') ? '<br>' : ' ') : '') + `<span class="w${ev.has(i)?' ev':''}${isName(w.n) ? ' nm' : ''}${isFocus(p, bankKey(w.raw)) ? ' fw' : ''}${pg.t.includes('\n') && w.end <= pg.t.indexOf('\n') ? ' ptitle' : ''}" data-i="${i}">${esc(w.raw)}</span>`).join('')}</p>
       ${words.some(w => isFocus(p, bankKey(w.raw))) ? `<p class="mut" style="font-size:.9rem;margin-top:6px"><span class="w fw">Dotted words</span> are your focus words. Read them carefully!</p>` : ''}
     </div>
     ${phase==='look' ? `<aside class="card readside"><button class="btn" data-a="${A(()=>{ view.phase='q'; render(); })}">Try the question again</button></aside>`
@@ -1553,8 +1580,8 @@ function wordHelp(i, el){
   const say = (view.name === 'read' && R && sayOf(R.s) || []).find(([n]) => n.split(' ').some(x => norm(x) === w.n));
   const parts = say ? [say[1]] : tr ? tr[1].split('-') : syllables(w.raw);
   popEl = document.createElement('div'); popEl.className = 'pop';
-  popEl.innerHTML = `<div class="syls">${parts.map(pt => `<span class="syl">${esc(pt)}</span>`).join('')}</div>
-    <div class="row">${mic.on ? `<button class="btn ghost small" data-a="${A(()=>{ mic.ptr = Math.max(mic.ptr, i+1); mic.seg = mic.ptr; paintRead(); closePop(); checkMicDone(); })}">Skip this word</button>` : ''}
+  popEl.innerHTML = `${say ? `<p class="mut" style="margin:0 0 6px">${/^[A-Z]/.test(say[0]) ? 'A name. Say it like this:' : 'Say it like this:'}</p>` : ''}<div class="syls">${parts.map(pt => `<span class="syl">${esc(pt)}</span>`).join('')}</div>
+    <div class="row">${'speechSynthesis' in window ? `<button class="btn ghost small" data-a="${A(()=>sayIt(say ? say[0] : w.raw.replace(/[^A-Za-z' -]/g, ''), true))}">🔊 Hear it</button>` : ''}${mic.on ? `<button class="btn ghost small" data-a="${A(()=>{ mic.ptr = Math.max(mic.ptr, i+1); mic.seg = mic.ptr; paintRead(); closePop(); checkMicDone(); })}">Skip this word</button>` : ''}
     <button class="btn small" data-a="${A(closePop)}">Got it</button></div>`;
   document.body.appendChild(popEl);
 }
@@ -1711,7 +1738,7 @@ function alignHeard(text){
     let hit = -1, two = false;
     for (let k=0;k<4 && p+k<words.length;k++){
       const w = words[p+k].n;
-      if (sameWord(heard[i], w)){ hit = k; break; }
+      if (sameWord(heard[i], w) || (isName(w) && heard[i].length >= 2 && (heard[i][0] === w[0] || lev(heard[i], w) <= Math.ceil(w.length / 2)))){ hit = k; break; }
       if (heard[i+1] && heard[i] + heard[i+1] === w){ hit = k; two = true; break; }
     }
     // the microphone sometimes misses a whole phrase: find the reader again where two heard words in a row match two page words in a row
