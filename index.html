@@ -7795,27 +7795,39 @@ function mathPlan(p, kind){
 // ---- What is coming up at school, from the teachers' weekly newsletters ----
 // Refresh this from each week's newsletters: dates, what the class is learning, and what to practise for each test.
 const SCHOOL = {
-  3: {from:'3rd grade newsletters, week of Nov 16',
+  3: {from:'Mrs. Malone and Ms. Merani, week of Nov 23',
       teachers:{malone:{name:'Mrs. Malone', lib:4}, merani:{name:'Ms. Merani', lib:3}},
       learn:[['🔢', 'Math', 'Unit 4 Geometry: polygons with 3 to 8 sides, combining and cutting shapes'], ['📚', 'Reading', 'Unit 3: Government for the People (helping others, voting rights)'],
              ['✏️', 'Spelling', 'r-controlled vowels: ar (garden) and or (forest)'], ['💧', 'Science', 'The water cycle and keeping water clean']],
       events:[{d:'2026-11-19', ic:'📸', t:'Picture make-up day'},
               {d:'2026-11-23', ic:'📐', t:'Math test: Unit 4 Geometry', about:'Study guide: polygons vs. nonpolygons, naming shapes by their sides (quadrilateral, pentagon, hexagon, octagon), lines, rays and line segments, congruent shapes, cutting and combining shapes.', math:['g3.polygons', 'g3.quads', 'g3.composepoly', 'g3.geovocab', 'g3.polyfacts', 'g3.geovocab'], prep:'Practise for the geometry test'},
-              {d:'2026-11-20', when:'Later this week', ic:'✏️', t:'Spelling test: r-controlled ar and or words', spell:true, prep:'Practise the spelling words'},
-              {d:'2026-11-23', ic:'📝', t:'Homework due: reading log and math spiral #5–6'},
-              {d:'2026-11-24', ic:'🧱', t:'Field trip: LEGO Discovery Center'},
+              {d:'2026-11-24', when:'This week', ic:'✏️', t:'Spelling test: r-controlled ar and or words', spell:true, prep:'Practise the spelling words'},
+              {d:'2026-11-23', ic:'📝', t:'Turn in: reading log and math spiral #5–6 (last week’s homework)'},
+              {d:'2026-11-23', ic:'🎉', t:'No homework this week!', about:'Keep reading 20 minutes a day.'},
+              {d:'2026-11-23', ic:'💛', t:'Spirit Day: wear clothes with kind words'},
+              {d:'2026-11-24', ic:'🧱', t:'Field trip: LEGO Discovery Center', about:'Bus leaves at 9:30, back at 1:30. Eat a good breakfast, bring lunch if you did not order one, wear comfy shoes. It is also Pajama Day (optional, just be field-trip ready). No money needed.'},
               {d:'2026-11-25', ic:'🦃', t:'Thanksgiving break, no school (Nov 25–27)'},
+              {d:'2026-11-30', ic:'📚', t:'Book Fair all week (Nov 30–Dec 4)', about:'Glow Spirit Week: Mon yellow and sunglasses, Tue tie-dye, Wed green (3rd grade color), Thu neon, Fri pajamas.'},
               {d:'2026-12-01', ic:'🎯', t:'MAP Math test', math:'review', prep:'Mixed review for MAP'},
+              {d:'2026-12-02', ic:'🕐', t:'Early release: school ends at 1:05'},
               {d:'2026-12-03', ic:'✨', t:'Literacy Glow Night and Book Fair, 6–8 PM'},
-              {d:'2026-12-09', ic:'📖', t:'i-Ready Reading test', info:true, prep:'Practise with Info Lab'}]},
-  5: {from:'Ms. Shahab, 5th grade, week of Nov 16',
+              {d:'2026-12-09', ic:'📖', t:'i-Ready Reading test', info:true, prep:'Practise with Info Lab'},
+              {d:'2026-12-22', ic:'❄️', t:'Winter break, no school (Dec 22–Jan 1)'}]},
+  5: {from:'Ms. Shahab, 5th grade, week of Nov 23',
       learn:[['🔢', 'Math', 'Unit 5: integers, order of operations, exponents, perfect squares'], ['📚', 'Reading', 'Unit 3: The U.S. Constitution Then and Now'],
              ['🌋', 'Science', 'Landforms: moving plates, weathering, erosion, the rock cycle, fossils'], ['⏱', 'Homework', 'Read 20 minutes every day, 90 minutes of ST Math a week']],
       events:[{d:'2026-11-19', ic:'📸', t:'Picture make-up day'},
               {d:'2026-11-23', ic:'🌋', t:'Science quiz #2: Landforms', info:['i5-15', 'i5-16'], prep:'Read the landforms articles'},
               {d:'2026-11-24', ic:'🔢', t:'Math quiz: Unit 5 (integers, exponents, square roots)', math:['g5.sqword', 'g5.squares', 'g5.intops', 'g5.orderops', 'g5.exponents', 'g5.sqword'], prep:'Practise for the math quiz'},
+              {d:'2026-11-23', ic:'💛', t:'Spirit Day: wear clothes with kind words'},
+              {d:'2026-11-24', ic:'😴', t:'Spirit Day: Pajama Day'},
               {d:'2026-11-25', ic:'🦃', t:'Thanksgiving break, no school (Nov 25–27)'},
-              {d:'2026-12-03', ic:'✨', t:'Literacy Glow Night and Book Fair, 6–8 PM'}]}};
+              {d:'2026-11-30', ic:'📚', t:'Book Fair all week (Nov 30–Dec 4)', about:'Glow Spirit Week: Mon yellow and sunglasses, Tue tie-dye, Wed purple (5th grade color), Thu neon, Fri pajamas.'},
+              {d:'2026-12-01', ic:'🎯', t:'Winter MAP test', math:'review', prep:'Mixed review for MAP'},
+              {d:'2026-12-02', ic:'🕐', t:'Early release: school ends at 1:05'},
+              {d:'2026-12-03', ic:'✨', t:'Literacy Glow Night and Book Fair, 6–8 PM'},
+              {d:'2026-12-09', ic:'📖', t:'i-Ready Reading test', info:true, prep:'Practise with Info Lab'},
+              {d:'2026-12-22', ic:'❄️', t:'Winter break, no school (Dec 22–Jan 1)'}]}};
 function schoolOf(p){ return SCHOOL[mathBand(p)]; }
 // Which 3rd-grade class each child is in, keyed by a short code made from the first name so no names sit in this public file.
 // Both classes share one calendar and nearly the same work; the class decides library day and whose name shows on the card.
