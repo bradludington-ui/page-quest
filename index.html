@@ -4256,7 +4256,6 @@ function addAloud(secs){
   for (const d of Object.keys(p.aloud)) if (d < addDays(-60)) delete p.aloud[d];
   p.aloud[t] = (p.aloud[t]||0) + Math.min(secs, 900)/60; save();
 }
-function aloudToday(p){ return ((p.aloud||{})[today()]) || 0; }
 // The daily 20 minutes (My day, Brain Break, the week strip): every minute of reading work the reading clock counted, plus
 // "Read my own book". Until Nov 2026 only the seconds the microphone heard words counted, so 20 minutes took 40-50.
 function readToday(p, d){ return (((p.daily||{})[d || today()]) || 0) + (!d && typeof RC !== 'undefined' && p === me() ? RC.pend / 60 : 0); }
@@ -4276,12 +4275,6 @@ function addMinutes(m, title){
   save();
   if (wasR < BREAK_ALOUD && p.daily[t] >= BREAK_ALOUD) cheer('soccer', `GOAL, ${fname(p)}!`, breakOpen(p) ? `${BREAK_ALOUD} minutes of reading today. Brain Break is open!` : `${BREAK_ALOUD} minutes of reading done!`, 100);
   if (p.goalPaid !== t && minsToday(p) >= goalOf(p)){ p.goalPaid = t; save(); giveTickets(1); addCoins(10, 'daily goal!'); if (goalOf(p) !== BREAK_ALOUD) cheer('soccer', `GOAL, ${fname(p)}!`, `You read ${goalOf(p)} minutes today. Daily goal done!`, 50); }
-}
-function ringSvg(p){
-  const done = Math.min(1, minsToday(p)/goalOf(p)), r = 26, c = 2*Math.PI*r;
-  return `<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--soft)" stroke-width="8"/>
-    <circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--good)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${c*done} ${c}" transform="rotate(-90 32 32)"/>
-    <text x="32" y="37" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)" font-family="Baloo 2, sans-serif">${minsToday(p)}</text></svg>`;
 }
 
 // ---------- Word bank: the words this reader actually struggles with ----------
@@ -4449,7 +4442,6 @@ function gymDone(secsIn){
 // ---------- Monthly check-in: a one-minute cold read ----------
 const BENCH = {2:[50,84,100], 3:[83,97,112], 4:[94,120,133], 5:[121,133,146], 6:[132,145,146]}; // Hasbrouck & Tindal (2017), 50th percentile words correct per minute: fall, winter, spring
 function season(d){ const m = +d.slice(5,7); return (m >= 8 && m <= 11) ? 0 : (m === 12 || m <= 2) ? 1 : 2; }
-function benchFor(grade, d){ const b = BENCH[Math.max(2, Math.min(6, grade))]; return b[season(d)]; }
 // ---------- Reading speed vs. national benchmarks ----------
 // Hasbrouck & Tindal (2017) oral reading fluency norms, words correct per minute at the 25th, 50th, 75th and
 // 90th percentile, fall / winter / spring. Bands: below the 25th = high risk, 25th-49th = some risk,
@@ -4722,10 +4714,6 @@ function readTitles(p, d, x){
     else if (!Object.keys(T).length) return x.reads.map(r => [r.title, Math.round(r.mins||0), r.right||0, r.total||0]);
   }
   return Object.entries(T).filter(([, m]) => m >= 0.5).sort((a, b) => b[1] - a[1]).map(([t, m]) => [t, Math.max(1, Math.round(m)), (fin[t] || {}).right || 0, (fin[t] || {}).total || 0, est.has(t) ? 1 : 0]);
-}
-function readLine(r){
-  const s = storyById(r.id);
-  return `${r.title} (${kindOf(s)}${s ? `, ${s.pages.length} pages` : ''})`;
 }
 function journalText(p, d){
   const x = dayData(p, d), lines = [`${p.name}: ${niceDate(d, true)}`, `Minutes read: ${x.mins}` + (x.aloud ? ` (${x.aloud} out loud)` : '')];
@@ -5179,17 +5167,6 @@ function logWeeks(rows){
     w.days++; w.m += r.m||0; w.al += r.al||0; w.mm = (w.mm || 0) + (r.mm || 0); if ((r.m||0) >= (r.gl||20)) w.met++; (r.rd||[]).forEach(x => { w.stories++; w.titles.push(x[0]); }); if (r.s) w.sp.push(r.s); W.set(k, w); });
   return [...W.values()].map(w => Object.assign(w, {s: median(w.sp)})).sort((a, b) => b.ws.localeCompare(a.ws) || a.n.localeCompare(b.n));
 }
-function csvCell(v){ v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
-function logCsv(){
-  const head = ['Date','Child','Grade','Minutes read','Daily goal (min)','Goal met','Minutes out loud','Reading speed (words/min)','Level','Target (top 25%)','Stories and chapters','Minutes on stories','Questions right first try','Fluency Gym (1st -> 3rd read)','Words to practise'];
-  const lines = [head.join(',')];
-  logRows().forEach(r => { const b = r.b && BANDS.find(x => x.k === r.b), rd = r.rd || [];
-    lines.push([r.d, r.n, r.g, r.m, r.gl, r.m >= r.gl ? 'yes' : 'no', r.al, r.s || '', b ? b.lab : '', r.tg || '', rd.map(x => x[0]).join('; '),
-      rd.reduce((a, x) => a + (x[1]||0), 0) || '', rd.some(x => x[3]) ? `${rd.reduce((a, x) => a + x[2], 0)} of ${rd.reduce((a, x) => a + x[3], 0)}` : '',
-      (r.gy || []).map(w => `${w[0]} -> ${w[2]}`).join('; '), (r.wp || []).join('; ')].map(csvCell).join(','));
-  });
-  return lines.join('\r\n');
-}
 // ---- the school reading log: which book, and for how long, every day ----
 // "Where Is Daisy?, Chapter 2: The Note" -> book "Where Is Daisy?", part "Chapter 2: The Note"
 function bookOf(t){ const m = String(t).match(/^(.*?), (Chapter \d+(?::.*)?)$/); return m ? {book: m[1], part: m[2]} : {book: String(t), part: ''}; }
@@ -5198,28 +5175,6 @@ function schoolDay(r){
   const B = new Map();
   (r.rd || []).forEach(x => { const b = bookOf(x[0]), e = B.get(b.book) || {book: b.book, parts: [], mins: 0}; if (b.part && !e.parts.includes(b.part.split(':')[0])) e.parts.push(b.part.split(':')[0]); e.mins += x[1] || 0; if (x[4]) e.est = true; B.set(b.book, e); });
   return [...B.values()];
-}
-function schoolText(rows, name){
-  return [`${name}: reading log`].concat(rows.slice().sort((a, b) => a.d.localeCompare(b.d)).map(r => {
-    const bs = schoolDay(r);
-    return `${new Date(r.d+'T12:00').toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'})}: ${r.m} min` +
-      (bs.length ? ' · ' + bs.map(b => `${b.book}${b.parts.length ? ' (' + b.parts.join(', ') + ')' : ''}${b.mins ? ` ${b.mins} min` : ''}`).join('; ') : ' · practice passages and word games');
-  })).join('\n');
-}
-function schoolCsv(){
-  const lines = [['Date','Child','Book or story','Chapters read','Minutes on this book','Total minutes read that day'].join(',')];
-  logRows().slice().sort((a, b) => a.d.localeCompare(b.d) || a.n.localeCompare(b.n)).forEach(r => {
-    const bs = schoolDay(r);
-    (bs.length ? bs : [{book:'Practice passages and word games', parts:[], mins:''}]).forEach(b => lines.push([r.d, r.n, b.book, b.parts.join(', '), b.mins || '', r.m].map(csvCell).join(',')));
-  });
-  return lines.join('\r\n');
-}
-function logWeekCsv(){
-  const lines = [['Week of (Sunday)','Child','Grade','Days read','Minutes read','Minutes out loud','Days goal met','Stories and chapters','Middle reading speed (words/min)','Change from last week','Target (top 25%)','Level','What they read'].join(',')];
-  const rows = logRows(), chg = {}; [...new Set(rows.map(r => r.n))].forEach(nm => speedWeeksOf(rows.filter(r => r.n === nm)).forEach(w => chg[nm + '|' + w.ws] = w));
-  logWeeks(rows).forEach(w => { const sw = chg[w.n + '|' + w.ws];
-    lines.push([w.ws, w.n, w.g, w.days, w.m, w.al, w.met, w.stories, w.s || '', sw && sw.chg != null ? (sw.chg > 0 ? '+' : '') + sw.chg : '', sw ? sw.tg : '', sw ? sw.band.lab : '', w.titles.join('; ')].map(csvCell).join(',')); });
-  return lines.join('\r\n');
 }
 function logBackup(){ return JSON.stringify({app:'Page Quest reading log', saved: new Date().toISOString(), log: logStore()}); }
 function logRestore(file, msgId){
@@ -5233,11 +5188,6 @@ function logRestore(file, msgId){
     logSaveStore(L); render(); setTimeout(() => say(`✓ Restored. ${n} day${n===1?'':'s'} added or updated.`), 50);
   }catch(e){ say('That file is not a Page Quest log backup.'); } };
   fr.readAsText(file);
-}
-function logText(){
-  const rows = logRows().slice().reverse();
-  return 'Page Quest reading log\n\n' + rows.map(r => r.t || [`${r.n}: ${niceDate(r.d, true)}`, `Minutes read: ${r.m}` + (r.al ? ` (${r.al} out loud)` : ''),
-    'Read: ' + ((r.rd||[]).length ? r.rd.map(x => x[0]).join('; ') : 'practice passages and word games')].concat(r.s ? [`Reading speed: ${r.s} words per minute`] : []).join('\n')).join('\n\n');
 }
 // iPhone: the share sheet's "Save to Files"; elsewhere a download
 async function saveFile(name, text, type, msgId){
@@ -5332,15 +5282,7 @@ function speedHtml(rows){
   </div>`;
 }
 // one day as a card: date, child, minutes, out loud, speed, then each book with its chapters and minutes
-function logDayCard(r, withName){
-  const b = r.b && BANDS.find(x => x.k === r.b), bs = schoolDay(r);
-  return `<div class="dcard"><div class="dhead"><b>${new Date(r.d+'T12:00').toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'})}</b>${withName ? `<span class="dname">${esc(r.a || '')} ${esc(r.n)}</span>` : ''}<span class="dmin ${(r.m||0) >= (r.gl||20) ? 'met' : ''}">${r.m || 0} min${(r.m||0) >= (r.gl||20) ? ' ✓' : ''}</span></div>
-    <div class="dstats"><span>🎤 ${r.al || 0} min out loud</span>${r.s ? `<span>⚡ ${r.s} words/min ${b ? b.ic : ''}</span>` : ''}</div>
-    ${bs.length ? `<ul class="dbooks">${bs.map(x => `<li><b>${esc(x.book)}</b><span>${[x.parts.length ? x.parts.map(q => q.replace('Chapter', 'Ch')).join(', ') : '', x.mins ? x.mins + ' min' : ''].filter(Boolean).join(' · ')}</span></li>`).join('')}</ul>` : '<p class="mut dbooks">Practice passages and word games</p>'}
-    ${(r.wp||[]).length ? `<p class="dwords">Practise: ${r.wp.map(esc).join(', ')}</p>` : ''}</div>`;
-}
 // the school view: week by week, each day's books and minutes, with Copy for the reading journal
-function schoolHtml(mine, who){ return dayLogHtml(mine, false); }
 // the reading log for one day: each title on its own line with its minutes, ready to copy into the school log
 function dayLogHtml(rows, withChild){
   const v = view, days = [...new Set(rows.map(r => r.d))].sort();
@@ -8074,8 +8016,6 @@ function mathQuest(p){
   if (missFacts) it.push({k:'mfacts', icon:'🎯', label:`Focus facts: ${missFacts} to master`, run:()=>mathStart(p, mathPlan(p, 'focus'), 'Focus facts', 'mfacts', true)});
   return it.map(i => Object.assign(i, {done: !!q[i.k]}));
 }
-function ringFor(v, goal){ const pc = Math.min(1, v / goal), r = 34, c = 2 * Math.PI * r;
-  return `<svg viewBox="0 0 84 84" width="84" height="84"><circle cx="42" cy="42" r="${r}" fill="none" stroke="var(--line)" stroke-width="9"/><circle cx="42" cy="42" r="${r}" fill="none" stroke="${pc >= 1 ? 'var(--good)' : 'var(--accent)'}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(pc*c).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 42 42)"/><text x="42" y="49" text-anchor="middle" font-size="22" font-weight="800" fill="var(--ink)">${Math.floor(v)}</text></svg>`; }
 function subjectSwitch(p){
   if (isParent(p) || !MATH_ON) return '';
   const s = p.subject || 'read';
